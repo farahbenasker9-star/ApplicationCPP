@@ -1,0 +1,27 @@
+<RCC>
+    <qresource prefix="/new/prefix1">
+        <file>images/bg_left.jpg</file>
+        <file>images/logo.png</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>images/bg_left.jpg</file>
+
+        <file>images/logo-removebg-preview (1).png</file>
+        <file>images/logo-removebg-preview (1) (1).png</file>
+        <file>images/client0.png</file>
+        <file>images/contrat0.png</file>
+        <file>images/employer.png</file>
+        <file>images/equipement0.png</file>
+        <file>images/porte.png</file>
+        <file>images/pubelle0.png</file>
+        <file>images/stock0.png</file>
+        <file>images/btn1.png</file>
+        <file>images/btn2.png</file>
+        <file>images/btn3.png</file>
+        <file>images/btn4.png</file>
+        <file>images/btn5.png</file>
+        <file>images/btn6.png</file>
+        <file>images/logo2.png</file>
+        <file>images/icon_profile.png</file>
+    </qresource>
+</RCC>
