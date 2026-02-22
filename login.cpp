@@ -24,6 +24,12 @@ Login::~Login()
 // --- Action : Se Connecter ---
 void Login::on_btn_login_clicked()
 {
-    // Simply accept and go to main window - no password check
-    this->accept();
+    QString username = ui->le_username->text();
+    QString password = ui->le_password->text();
+
+    if (username == "HR" && password == "hr123") {
+        this->accept();
+    } else {
+        QMessageBox::warning(this, "Login Failed", "Invalid username or password.");
+    }
 }

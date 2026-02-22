@@ -1,34 +1,50 @@
 #include "mainwindow.h"
 #include "login.h"
-#include "connection.h"  // Add this
+#include "connection.h"
 #include <QApplication>
-#include <QMessageBox>   // Add this
+#include <QMessageBox>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    // Test database connection before showing login
-    Connection c;
-    if (!c.createconnect())
-    {
-        // If connection fails, the error message is already shown in createconnect()
-        return 1; // Exit the application
+    // 1. Connect to the Oracle database
+    Connection conn;
+    bool test = conn.createconnect();
+
+    if (test) {
+        QMessageBox::information(
+            nullptr,
+            QObject::tr("DONE"),
+            QObject::tr("Connection successful"),
+            QMessageBox::Cancel
+        );
+    } else {
+        QMessageBox::critical(
+            nullptr,
+            QObject::tr("ERROR"),
+            QObject::tr("Unable to establish a database connection."),
+            QMessageBox::Cancel
+        );
+        return -1;
     }
 
-    // 1. On crée la fenêtre de login
+    // 2. On crée la fenêtre de login
     Login loginWindow;
 
-    // 2. On l'affiche et on attend
+    // 3. On l'affiche et on attend. Si le bouton "Sign In" est cliqué,
+    // le slot "on_btn_login_clicked" va appeler "accept()",
+    // et ".exec()" renverra QDialog::Accepted.
     if(loginWindow.exec() == QDialog::Accepted)
     {
-        // 3. On crée et on affiche la fenêtre principale
+        // 4. On crée et on affiche la fenêtre principale
         MainWindow w;
         w.show();
 
-        // 4. On lance l'application
+        // 5. On lance l'application
         return a.exec();
     }
 
+    // Si on ferme le login sans cliquer, le programme s'arrête.
     return 0;
 }

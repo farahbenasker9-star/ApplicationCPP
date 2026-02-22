@@ -1,15 +1,15 @@
-QT       += core gui widgets
+QT       += core gui widgets sql
 
 SOURCES += \
-    connection.cpp \
     main.cpp \
     login.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    connection.cpp
 
 HEADERS += \
-    connection.h \
     login.h \
-    mainwindow.h
+    mainwindow.h \
+    connection.h
 
 FORMS += \
     login.ui \
@@ -17,5 +17,3 @@ FORMS += \
 
 RESOURCES += \
     ressources.qrc
-
-QT+= sql

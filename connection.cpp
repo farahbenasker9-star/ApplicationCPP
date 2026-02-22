@@ -1,5 +1,4 @@
 #include "connection.h"
-#include <QMessageBox>  // Add this include
 
 Connection::Connection()
 {
@@ -8,21 +7,16 @@ Connection::Connection()
 bool Connection::createconnect()
 {
     bool test = false;
-    QSqlDatabase db = QSqlDatabase::addDatabase("QODBC");
-    db.setDatabaseName("Source_Proje2A");
-    db.setUserName("Amine");
-    db.setPassword("esprit18");
+    QSqlDatabase db = QSqlDatabase::addDatabase("QODBC", CONNECTION_NAME);
+    db.setDatabaseName("DRIVER={Oracle in XE};DBQ=XE;UID=ECOCYCLEUSER;PWD=esprit2025;");
 
     if (db.open())
     {
         test = true;
-        QMessageBox::information(nullptr, "Connection Status",
-                                 "Database connected successfully!");
     }
     else
     {
-        QMessageBox::critical(nullptr, "Connection Error",
-                              "Failed to connect to database!\n\nError: " + db.lastError().text());
+        qDebug() << "Error:" << db.lastError().text();
     }
 
     return test;
