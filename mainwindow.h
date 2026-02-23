@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QSqlTableModel> // Required for QSqlTableModel
+#include "employe.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,28 +17,17 @@ public:
     ~MainWindow();
 
 private slots:
-    // On garde juste la navigation de base pour le test
+    // Placeholder so Qt's auto-connect (via setupUi) does not warn about
+    // a missing slot for btn_nav_employes. Actual navigation is handled
+    // by the explicit connect() in the constructor.
     void on_btn_nav_employes_clicked();
-
-    // CRUD Slots for Employees
-    void on_tab_employes_clicked(const QModelIndex &index);
-    void on_btn_ajouter_clicked();
-    void on_btn_modifier_clicked();
-    void on_btn_supprimer_clicked();
-
-    // Search and Sort Slots for Employees
-    void on_le_recherche_textChanged(const QString &arg1);
-    void on_btn_tri_clicked();
 
 private:
     Ui::MainWindow *ui;
     void navigateToPage(int pageIndex);
-    
-    // Pointer to our SQL Table Model
-    QSqlTableModel *employeModel;
-    
-    // Method to setup and display the employees
-    void afficherEmployes();
+
+    // Employee page manager (owns all CRUD / search / sort logic)
+    Employe *employe;
 };
 
 #endif // MAINWINDOW_H

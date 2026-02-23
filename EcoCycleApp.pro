@@ -4,12 +4,14 @@ SOURCES += \
     main.cpp \
     login.cpp \
     mainwindow.cpp \
-    connection.cpp
+    connection.cpp \
+    employe.cpp
 
 HEADERS += \
     login.h \
     mainwindow.h \
-    connection.h
+    connection.h \
+    employe.h
 
 FORMS += \
     login.ui \
