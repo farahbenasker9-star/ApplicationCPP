@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "employe.h"
+#include "client.h" // Ajout de l'en-tête client
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,17 +18,16 @@ public:
     ~MainWindow();
 
 private slots:
-    // Placeholder so Qt's auto-connect (via setupUi) does not warn about
-    // a missing slot for btn_nav_employes. Actual navigation is handled
-    // by the explicit connect() in the constructor.
+    // Slot placeholder pour éviter les erreurs d'auto-connexion de Qt
     void on_btn_nav_employes_clicked();
 
 private:
     Ui::MainWindow *ui;
     void navigateToPage(int pageIndex);
 
-    // Employee page manager (owns all CRUD / search / sort logic)
+    // Les gestionnaires de pages
     Employe *employe;
+    Client  *client; // Pointeur pour ton module Client
 };
 
 #endif // MAINWINDOW_H

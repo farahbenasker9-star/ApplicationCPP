@@ -6,14 +6,12 @@
 #include <QSqlQuery>
 #include <QDebug>
 
-// Use this name when calling QSqlDatabase::database(CONNECTION_NAME) elsewhere in the app
 #define CONNECTION_NAME "conn_main"
 
-class Connection
-{
+class Connection {
 public:
-    Connection();
+    Connection() {}
     bool createconnect();
 };
 
-#endif // CONNECTION_H
+#endif

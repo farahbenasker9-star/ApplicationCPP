@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -7,25 +8,34 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    // Set landing page to Dashboard (Index 0)
-    ui->stackedWidget->setCurrentIndex(0);
-    ui->navbar_container->hide(); // Hide sidebar on dashboard initially
+    // 1. Initialisation de l'affichage
+    ui->stackedWidget->setCurrentIndex(0); // Dashboard par défaut
+    ui->navbar_container->hide();
 
-    // Create the employee page manager (handles all CRUD / search / sort)
+    // 2. INITIALISATION DES MANAGERS (Très important pour le CRUD)
     employe = new Employe(ui, this);
+    client  = new Client(ui, this); // Initialise ta gestion client
 
     // ==================== DASHBOARD CONNECTIONS ====================
-    connect(ui->btn_dash_employe, &QPushButton::clicked, this, [this]() { navigateToPage(6); ui->btn_nav_employes->setChecked(true); });
-    connect(ui->btn_dash_client, &QPushButton::clicked, this, [this]() { navigateToPage(5); ui->btn_nav_client->setChecked(true); });
-    connect(ui->btn_dash_contrat, &QPushButton::clicked, this, [this]() { navigateToPage(2); ui->btn_nav_contrat->setChecked(true); });
-    connect(ui->btn_dash_poubelle, &QPushButton::clicked, this, [this]() { navigateToPage(7); ui->btn_nav_poubelle->setChecked(true); });
-    connect(ui->btn_dash_equipement, &QPushButton::clicked, this, [this]() { navigateToPage(3); ui->btn_nav_equipements->setChecked(true); });
-    connect(ui->btn_dash_stock, &QPushButton::clicked, this, [this]() { navigateToPage(4); ui->btn_nav_stock->setChecked(true); });
+    connect(ui->btn_dash_employe, &QPushButton::clicked, this, [this]() {
+        qDebug() << "Vers page Employe (6)";
+        navigateToPage(6);
+    });
+
+    connect(ui->btn_dash_client, &QPushButton::clicked, this, [this]() {
+        qDebug() << "Vers page Client (5)";
+        navigateToPage(5);
+    });
+
+    connect(ui->btn_dash_contrat, &QPushButton::clicked, this, [this]() { navigateToPage(2); });
+    connect(ui->btn_dash_poubelle, &QPushButton::clicked, this, [this]() { navigateToPage(7); });
+    connect(ui->btn_dash_equipement, &QPushButton::clicked, this, [this]() { navigateToPage(3); });
+    connect(ui->btn_dash_stock, &QPushButton::clicked, this, [this]() { navigateToPage(4); });
 
 
     // ==================== SIDEBAR VISIBILITY ====================
     connect(ui->stackedWidget, &QStackedWidget::currentChanged, this, [this](int index) {
-        if (index == 0) { // Dashboard
+        if (index == 0) {
             ui->navbar_container->hide();
         } else {
             ui->navbar_container->show();
@@ -34,39 +44,30 @@ MainWindow::MainWindow(QWidget *parent)
 
     // ==================== NAVIGATION (SIDEBAR) ====================
     connect(ui->btn_nav_employes, &QPushButton::clicked, this, [this]() {
-        navigateToPage(6); // Page Employee
-        ui->btn_nav_employes->setChecked(true);
+        navigateToPage(6);
     });
 
     connect(ui->btn_nav_client, &QPushButton::clicked, this, [this]() {
-        navigateToPage(5); // Page Client
-        ui->btn_nav_client->setChecked(true);
+        navigateToPage(5);
     });
 
     connect(ui->btn_nav_poubelle, &QPushButton::clicked, this, [this]() {
-        navigateToPage(7); // Page Poubelle
-        ui->btn_nav_poubelle->setChecked(true);
+        navigateToPage(7);
     });
 
     connect(ui->btn_nav_contrat, &QPushButton::clicked, this, [this]() {
-        navigateToPage(2); // Page Contrat
-        ui->btn_nav_contrat->setChecked(true);
+        navigateToPage(2);
     });
 
     connect(ui->btn_nav_stock, &QPushButton::clicked, this, [this]() {
-        navigateToPage(4); // Page Stock
-        ui->btn_nav_stock->setChecked(true);
+        navigateToPage(4);
     });
 
     connect(ui->btn_nav_equipements, &QPushButton::clicked, this, [this]() {
-        navigateToPage(3); // Page Equipement
-        ui->btn_nav_equipements->setChecked(true);
+        navigateToPage(3);
     });
-    
-    // Connect Quit button to close application
+
     connect(ui->btn_quit, &QPushButton::clicked, this, &QMainWindow::close);
-
-
 }
 
 MainWindow::~MainWindow()
@@ -74,19 +75,14 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
-// ==================== NAVIGATION ====================
-
 void MainWindow::navigateToPage(int pageIndex)
 {
-    ui->stackedWidget->setCurrentIndex(pageIndex);
+    // Vérifie si l'index existe dans ton StackedWidget
+    if(pageIndex < ui->stackedWidget->count()) {
+        ui->stackedWidget->setCurrentIndex(pageIndex);
+    } else {
+        qDebug() << "Erreur : L'index de page" << pageIndex << "n'existe pas !";
+    }
 }
 
-// (Employee management has been moved to employe.cpp / employe.h)
-
-// Keep this placeholder so Qt's connectSlotsByName (called inside setupUi) does not
-// emit a "no matching slot" warning for btn_nav_employes. Navigation is already
-// handled by the explicit connect() call in the constructor above.
 void MainWindow::on_btn_nav_employes_clicked() {}
-
-

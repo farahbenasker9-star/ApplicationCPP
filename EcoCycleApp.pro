@@ -1,6 +1,9 @@
 QT       += core gui widgets sql
 
+CONFIG += c++17
+
 SOURCES += \
+    client.cpp \
     main.cpp \
     login.cpp \
     mainwindow.cpp \
@@ -8,6 +11,7 @@ SOURCES += \
     employe.cpp
 
 HEADERS += \
+    client.h \
     login.h \
     mainwindow.h \
     connection.h \

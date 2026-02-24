@@ -383,7 +383,7 @@ QWidget#centralwidget {
         </rect>
        </property>
        <property name="currentIndex">
-        <number>6</number>
+        <number>5</number>
        </property>
        <widget class="QWidget" name="page_dashboard">
         <widget class="QLabel" name="label_logo_dash">
@@ -3078,6 +3078,16 @@ QTabBar::tab:hover {
            </widget>
           </item>
           <item>
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string> Num Tel</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="le_tel_client"/>
+          </item>
+          <item>
            <widget class="QLabel" name="label_11_client">
             <property name="text">
              <string>Adresse</string>
@@ -3136,21 +3146,7 @@ QTabBar::tab:hover {
            </widget>
           </item>
           <item>
-           <widget class="QDoubleSpinBox" name="dsb_codepostal_client"/>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_14_client">
-            <property name="text">
-             <string>Date Inscription</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QDateEdit" name="de_inscription_client">
-            <property name="calendarPopup">
-             <bool>true</bool>
-            </property>
-           </widget>
+           <widget class="QLineEdit" name="dsb_codepostal_client"/>
           </item>
           <item>
            <widget class="QLabel" name="label_15_client">
@@ -3284,54 +3280,6 @@ QTabBar::tab:hover {
          <property name="selectionBehavior">
           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
          </property>
-        </widget>
-        <widget class="QTableWidget" name="tableWidget_3">
-         <property name="geometry">
-          <rect>
-           <x>280</x>
-           <y>200</y>
-           <width>551</width>
-           <height>411</height>
-          </rect>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">border-color: rgb(0, 0, 0);</string>
-         </property>
-         <column>
-          <property name="text">
-           <string>ID_client</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>Nom_client</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>Adresse</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>Code postale</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>Nature_du_Flux</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>Points_de_fidélité</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string/>
-          </property>
-         </column>
         </widget>
         <widget class="QWidget" name="layoutWidget">
          <property name="geometry">
@@ -4590,7 +4538,7 @@ background-color: rgb(67, 160, 71);</string>
      <x>0</x>
      <y>0</y>
      <width>1587</width>
-     <height>25</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>
