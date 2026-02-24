@@ -8,14 +8,16 @@ SOURCES += \
     login.cpp \
     mainwindow.cpp \
     connection.cpp \
-    employe.cpp
+    employe.cpp \
+    poubelle.cpp
 
 HEADERS += \
     client.h \
     login.h \
     mainwindow.h \
     connection.h \
-    employe.h
+    employe.h \
+    poubelle.h
 
 FORMS += \
     login.ui \

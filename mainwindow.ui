@@ -377,13 +377,13 @@ QWidget#centralwidget {
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
+         <y>10</y>
          <width>1341</width>
          <height>731</height>
         </rect>
        </property>
        <property name="currentIndex">
-        <number>5</number>
+        <number>6</number>
        </property>
        <widget class="QWidget" name="page_dashboard">
         <widget class="QLabel" name="label_logo_dash">
@@ -1918,8 +1918,8 @@ QGroupBox::title {
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>357</width>
-               <height>492</height>
+               <width>361</width>
+               <height>496</height>
               </rect>
              </property>
              <property name="styleSheet">
@@ -3029,9 +3029,9 @@ QTabBar::tab:hover {
          <property name="geometry">
           <rect>
            <x>0</x>
-           <y>10</y>
+           <y>40</y>
            <width>231</width>
-           <height>721</height>
+           <height>681</height>
           </rect>
          </property>
          <property name="font">
@@ -3285,7 +3285,7 @@ QTabBar::tab:hover {
          <property name="geometry">
           <rect>
            <x>240</x>
-           <y>690</y>
+           <y>680</y>
            <width>621</width>
            <height>41</height>
           </rect>
@@ -4127,12 +4127,12 @@ QTabBar::tab:hover {
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="le_cin_2">
+           <widget class="QLineEdit" name="le_id_poubelle">
             <property name="maxLength">
-             <number>8</number>
+             <number>5</number>
             </property>
             <property name="placeholderText">
-             <string>12345678</string>
+             <string>12345</string>
             </property>
            </widget>
           </item>
@@ -4144,7 +4144,7 @@ QTabBar::tab:hover {
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="le_nom_2">
+           <widget class="QLineEdit" name="le_adresse_poubelle">
             <property name="text">
              <string/>
             </property>
@@ -4161,7 +4161,7 @@ QTabBar::tab:hover {
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="le_prenom_2">
+           <widget class="QLineEdit" name="le_type_dechet">
             <property name="text">
              <string/>
             </property>
@@ -4178,7 +4178,109 @@ QTabBar::tab:hover {
            </widget>
           </item>
           <item>
-           <widget class="QDoubleSpinBox" name="dsb_salaire_2"/>
+           <widget class="QSpinBox" name="sb_capacite">
+            <property name="maximum">
+             <number>10000</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_etat">
+            <property name="text">
+             <string>Etat</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="cb_etat_poubelle">
+            <item>
+             <property name="text">
+              <string>EN_STOCK</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>INSTALLE</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_remp">
+            <property name="text">
+             <string>Remplissage (%)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="sb_remplissage">
+            <property name="maximum">
+             <number>100</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_batt">
+            <property name="text">
+             <string>Batterie (%)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="sb_batterie">
+            <property name="maximum">
+             <number>100</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_statut_cap">
+            <property name="text">
+             <string>Statut Capteur</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="cb_statut_capteur">
+            <item>
+             <property name="text">
+              <string>Fonctionnel</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>En panne</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_date_inst">
+            <property name="text">
+             <string>Date Installation</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDateEdit" name="de_installation">
+            <property name="calendarPopup">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_date_coll">
+            <property name="text">
+             <string>Date Collecte</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDateEdit" name="de_collecte">
+            <property name="calendarPopup">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -4201,64 +4303,6 @@ QTabBar::tab:hover {
           <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
          </property>
         </widget>
-        <widget class="QTableWidget" name="tableWidget_2">
-         <property name="geometry">
-          <rect>
-           <x>390</x>
-           <y>230</y>
-           <width>591</width>
-           <height>371</height>
-          </rect>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">border-color: rgb(0, 0, 0);</string>
-         </property>
-         <column>
-          <property name="text">
-           <string>ID_poubelles</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>Adresse</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>Type_Dechet</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>Capacité(L)</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>Niveau_Remp</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>etat_batterie</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>Statut_capteur</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>date_installation</string>
-          </property>
-         </column>
-         <column>
-          <property name="text">
-           <string>date_dernière_collecte</string>
-          </property>
-         </column>
-        </widget>
         <widget class="QWidget" name="layoutWidget_3">
          <property name="geometry">
           <rect>
@@ -4280,7 +4324,7 @@ QTabBar::tab:hover {
            </widget>
           </item>
           <item>
-           <widget class="QComboBox" name="comboBox_client_3">
+           <widget class="QComboBox" name="cb_tri_poubelle">
             <item>
              <property name="text">
               <string>Niveau de remplissage </string>
@@ -4299,7 +4343,7 @@ QTabBar::tab:hover {
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="btn_tri_client_3">
+           <widget class="QPushButton" name="btn_tri_poubelle">
             <property name="styleSheet">
              <string notr="true">background-color: rgb(255, 193, 7);</string>
             </property>
@@ -4415,7 +4459,7 @@ QTabBar::tab:hover {
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_7_client_2">
           <item>
-           <widget class="QLineEdit" name="le_recherche_client_2">
+           <widget class="QLineEdit" name="le_recherche_poubelle">
             <property name="placeholderText">
              <string>Chercher une poubelle</string>
             </property>
@@ -4463,7 +4507,7 @@ QTabBar::tab:hover {
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_client_2">
           <item>
-           <widget class="QPushButton" name="btn_ajouter_client_2">
+           <widget class="QPushButton" name="btn_ajouter_poubelle">
             <property name="styleSheet">
              <string notr="true">background-color: rgb(0, 96, 0);</string>
             </property>
@@ -4473,7 +4517,7 @@ QTabBar::tab:hover {
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="btn_modifier_client_2">
+           <widget class="QPushButton" name="btn_modifier_poubelle">
             <property name="styleSheet">
              <string notr="true">background-color: rgb(26, 120, 202);</string>
             </property>
@@ -4483,7 +4527,7 @@ QTabBar::tab:hover {
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="btn_supprimer_client_2">
+           <widget class="QPushButton" name="btn_supprimer_poubelle">
             <property name="styleSheet">
              <string notr="true">background-color: rgb(226, 56, 52);</string>
             </property>
@@ -4523,7 +4567,6 @@ background-color: rgb(67, 160, 71);</string>
         <zorder>gb_form_2</zorder>
         <zorder>lbl_page_title_3</zorder>
         <zorder>tab_poubelle</zorder>
-        <zorder>tableWidget_2</zorder>
         <zorder>layoutWidget_3</zorder>
         <zorder>tabWidget_right_2</zorder>
        </widget>
@@ -4538,7 +4581,7 @@ background-color: rgb(67, 160, 71);</string>
      <x>0</x>
      <y>0</y>
      <width>1587</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

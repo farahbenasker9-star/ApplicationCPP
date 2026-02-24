@@ -1,10 +1,11 @@
-#include "client.h"
+﻿#include "client.h"
 #include "ui_mainwindow.h"
 #include "connection.h"
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <QDebug>
 
 Client::Client(Ui::MainWindow *ui, QObject *parent) : QObject(parent), ui(ui) {
     // 1. Initialisation du Modèle SQL
@@ -17,8 +18,8 @@ Client::Client(Ui::MainWindow *ui, QObject *parent) : QObject(parent), ui(ui) {
     ui->tab_clients->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tab_clients->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    // 3. Titres des colonnes (Synchronisés avec le formulaire)
-    // Ordre Oracle : 0:ID, 1:NOM, 2:VILLE, 3:CP, 4:POINTS, 5:TEL, 6:PDG, 7:ADRESSE
+    // 3. Titres des colonnes
+    // Ordre Oracle : 0:ID_CLIENT, 1:NOM_CLIENT, 2:VILLE, 3:CODE_POSTAL, 4:POINT_DE_FIDELITE, 5:NUM_TEL, 6:PDG, 7:ADRESSE
     model->setHeaderData(0, Qt::Horizontal, "ID Client");
     model->setHeaderData(1, Qt::Horizontal, "Nom");
     model->setHeaderData(5, Qt::Horizontal, "Num Tél");
@@ -29,13 +30,10 @@ Client::Client(Ui::MainWindow *ui, QObject *parent) : QObject(parent), ui(ui) {
 
     rafraichirAffichage();
 
-    // 4. CONFIGURATION DE L'AFFICHAGE (Masquer ce qui n'est pas dans le formulaire)
-    ui->tab_clients->hideColumn(4); // Masquer la colonne "Points de fidélité"
-
-    // Optimisation visuelle
+    ui->tab_clients->hideColumn(4); // Masquer Points de fidélité
     ui->tab_clients->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    // 5. Connexions des signaux
+    // Connexions
     connect(ui->btn_ajouter_client, &QPushButton::clicked, this, &Client::onBtnAjouterClicked);
     connect(ui->btn_modifier_client, &QPushButton::clicked, this, &Client::onBtnModifierClicked);
     connect(ui->btn_supprimer_client, &QPushButton::clicked, this, &Client::onBtnSupprimerClicked);
@@ -44,10 +42,11 @@ Client::Client(Ui::MainWindow *ui, QObject *parent) : QObject(parent), ui(ui) {
 }
 
 void Client::rafraichirAffichage() {
-    model->select();
+    if (!model->select()) {
+        qDebug() << "Erreur lors du select() du modèle Client:" << model->lastError().text();
+    }
 }
 
-// ==================== CONTROLE DE SAISIE LOGIQUE ====================
 bool Client::verifierSaisie() {
     QString id = ui->le_id_client->text();
     QString nom = ui->le_nom_client->text();
@@ -56,41 +55,36 @@ bool Client::verifierSaisie() {
     QString responsable = ui->le_responsable_client->text();
     QString cp = ui->dsb_codepostal_client->text();
 
-    // A. Vérification des champs vides
     if(id.isEmpty() || nom.isEmpty() || tel.isEmpty() || adr.isEmpty() || responsable.isEmpty() || cp.isEmpty()) {
         QMessageBox::warning(nullptr, "Champs vides", "Veuillez remplir tous les champs du formulaire.");
         return false;
     }
 
-    // B. Vérification du Nom (Lettres et espaces uniquement)
     QRegularExpression rxNom("^[A-Za-zÀ-ÿ\\s]+$");
     if(!rxNom.match(nom).hasMatch()) {
         QMessageBox::warning(nullptr, "Erreur Nom", "Le nom ne doit contenir que des lettres.");
         return false;
     }
 
-    // C. Vérification du Téléphone (Exactement 8 chiffres)
     QRegularExpression rxTel("^[0-9]{8}$");
     if(!rxTel.match(tel).hasMatch()) {
         QMessageBox::warning(nullptr, "Erreur Téléphone", "Le numéro de téléphone doit contenir 8 chiffres.");
         return false;
     }
 
-    // D. Vérification de l'ID (Doit être un nombre positif)
     if(id.toInt() <= 0) {
-        QMessageBox::warning(nullptr, "Erreur ID", "L'ID doit être un nombre positif.");
+        QMessageBox::warning(nullptr, "Erreur ID", "L''ID doit être un nombre positif.");
         return false;
     }
 
     return true;
 }
 
-// ==================== ACTIONS CRUD ====================
-
 void Client::onBtnAjouterClicked() {
-    if(!verifierSaisie()) return; // Blocage si erreur de saisie
+    if(!verifierSaisie()) return;
 
     QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    // Correction possible des noms de colonnes si NOM_CLIENT/ID_CLIENT ne fonctionnent pas
     query.prepare("INSERT INTO CLIENT (ID_CLIENT, NOM_CLIENT, VILLE, CODE_POSTAL, NUM_TEL, PDG, ADRESSE, POINT_DE_FIDELITE) "
                   "VALUES (:id, :nom, :ville, :cp, :tel, :pdg, :adr, 0)");
 
@@ -106,12 +100,15 @@ void Client::onBtnAjouterClicked() {
         QMessageBox::information(nullptr, "Succès", "Client ajouté avec succès !");
         rafraichirAffichage();
     } else {
-        QMessageBox::critical(nullptr, "Erreur", "L'ID existe déjà dans la base.");
+        // Afficher l''erreur réelle au lieu d''un message générique
+        QMessageBox::critical(nullptr, "Erreur de base de données", 
+                              "Erreur lors de l''ajout :\n" + query.lastError().text());
+        qDebug() << "Erreur INSERT Client:" << query.lastError().text();
     }
 }
 
 void Client::onBtnModifierClicked() {
-    if(!verifierSaisie()) return; // Contrôle de saisie aussi présent pour la modif
+    if(!verifierSaisie()) return;
 
     QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
     query.prepare("UPDATE CLIENT SET NOM_CLIENT=:nom, VILLE=:ville, CODE_POSTAL=:cp, NUM_TEL=:tel, PDG=:pdg, ADRESSE=:adr WHERE ID_CLIENT=:id");
@@ -127,6 +124,9 @@ void Client::onBtnModifierClicked() {
     if(query.exec()) {
         QMessageBox::information(nullptr, "Succès", "Client modifié avec succès.");
         rafraichirAffichage();
+    } else {
+        QMessageBox::critical(nullptr, "Erreur de base de données", 
+                              "Erreur lors de la modification :\n" + query.lastError().text());
     }
 }
 
@@ -142,13 +142,17 @@ void Client::onBtnSupprimerClicked() {
         QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
         query.prepare("DELETE FROM CLIENT WHERE ID_CLIENT = :id");
         query.bindValue(":id", id);
-        if(query.exec()) rafraichirAffichage();
+        if(query.exec()) {
+            rafraichirAffichage();
+        } else {
+             QMessageBox::critical(nullptr, "Erreur de base de données", 
+                                  "Erreur lors de la suppression :\n" + query.lastError().text());
+        }
     }
 }
 
 void Client::onTableClicked(const QModelIndex &index) {
     int r = index.row();
-    // On remplit les 7 champs du formulaire
     ui->le_id_client->setText(model->data(model->index(r, 0)).toString());
     ui->le_nom_client->setText(model->data(model->index(r, 1)).toString());
     ui->cb_ville_client->setCurrentText(model->data(model->index(r, 2)).toString());
@@ -159,6 +163,10 @@ void Client::onTableClicked(const QModelIndex &index) {
 }
 
 void Client::onRechercheTextChanged(const QString &text) {
-    model->setFilter(QString("UPPER(NOM_CLIENT) LIKE UPPER('%%1%')").arg(text));
+    if (text.isEmpty()) {
+        model->setFilter("");
+    } else {
+        model->setFilter(QString("UPPER(NOM_CLIENT) LIKE UPPER('%%1%')").arg(text));
+    }
     rafraichirAffichage();
 }
