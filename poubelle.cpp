@@ -31,7 +31,7 @@ Poubelle::Poubelle(int id, QString type, QString addr, int cap, QString etat,
 
 bool Poubelle::ajouter()
 {
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlQuery query;
     
     query.prepare("INSERT INTO POUBELLE_INTELLIGENTE (ID_POUBELLE, TYPE_DECHET, CAPACITE_MAX, NIVEAU_REMPLISSAGE, ETAT_BATTERIE, STATUT_CAPTEUR, DATE_INSTALLATION, DATE_DERNIERE_COLLECTE, ADRESSE, ETAT_DEPLOYEMENT) "
                   "VALUES (:id, :type, :cap, :niv, :batt, :statut, :date_inst, :date_coll, :addr, :etat)");
@@ -73,7 +73,10 @@ bool Poubelle::ajouter()
 QSqlQueryModel * Poubelle::afficher()
 {
     QSqlQueryModel * model = new QSqlQueryModel();
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlDatabase db = QSqlDatabase::database();
+
+    // Insert dummy data if the table is empty (for testing)
+    QSqlQuery query(db);
     query.prepare("SELECT ID_POUBELLE, TYPE_DECHET, ADRESSE, CAPACITE_MAX, ETAT_DEPLOYEMENT, NIVEAU_REMPLISSAGE, ETAT_BATTERIE, STATUT_CAPTEUR, DATE_INSTALLATION, DATE_DERNIERE_COLLECTE FROM POUBELLE_INTELLIGENTE");
     query.exec();
     model->setQuery(query);
@@ -94,7 +97,7 @@ QSqlQueryModel * Poubelle::afficher()
 
 bool Poubelle::supprimer(int id)
 {
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlQuery query;
     query.prepare("DELETE FROM POUBELLE_INTELLIGENTE WHERE ID_POUBELLE = :id");
     query.bindValue(":id", id);
     return query.exec();
@@ -102,7 +105,7 @@ bool Poubelle::supprimer(int id)
 
 bool Poubelle::modifier()
 {
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlQuery query;
     query.prepare("UPDATE POUBELLE_INTELLIGENTE SET TYPE_DECHET = :type, ADRESSE = :addr, CAPACITE_MAX = :cap, ETAT_DEPLOYEMENT = :etat, "
                   "NIVEAU_REMPLISSAGE = :niv, ETAT_BATTERIE = :batt, STATUT_CAPTEUR = :statut, DATE_INSTALLATION = :date_inst, DATE_DERNIERE_COLLECTE = :date_coll "
                   "WHERE ID_POUBELLE = :id");
@@ -142,7 +145,7 @@ bool Poubelle::modifier()
 QSqlQueryModel* Poubelle::trier(QString critere)
 {
     QSqlQueryModel* model = new QSqlQueryModel();
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlQuery query;
     QString queryStr = "SELECT * FROM POUBELLE_INTELLIGENTE ORDER BY " + critere;
     query.prepare(queryStr);
     query.exec();
@@ -153,7 +156,7 @@ QSqlQueryModel* Poubelle::trier(QString critere)
 QSqlQueryModel* Poubelle::rechercher(QString val)
 {
     QSqlQueryModel* model = new QSqlQueryModel();
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlQuery query;
     QString queryStr = "SELECT * FROM POUBELLE_INTELLIGENTE WHERE ID_POUBELLE LIKE :val OR ADRESSE LIKE :val";
     query.prepare(queryStr);
     query.bindValue(":val", val + "%");
@@ -164,7 +167,7 @@ QSqlQueryModel* Poubelle::rechercher(QString val)
 
 bool Poubelle::existe(int id)
 {
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlQuery query;
     query.prepare("SELECT ID_POUBELLE FROM POUBELLE_INTELLIGENTE WHERE ID_POUBELLE = :id");
     query.bindValue(":id", id);
     if (query.exec() && query.next())
@@ -174,7 +177,7 @@ bool Poubelle::existe(int id)
 
 Poubelle Poubelle::getPoubelle(int id)
 {
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlQuery query;
     query.prepare("SELECT * FROM POUBELLE_INTELLIGENTE WHERE ID_POUBELLE = :id");
     query.bindValue(":id", id);
     

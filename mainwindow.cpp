@@ -120,20 +120,11 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-<<<<<<< HEAD
-void MainWindow::navigateToPage(int pageIndex)
-{
-    // Vérifie si l'index existe dans ton StackedWidget
-    if(pageIndex < ui->stackedWidget->count()) {
-        ui->stackedWidget->setCurrentIndex(pageIndex);
-    } else {
-        qDebug() << "Erreur : L'index de page" << pageIndex << "n'existe pas !";
-    }
-}
+// ─── Navigation Slots ────────────────────────────────────────────────────────
 
 void MainWindow::on_btn_nav_employes_clicked() { ui->stackedWidget->setCurrentIndex(6); }
 void MainWindow::on_btn_nav_client_clicked() { ui->stackedWidget->setCurrentIndex(5); }
-void MainWindow::on_btn_nav_contrat_clicked() { ui->stackedWidget->setCurrentIndex(2); }
+void MainWindow::on_btn_nav_contrat_clicked() { navigateToPage(2); }
 void MainWindow::on_btn_nav_poubelle_clicked() { ui->stackedWidget->setCurrentIndex(7); }
 void MainWindow::on_btn_nav_equipements_clicked() { ui->stackedWidget->setCurrentIndex(3); }
 void MainWindow::on_btn_nav_stock_clicked() { ui->stackedWidget->setCurrentIndex(4); }
@@ -141,7 +132,7 @@ void MainWindow::on_btn_nav_stock_clicked() { ui->stackedWidget->setCurrentIndex
 void MainWindow::on_btn_dash_poubelle_clicked() { ui->stackedWidget->setCurrentIndex(7); }
 void MainWindow::on_btn_dash_employe_clicked() { ui->stackedWidget->setCurrentIndex(6); }
 void MainWindow::on_btn_dash_client_clicked() { ui->stackedWidget->setCurrentIndex(5); }
-void MainWindow::on_btn_dash_contrat_clicked() { ui->stackedWidget->setCurrentIndex(2); }
+void MainWindow::on_btn_dash_contrat_clicked() { navigateToPage(2); }
 void MainWindow::on_btn_dash_equipement_clicked() { ui->stackedWidget->setCurrentIndex(3); }
 void MainWindow::on_btn_dash_stock_clicked() { ui->stackedWidget->setCurrentIndex(4); }
 
@@ -166,11 +157,11 @@ void MainWindow::on_btn_ajouter_poubelle_clicked()
     Poubelle p(id, type, adresse, capacite, etat, remplissage, batterie, statut_capteur, date_inst, date_coll);
 
     if(p.ajouter()) {
-        QMessageBox::information(this, "Succ�s", "Poubelle ajout�e avec succ�s");
+        QMessageBox::information(this, "Succès", "Poubelle ajoutée avec succès");
         ui->tab_poubelle->setModel(tmp_poubelle.afficher());
         clearFormPoubelle();
     } else {
-        QMessageBox::critical(this, "Erreur", "�chec de l'ajout.\nD�tail : " + p.getLastError());
+        QMessageBox::critical(this, "Erreur", "Échec de l'ajout.\nDétail : " + p.getLastError());
     }
 }
 
@@ -178,18 +169,18 @@ void MainWindow::on_btn_supprimer_poubelle_clicked()
 {
     int row = ui->tab_poubelle->currentIndex().row();
     if (row == -1) {
-        QMessageBox::warning(this, "Selection", "Veuillez s�lectionner une poubelle.");
+        QMessageBox::warning(this, "Selection", "Veuillez sélectionner une poubelle.");
         return;
     }
     
     int id = ui->tab_poubelle->model()->data(ui->tab_poubelle->model()->index(row, 0)).toInt();
 
     if(tmp_poubelle.supprimer(id)) {
-        QMessageBox::information(this, "Succ�s", "Poubelle supprim�e");
+        QMessageBox::information(this, "Succès", "Poubelle supprimée");
         ui->tab_poubelle->setModel(tmp_poubelle.afficher());
         clearFormPoubelle();
     } else {
-        QMessageBox::critical(this, "Erreur", "�chec de la suppression");
+        QMessageBox::critical(this, "Erreur", "Échec de la suppression");
     }
 }
 
@@ -215,11 +206,11 @@ void MainWindow::on_btn_modifier_poubelle_clicked()
     p.setDateInstallation(date_inst); p.setDateCollecte(date_coll);
 
     if(p.modifier()) {
-        QMessageBox::information(this, "Succ�s", "Poubelle modifi�e");
+        QMessageBox::information(this, "Succès", "Poubelle modifiée");
         ui->tab_poubelle->setModel(tmp_poubelle.afficher());
         clearFormPoubelle();
     } else {
-        QMessageBox::critical(this, "Erreur", "�chec de la modification");
+        QMessageBox::critical(this, "Erreur", "Échec de la modification");
     }
 }
 
@@ -317,15 +308,14 @@ void MainWindow::on_le_recherche_poubelle_textChanged(const QString &arg1)
     ui->tab_poubelle->setModel(tmp_poubelle.rechercher(arg1));
 }
 
-// ─── Slot navigation employés (garde pour compatibilité) ─────────────────────
-void MainWindow::on_btn_nav_employes_clicked()
-{
-    // Slot de compatibilité — la navigation est gérée dans le constructeur
-}
 
 // ─── Navigation par index ────────────────────────────────────────────────────
 void MainWindow::navigateToPage(int pageIndex)
 {
+    if (pageIndex == 2) { // Page Contrat
+        populateComboBoxes();
+        ui->tab_contrat_2->setModel(Contrat().afficher());
+    }
     ui->stackedWidget->setCurrentIndex(pageIndex);
 }
 
@@ -333,7 +323,7 @@ void MainWindow::on_ajouter_contrat_clicked()
 {
     // 1. Récupérer les valeurs de tous les champs
     int    id_client         = ui->combo_ID_Client->currentText().toInt();
-    int    cin               = 1; // Placeholder simplifié pour le CIN
+    int    cin               = ui->combo_CIN_Employe->currentText().toInt();
     QString type_ex          = ui->type_ex->currentText();
     QString prod_con         = ui->prod_con->currentText();
     QDate   date_debut       = ui->date_debut->date();
@@ -348,6 +338,10 @@ void MainWindow::on_ajouter_contrat_clicked()
         QMessageBox::warning(this, "Erreur", "Veuillez sélectionner ou saisir un Client ID.");
         return;
     }
+    if (cin == 0) {
+        QMessageBox::warning(this, "Erreur", "Veuillez sélectionner un CIN Employé.");
+        return;
+    }
 
     // 3. Créer l'objet Contrat
     Contrat c(id_client, cin, type_ex, prod_con, date_debut, date_fin,
@@ -360,6 +354,7 @@ void MainWindow::on_ajouter_contrat_clicked()
         // Nettoyage et rafraîchissement
         ui->ID_Contrat->clear();
         ui->combo_ID_Client->setCurrentIndex(0);
+        ui->combo_CIN_Employe->setCurrentIndex(0);
         ui->tab_contrat_2->setModel(Contrat().afficher());
         resetValidationStyles();
     } else {
@@ -392,7 +387,10 @@ void MainWindow::on_tab_contrat_2_doubleClicked(const QModelIndex &index)
     int clientIdx = ui->combo_ID_Client->findText(id_client);
     if (clientIdx != -1) ui->combo_ID_Client->setCurrentIndex(clientIdx);
 
-    // CIN (2) est ignoré dans le formulaire mais présent dans le modèle
+    // Remplissage du dropdown CIN Employé
+    QString cin_val = model->data(model->index(row, 2)).toString();
+    int cinIdx = ui->combo_CIN_Employe->findText(cin_val);
+    if (cinIdx != -1) ui->combo_CIN_Employe->setCurrentIndex(cinIdx);
     
     ui->type_ex->setCurrentText(model->data(model->index(row, 3)).toString());
     ui->prod_con->setCurrentText(model->data(model->index(row, 4)).toString());
@@ -450,7 +448,7 @@ void MainWindow::on_modifier_contrat_clicked()
     }
 
     int    id_client         = ui->combo_ID_Client->currentText().toInt();
-    int    cin               = 1; // Placeholder simplifié
+    int    cin               = ui->combo_CIN_Employe->currentText().toInt();
     QString type_ex          = ui->type_ex->currentText();
     QString prod_con         = ui->prod_con->currentText();
     QDate   date_debut       = ui->date_debut->date();
@@ -470,6 +468,10 @@ void MainWindow::on_modifier_contrat_clicked()
 
     if (id_client == 0) {
         QMessageBox::warning(this, "Erreur", "Veuillez sélectionner un Client.");
+        return;
+    }
+    if (cin == 0) {
+        QMessageBox::warning(this, "Erreur", "Veuillez sélectionner un Employé.");
         return;
     }
 
@@ -560,15 +562,49 @@ void MainWindow::validateDescription() {
 }
 
 void MainWindow::populateComboBoxes() {
+    // 1. Dropdown Client
     ui->combo_ID_Client->clear();
-    ui->combo_ID_Client->setEditable(true); // Permet de taper un ID manuellement pour le moment
+    ui->combo_ID_Client->setEditable(true);
     ui->combo_ID_Client->addItem("Sélectionner...", 0);
-    // addItem("1") supprimé car l'utilisateur l'a ajouté en base
 
-    QSqlQuery query("SELECT ID_CLIENT FROM CLIENT ORDER BY ID_CLIENT ASC");
-    while (query.next()) {
-        ui->combo_ID_Client->addItem(query.value(0).toString());
+    QSqlQuery qClient("SELECT ID_CLIENT FROM CLIENT ORDER BY ID_CLIENT ASC");
+    while (qClient.next()) {
+        ui->combo_ID_Client->addItem(qClient.value(0).toString());
+    }
+
+    // 2. Dropdown Employé (CIN)
+    ui->combo_CIN_Employe->clear();
+    ui->combo_CIN_Employe->setEditable(true);
+    ui->combo_CIN_Employe->addItem("Sélectionner...", 0);
+
+    QSqlQuery qEmp("SELECT CIN FROM EMPLOYE ORDER BY CIN ASC");
+    while (qEmp.next()) {
+        ui->combo_CIN_Employe->addItem(qEmp.value(0).toString());
     }
 }
+
+void MainWindow::on_recherche0_contrat_textChanged(const QString &arg1)
+{
+    QSqlQueryModel *model = new QSqlQueryModel();
+    QString queryStr = "SELECT * FROM CONTRAT WHERE "
+                       "CAST(ID_CONTRAT AS VARCHAR2(50)) LIKE '%" + arg1 + "%' OR "
+                       "UPPER(TYPE_EXCLUSIVITE) LIKE UPPER('%" + arg1 + "%') OR "
+                       "UPPER(PRODUITS_CONCERNES) LIKE UPPER('%" + arg1 + "%')";
+    
+    model->setQuery(queryStr);
+    
+    model->setHeaderData(0, Qt::Horizontal, QObject::tr("ID"));
+    model->setHeaderData(1, Qt::Horizontal, QObject::tr("ID Client"));
+    model->setHeaderData(2, Qt::Horizontal, QObject::tr("CIN Employé"));
+    model->setHeaderData(3, Qt::Horizontal, QObject::tr("Type Exclusivité"));
+    model->setHeaderData(4, Qt::Horizontal, QObject::tr("Produits"));
+    model->setHeaderData(5, Qt::Horizontal, QObject::tr("Date Début"));
+    model->setHeaderData(6, Qt::Horizontal, QObject::tr("Date Fin"));
+    model->setHeaderData(7, Qt::Horizontal, QObject::tr("Obj. Achat"));
+    model->setHeaderData(8, Qt::Horizontal, QObject::tr("Taux Rem."));
+    model->setHeaderData(9, Qt::Horizontal, QObject::tr("Statut"));
+    model->setHeaderData(10, Qt::Horizontal, QObject::tr("Clause Pénale"));
+    
+    ui->tab_contrat_2->setModel(model);
 }
 

@@ -1,6 +1,6 @@
 #include "employe.h"
 #include "ui_mainwindow.h"   // Full definition needed in the .cpp
-#include "connection.h"      // For CONNECTION_NAME
+#include "connection.h"      // For database connection
 
 #include <QSqlQuery>
 #include <QSqlError>
@@ -42,7 +42,7 @@ Employe::Employe(Ui::MainWindow *ui, QObject *parent)
 
 void Employe::afficherEmployes()
 {
-    QSqlDatabase db = QSqlDatabase::database(CONNECTION_NAME);
+    QSqlDatabase db = QSqlDatabase::database();
 
     // Insert dummy data if the table is empty (for testing)
     QSqlQuery query(db);
@@ -151,7 +151,7 @@ void Employe::onBtnAjouterClicked()
     if (!validerFormulaire(cin, nom, prenom, idBadge, salaire))
         return;
 
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlQuery query;
     query.prepare("INSERT INTO EMPLOYE (CIN, NOM, PRENOM, POSTE, SALAIRE, DATE_EMBAUCHE, ID_BADGE) "
                   "VALUES (:cin, :nom, :prenom, :poste, :salaire, :date_embauche, :id_badge)");
     query.bindValue(":cin",          cin);
@@ -186,7 +186,7 @@ void Employe::onBtnModifierClicked()
     if (!validerFormulaire(cin, nom, prenom, idBadge, salaire))
         return;
 
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlQuery query;
     query.prepare("UPDATE EMPLOYE SET NOM = :nom, PRENOM = :prenom, POSTE = :poste, "
                   "SALAIRE = :salaire, DATE_EMBAUCHE = :date_embauche, ID_BADGE = :id_badge "
                   "WHERE CIN = :cin");
@@ -219,12 +219,42 @@ void Employe::onBtnSupprimerClicked()
         return;
     }
 
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlQuery checkQuery;
+    checkQuery.prepare("SELECT COUNT(*) FROM CONTRAT WHERE CIN = :cin");
+    checkQuery.bindValue(":cin", cin);
+    checkQuery.exec();
+    checkQuery.next();
+    int count = checkQuery.value(0).toInt();
+
+    QString msg = "Voulez-vous vraiment supprimer cet employé ?";
+    if (count > 0) {
+        msg = QString("Cet employé est lié à %1 contrat(s).\n"
+                      "Si vous le supprimez, ces contrats deviendront 'non-assignés'.\n\n"
+                      "Confirmer la suppression ?").arg(count);
+    }
+
+    if (QMessageBox::question(nullptr, "Confirmation de suppression", msg, 
+                              QMessageBox::Yes|QMessageBox::No) != QMessageBox::Yes) {
+        return;
+    }
+
+    if (count > 0) {
+        QSqlQuery updateQuery;
+        updateQuery.prepare("UPDATE CONTRAT SET CIN = NULL WHERE CIN = :cin");
+        updateQuery.bindValue(":cin", cin);
+        if (!updateQuery.exec()) {
+            QMessageBox::critical(nullptr, "Erreur", "Impossible de détacher les contrats : " + updateQuery.lastError().text());
+            return;
+        }
+    }
+
+    QSqlQuery query;
     query.prepare("DELETE FROM EMPLOYE WHERE CIN = :cin");
     query.bindValue(":cin", cin);
 
     if (query.exec()) {
         QMessageBox::information(nullptr, "Succès", "Employé supprimé avec succès.");
+        // Nettoyage etc...
 
         // Clear the form
         ui->le_cin->clear();

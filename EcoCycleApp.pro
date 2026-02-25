@@ -1,6 +1,5 @@
 QT       += core gui widgets sql
 
-<<<<<<< HEAD
 CONFIG += c++17
 
 SOURCES += \

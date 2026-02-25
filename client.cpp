@@ -9,7 +9,7 @@
 
 Client::Client(Ui::MainWindow *ui, QObject *parent) : QObject(parent), ui(ui) {
     // 1. Initialisation du Modèle SQL
-    model = new QSqlTableModel(this, QSqlDatabase::database(CONNECTION_NAME));
+    model = new QSqlTableModel(this, QSqlDatabase::database());
     model->setTable("CLIENT");
     model->setEditStrategy(QSqlTableModel::OnManualSubmit);
 
@@ -22,11 +22,11 @@ Client::Client(Ui::MainWindow *ui, QObject *parent) : QObject(parent), ui(ui) {
     // Ordre Oracle : 0:ID_CLIENT, 1:NOM_CLIENT, 2:VILLE, 3:CODE_POSTAL, 4:POINT_DE_FIDELITE, 5:NUM_TEL, 6:PDG, 7:ADRESSE
     model->setHeaderData(0, Qt::Horizontal, "ID Client");
     model->setHeaderData(1, Qt::Horizontal, "Nom");
-    model->setHeaderData(5, Qt::Horizontal, "Num Tél");
+    model->setHeaderData(6, Qt::Horizontal, "Num Tél");
     model->setHeaderData(7, Qt::Horizontal, "Adresse");
     model->setHeaderData(2, Qt::Horizontal, "Ville");
     model->setHeaderData(3, Qt::Horizontal, "Code Postal");
-    model->setHeaderData(6, Qt::Horizontal, "Responsable");
+    model->setHeaderData(5, Qt::Horizontal, "Responsable");
 
     rafraichirAffichage();
 
@@ -73,7 +73,13 @@ bool Client::verifierSaisie() {
     }
 
     if(id.toInt() <= 0) {
-        QMessageBox::warning(nullptr, "Erreur ID", "L''ID doit être un nombre positif.");
+        QMessageBox::warning(nullptr, "Erreur ID", "L'ID doit être un nombre positif.");
+        return false;
+    }
+
+    QRegularExpression rxCP("^[0-9]+$");
+    if(!rxCP.match(cp).hasMatch()) {
+        QMessageBox::warning(nullptr, "Erreur Code Postal", "Le code postal doit être numérique.");
         return false;
     }
 
@@ -83,7 +89,7 @@ bool Client::verifierSaisie() {
 void Client::onBtnAjouterClicked() {
     if(!verifierSaisie()) return;
 
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlQuery query;
     // Correction possible des noms de colonnes si NOM_CLIENT/ID_CLIENT ne fonctionnent pas
     query.prepare("INSERT INTO CLIENT (ID_CLIENT, NOM_CLIENT, VILLE, CODE_POSTAL, NUM_TEL, PDG, ADRESSE, POINT_DE_FIDELITE) "
                   "VALUES (:id, :nom, :ville, :cp, :tel, :pdg, :adr, 0)");
@@ -110,7 +116,7 @@ void Client::onBtnAjouterClicked() {
 void Client::onBtnModifierClicked() {
     if(!verifierSaisie()) return;
 
-    QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
+    QSqlQuery query;
     query.prepare("UPDATE CLIENT SET NOM_CLIENT=:nom, VILLE=:ville, CODE_POSTAL=:cp, NUM_TEL=:tel, PDG=:pdg, ADRESSE=:adr WHERE ID_CLIENT=:id");
 
     query.bindValue(":id", ui->le_id_client->text().toInt());
@@ -138,16 +144,44 @@ void Client::onBtnSupprimerClicked() {
     }
 
     int id = model->data(model->index(row, 0)).toInt();
-    if(QMessageBox::question(nullptr, "Suppression", "Voulez-vous supprimer ce client ?", QMessageBox::Yes|QMessageBox::No) == QMessageBox::Yes) {
-        QSqlQuery query(QSqlDatabase::database(CONNECTION_NAME));
-        query.prepare("DELETE FROM CLIENT WHERE ID_CLIENT = :id");
-        query.bindValue(":id", id);
-        if(query.exec()) {
-            rafraichirAffichage();
-        } else {
-             QMessageBox::critical(nullptr, "Erreur de base de données", 
-                                  "Erreur lors de la suppression :\n" + query.lastError().text());
+
+    QSqlQuery checkQuery;
+    checkQuery.prepare("SELECT COUNT(*) FROM CONTRAT WHERE ID_CLIENT = :id");
+    checkQuery.bindValue(":id", id);
+    checkQuery.exec();
+    checkQuery.next();
+    int count = checkQuery.value(0).toInt();
+
+    QString msg = "Voulez-vous supprimer ce client ?";
+    if (count > 0) {
+        msg = QString("Ce client est lié à %1 contrat(s).\n"
+                      "Si vous le supprimez, ces contrats deviendront 'non-assignés'.\n\n"
+                      "Confirmer la suppression ?").arg(count);
+    }
+
+    if (QMessageBox::question(nullptr, "Suppression", msg, QMessageBox::Yes|QMessageBox::No) != QMessageBox::Yes) {
+        return;
+    }
+
+    if (count > 0) {
+        QSqlQuery updateQuery;
+        updateQuery.prepare("UPDATE CONTRAT SET ID_CLIENT = NULL WHERE ID_CLIENT = :id");
+        updateQuery.bindValue(":id", id);
+        if (!updateQuery.exec()) {
+            QMessageBox::critical(nullptr, "Erreur", "Impossible de détacher les contrats : " + updateQuery.lastError().text());
+            return;
         }
+    }
+
+    QSqlQuery query;
+    query.prepare("DELETE FROM CLIENT WHERE ID_CLIENT = :id");
+    query.bindValue(":id", id);
+    if(query.exec()) {
+        rafraichirAffichage();
+        QMessageBox::information(nullptr, "Succès", "Client supprimé avec succès.");
+    } else {
+         QMessageBox::critical(nullptr, "Erreur de base de données", 
+                              "Erreur lors de la suppression :\n" + query.lastError().text());
     }
 }
 

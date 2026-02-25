@@ -57,6 +57,7 @@ private slots:
     void on_tab_contrat_2_doubleClicked(const QModelIndex &index);
     void on_supprimer_contrat_clicked();
     void on_modifier_contrat_clicked();
+    void on_recherche0_contrat_textChanged(const QString &arg1);
 
     // Validation slots Contrat
     void validateID();
