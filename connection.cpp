@@ -1,5 +1,6 @@
 #include "connection.h"
 
+<<<<<<< HEAD
 bool Connection::createconnect() {
     QSqlDatabase db = QSqlDatabase::addDatabase("QODBC", CONNECTION_NAME);
     db.setDatabaseName("DRIVER={Oracle in XE};DBQ=XE;UID=ECOCYCLEUSER;PWD=esprit2025;");

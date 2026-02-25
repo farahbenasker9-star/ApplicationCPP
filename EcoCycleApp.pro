@@ -1,5 +1,6 @@
 QT       += core gui widgets sql
 
+<<<<<<< HEAD
 CONFIG += c++17
 
 SOURCES += \
@@ -9,7 +10,8 @@ SOURCES += \
     mainwindow.cpp \
     connection.cpp \
     employe.cpp \
-    poubelle.cpp
+    poubelle.cpp \
+    contrat.cpp
 
 HEADERS += \
     client.h \
@@ -17,7 +19,8 @@ HEADERS += \
     mainwindow.h \
     connection.h \
     employe.h \
-    poubelle.h
+    poubelle.h \
+    contrat.h
 
 FORMS += \
     login.ui \

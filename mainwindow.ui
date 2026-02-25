@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
@@ -14,9 +14,9 @@
    <string>MainWindow</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">/* --- GÉNÉRAL --- */
+   <string notr="true">/* --- GÃ‰NÃ‰RAL --- */
 QMainWindow {
-    background-color: white; /* Fond général */
+    background-color: white; /* Fond gÃ©nÃ©ral */
 }
 
 QLabel {
@@ -25,7 +25,7 @@ QLabel {
 
 /* --- PANNEAU GAUCHE (VERT) --- */
 #frame_left {
-    /* Un dégradé subtil pour faire moins &quot;Paint&quot; */
+    /* Un dÃ©gradÃ© subtil pour faire moins &quot;Paint&quot; */
     background: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 #1b5e20, stop:1 #2e7d32);
     border-top-left-radius: 15px;
     border-bottom-left-radius: 15px;
@@ -44,7 +44,7 @@ QLabel {
 
 /* --- CHAMPS DE TEXTE (MODERNES) --- */
 QLineEdit {
-    background-color: #F5F7F9; /* Gris très très clair */
+    background-color: #F5F7F9; /* Gris trÃ¨s trÃ¨s clair */
     border: 1px solid #E0E0E0; /* Bordure fine grise */
     border-radius: 8px;        /* Coins arrondis */
     padding-left: 15px;        /* Espace entre le bord gauche et le texte */
@@ -54,7 +54,7 @@ QLineEdit {
 
 QLineEdit:focus {
     background-color: white;
-    border: 2px solid #1b5e20; /* Bordure verte quand on écrit */
+    border: 2px solid #1b5e20; /* Bordure verte quand on Ã©crit */
 }
 
 /* --- BOUTON (SIGN IN) --- */
@@ -77,7 +77,7 @@ QPushButton#btn_login:pressed {
 }
 
 /* --- TITRES --- */
-/* Pour cibler spécifiquement le titre &quot;Welcome Back&quot; si tu l'as nommé lbl_titre */
+/* Pour cibler spÃ©cifiquement le titre &quot;Welcome Back&quot; si tu l'as nommÃ© lbl_titre */
 #lbl_titre {
     color: #2c3e50;
     font-weight: bold;
@@ -100,7 +100,7 @@ QCheckBox::indicator:checked {
 }
 /* --- NAVBAR (Cadre Gauche) --- */
 QFrame#navbar_container {
-    /* Blanc transparent pour voir le fond global derrière */
+    /* Blanc transparent pour voir le fond global derriÃ¨re */
     background-color: rgba(255, 255, 255, 220);
     border-right: 1px solid rgba(0,0,0, 20);
     min-width: 200px; /* Largeur fixe */
@@ -111,22 +111,22 @@ QFrame#navbar_container {
 QFrame#navbar_container QPushButton {
     background-color: transparent;
     border: none;
-    text-align: left; /* Texte à gauche */
+    text-align: left; /* Texte Ã  gauche */
     padding: 15px 20px;
     font-size: 14px;
     font-weight: bold;
     color: #555555;
-    border-left: 5px solid transparent; /* Barre verte invisible par défaut */
+    border-left: 5px solid transparent; /* Barre verte invisible par dÃ©faut */
 }
 
 /* Survol des boutons */
 QFrame#navbar_container QPushButton:hover, QFrame#navbar_container QPushButton:checked {
-    background-color: rgba(46, 125, 50, 30); /* Vert très pâle */
+    background-color: rgba(46, 125, 50, 30); /* Vert trÃ¨s pÃ¢le */
     color: #2E7D32; /* Texte Vert */
-    border-left: 5px solid #2E7D32; /* La barre verte apparaît */
+    border-left: 5px solid #2E7D32; /* La barre verte apparaÃ®t */
 }
 
-/* BOUTON DÉCONNEXION (Spécial) */
+/* BOUTON DÃ‰CONNEXION (SpÃ©cial) */
 QPushButton#btn_logout {
     text-align: center;
     background-color: rgba(211, 47, 47, 30);
@@ -142,7 +142,7 @@ QPushButton#btn_logout:hover {
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="styleSheet">
-    <string notr="true">/* Applique l'image sur le fond global de la fenêtre */
+    <string notr="true">/* Applique l'image sur le fond global de la fenÃªtre */
 QWidget#centralwidget {
     border-image: url(:/new/prefix1/images/bg_left.jpg) 0 0 0 0 stretch stretch;
 }</string>
@@ -200,7 +200,7 @@ QWidget#centralwidget {
        <item>
         <widget class="QPushButton" name="btn_nav_employes">
          <property name="text">
-          <string>Gestion employé</string>
+          <string>Gestion employÃ©</string>
          </property>
          <property name="icon">
           <iconset resource="ressources.qrc">
@@ -749,7 +749,7 @@ QPushButton:hover {
     border-image: url(:/new/prefix1/images/bg_left.jpg) 0 0 0 0 stretch stretch ;
 }
 
-/* On rend la zone de contenu INVISIBLE pour voir l'image derrière */
+/* On rend la zone de contenu INVISIBLE pour voir l'image derri├¿re */
 #stackedWidget {
     background: transparent;
 }
@@ -761,10 +761,10 @@ QPushButton:hover {
    2. LA BARRE DE NAVIGATION (GAUCHE)
    ======================================================= */
 
-/* On donne une couleur &quot;Verre blanc&quot; à ton menu pour qu'il soit assorti */
+/* On donne une couleur &quot;Verre blanc&quot; ├á ton menu pour qu'il soit assorti */
 #frame_navbar {
     background-color: rgba(255, 255, 255, 210); /* Blanc semi-transparent */
-    border-right: 2px solid #2E7D32; /* Petite ligne verte à droite pour séparer */
+    border-right: 2px solid #2E7D32; /* Petite ligne verte ├á droite pour s├®parer */
 }
 
 /* Style des boutons du menu (Navigation) */
@@ -785,12 +785,12 @@ QPushButton:hover {
 }
 
 /* =======================================================
-   3. ADAPTATION DU STYLE DE TON COÉQUIPIER (FORMULAIRES)
+   3. ADAPTATION DU STYLE DE TON CO├ëQUIPIER (FORMULAIRES)
    ======================================================= */
 
 /* Le fond des zones de texte (Inputs) */
-QLineEdit, QComboBox, QDateEdit, QDoubleSpinBox {
-    background-color: rgba(245, 245, 245, 200); 
+QLineEdit, QComboBox, QDateEdit, QDoubleSpinBox, QSpinBox, QTextEdit {
+    background-color: white;
     border: 1px solid #BDBDBD;
     border-radius: 5px;
     padding: 5px;
@@ -800,12 +800,12 @@ QLineEdit, QComboBox, QDateEdit, QDoubleSpinBox {
 }
 
 /* Quand on clique dans une case */
-QLineEdit:focus, QComboBox:focus, QDateEdit:focus {
+QLineEdit:focus, QComboBox:focus, QDateEdit:focus, QSpinBox:focus, QTextEdit:focus {
     background-color: #FFFFFF;
     border: 2px solid #4CAF50; /* Bordure VERTE */
 }
 
-/* Amélioration des flèches pour QDateEdit / QSpinBox */
+/* Am├®lioration des fl├¿ches pour QDateEdit / QSpinBox */
 QDateEdit, QSpinBox {
     padding-right: 6px;
 }
@@ -820,9 +820,9 @@ QSpinBox::up-arrow, QSpinBox::down-arrow {
     height: 8px;
 }
 
-/* Les Labels (Textes : &quot;Nom&quot;, &quot;Prénom&quot;...) */
+/* Les Labels (Textes : &quot;Nom&quot;, &quot;Pr├®nom&quot;...) */
 QLabel {
-    color: #333333; /* Noir/Gris foncé pour bien lire sur le fond */
+    color: #333333; /* Noir/Gris fonc├® pour bien lire sur le fond */
     font-weight: bold;
     font-size: 12px;
 }
@@ -876,7 +876,7 @@ QPushButton#btn_supprimer:hover { background-color: #C62828; }
           <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
          </property>
         </widget>
-        <widget class="QComboBox" name="cb_tri_option">
+        <widget class="QComboBox" name="tri_contrat">
          <property name="geometry">
           <rect>
            <x>710</x>
@@ -897,11 +897,11 @@ QPushButton#btn_supprimer:hover { background-color: #C62828; }
          </item>
          <item>
           <property name="text">
-           <string>Type matière</string>
+           <string>Type mati├¿re</string>
           </property>
          </item>
         </widget>
-        <widget class="QPushButton" name="btn_tri_2">
+        <widget class="QPushButton" name="tri2_contrat">
          <property name="geometry">
           <rect>
            <x>820</x>
@@ -930,13 +930,36 @@ color: rgb(0, 0, 0);</string>
          <property name="styleSheet">
           <string notr="true">QTableView {
     background-color: rgba(255, 255, 255, 200); 
+    alternate-background-color: rgba(232, 245, 233, 200);
     border: 1px solid rgba(0, 0, 0, 20);
     border-radius: 8px;
-    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises très fines */
-    color: #000000; /* Texte Noir */
-    selection-background-color: rgba(76, 175, 80, 180); /* Vert sélection */
+    gridline-color: rgba(0, 0, 0, 10);
+    color: #000000;
+    selection-background-color: rgba(76, 175, 80, 180);
     selection-color: white;
     outline: 0;
+}
+
+QHeaderView::section {
+    background-color: #1b5e20;
+    color: white;
+    padding: 8px;
+    border: none;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+QHeaderView::section:vertical {
+    background-color: #1b5e20;
+    color: white;
+    padding: 4px;
+    border: none;
+    font-weight: bold;
+}
+
+QTableCornerButton::section {
+    background-color: #1b5e20;
+    border: none;
 }</string>
          </property>
          <property name="alternatingRowColors">
@@ -946,7 +969,7 @@ color: rgb(0, 0, 0);</string>
           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
          </property>
         </widget>
-        <widget class="QLineEdit" name="le_recherche_4">
+        <widget class="QLineEdit" name="recherche0_contrat">
          <property name="geometry">
           <rect>
            <x>310</x>
@@ -959,10 +982,10 @@ color: rgb(0, 0, 0);</string>
           <string/>
          </property>
          <property name="placeholderText">
-          <string>🔍 Rechercher par ID, Type, Matière...</string>
+          <string>­ƒöì Rechercher par ID, Type, Mati├¿re...</string>
          </property>
         </widget>
-        <widget class="QTabWidget" name="tabWidget_right_contrat">
+        <widget class="QTabWidget" name="statistique_contrat">
          <property name="geometry">
           <rect>
            <x>910</x>
@@ -977,9 +1000,9 @@ color: rgb(0, 0, 0);</string>
     background-color: transparent;
     border: transparent;
     border-radius: 8px;
-    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises très fines /
+    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises tr├¿s fines /
     color: #000000; / Texte Noir /
-    selection-background-color: rgba(76, 175, 80, 180); / Vert sélection */
+    selection-background-color: rgba(76, 175, 80, 180); / Vert s├®lection */
     selection-color: white;
     outline: 0;
     top: -1px;
@@ -1042,7 +1065,7 @@ QTabBar::tab:hover {
            <property name="styleSheet">
             <string notr="true"> /* --- 2. LE CADRE FORMULAIRE &amp; STATISTIQUES (Verre Blanc) --- */
 QGroupBox {
-    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilité) */
+    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilit├®) */
     background-color: rgba(255, 255, 255, 210); 
     border: 1px solid rgba(0, 0, 0, 20); /* Bordure grise subtile */
     border-radius: 15px;
@@ -1053,7 +1076,7 @@ QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
     left: 20px;
-    color: #2E7D32; /* Vert Foncé EcoCycle pour le contraste sur blanc */
+    color: #2E7D32; /* Vert Fonc├® EcoCycle pour le contraste sur blanc */
     font-weight: bold;
     font-size: 16px;
     background-color: transparent;
@@ -1140,12 +1163,12 @@ QGroupBox::title {
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QLineEdit" name="le_ID_Contrat">
+           <widget class="QLineEdit" name="ID_Contrat">
             <property name="text">
              <string/>
             </property>
             <property name="readOnly">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -1156,22 +1179,9 @@ QGroupBox::title {
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QSpinBox" name="spinBox_ID_Client">
-            <property name="styleSheet">
-             <string notr="true">background-color: rgb(255, 255, 255);
-font: 700 9pt &quot;Segoe UI&quot;;
-color: rgb(0, 0, 0);
-</string>
-            </property>
-            <property name="minimum">
-             <number>0</number>
-            </property>
-            <property name="maximum">
-             <number>999999</number>
-            </property>
-           </widget>
-          </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="combo_ID_Client"/>
+           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="label_type">
             <property name="text">
@@ -1180,7 +1190,7 @@ color: rgb(0, 0, 0);
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QComboBox" name="cb_Type_Contrat">
+           <widget class="QComboBox" name="type_ex">
             <item>
              <property name="text">
               <string>Totale</string>
@@ -1206,7 +1216,7 @@ color: rgb(0, 0, 0);
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QComboBox" name="cb_Type_Matiere">
+           <widget class="QComboBox" name="prod_con">
             <item>
              <property name="text">
               <string>Plastique</string>
@@ -1237,7 +1247,7 @@ color: rgb(0, 0, 0);
           <item row="4" column="0">
            <widget class="QLabel" name="label_date_deb">
             <property name="text">
-             <string>Date Début</string>
+             <string>Date D├®but</string>
             </property>
            </widget>
           </item>
@@ -1262,7 +1272,7 @@ color: rgb(0, 0, 0);
            </widget>
           </item>
           <item row="6" column="1">
-           <widget class="QDoubleSpinBox" name="dspin_prix_unitaire_2">
+           <widget class="QDoubleSpinBox" name="obj_ach_ann">
             <property name="decimals">
              <number>2</number>
             </property>
@@ -1279,7 +1289,10 @@ color: rgb(0, 0, 0);
            </widget>
           </item>
           <item row="7" column="1">
-           <widget class="QDoubleSpinBox" name="dspin_prix_unitaire">
+           <widget class="QDoubleSpinBox" name="tau_rem_acc">
+            <property name="decimals">
+             <number>0</number>
+            </property>
             <property name="value">
              <double>0.000000000000000</double>
             </property>
@@ -1293,7 +1306,7 @@ color: rgb(0, 0, 0);
            </widget>
           </item>
           <item row="8" column="1">
-           <widget class="QComboBox" name="cb_statut_contrat">
+           <widget class="QComboBox" name="status_contrat">
             <item>
              <property name="text">
               <string>Actif</string>
@@ -1306,12 +1319,12 @@ color: rgb(0, 0, 0);
             </item>
             <item>
              <property name="text">
-              <string>Résilié</string>
+              <string>R├®sili├®</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Expiré</string>
+              <string>Expir├®</string>
              </property>
             </item>
            </widget>
@@ -1324,7 +1337,7 @@ color: rgb(0, 0, 0);
            </widget>
           </item>
           <item row="9" column="1">
-           <widget class="QTextEdit" name="te_details">
+           <widget class="QTextEdit" name="clause_penale">
             <property name="minimumSize">
              <size>
               <width>0</width>
@@ -1344,11 +1357,11 @@ color: rgb(0, 0, 0);
           </item>
          </layout>
         </widget>
-        <widget class="QFrame" name="frame_recherche">
+        <widget class="QFrame" name="recherche_contrat">
          <property name="geometry">
           <rect>
-           <x>70</x>
-           <y>0</y>
+           <x>310</x>
+           <y>60</y>
            <width>381</width>
            <height>40</height>
           </rect>
@@ -1380,7 +1393,7 @@ color: rgb(0, 0, 0);
           </property>
          </layout>
         </widget>
-        <widget class="QPushButton" name="btn_export_pdf">
+        <widget class="QPushButton" name="exporter_contrat">
          <property name="geometry">
           <rect>
            <x>740</x>
@@ -1402,7 +1415,7 @@ color: rgb(0, 0, 0);
           <string> Exporter PDF</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="btn_modifier_3">
+        <widget class="QPushButton" name="modifier_contrat">
          <property name="geometry">
           <rect>
            <x>460</x>
@@ -1424,7 +1437,7 @@ color: rgb(0, 0, 0);
           <string> Modifier</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="btn_ajouter_3">
+        <widget class="QPushButton" name="ajouter_contrat">
          <property name="geometry">
           <rect>
            <x>320</x>
@@ -1447,7 +1460,7 @@ color: rgb(0, 0, 0);
           <string> Ajouter</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="btn_supprimer_4">
+        <widget class="QPushButton" name="supprimer_contrat">
          <property name="geometry">
           <rect>
            <x>600</x>
@@ -1470,6 +1483,7 @@ color: rgb(0, 0, 0);
          </property>
         </widget>
        </widget>
+
        <widget class="QWidget" name="page_equipement">
         <property name="font">
          <font>
@@ -1485,7 +1499,7 @@ QWidget#page_employes {
 
 /* --- 2. LE CADRE FORMULAIRE &amp; STATISTIQUES (Verre Blanc) --- */
 QGroupBox {
-    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilité) */
+    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilitÃ©) */
     background-color: rgba(255, 255, 255, 210); 
     border: 1px solid rgba(0, 0, 0, 20); /* Bordure grise subtile */
     border-radius: 15px;
@@ -1496,7 +1510,7 @@ QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
     left: 20px;
-    color: #2E7D32; /* Vert Foncé EcoCycle pour le contraste sur blanc */
+    color: #2E7D32; /* Vert FoncÃ© EcoCycle pour le contraste sur blanc */
     font-weight: bold;
     font-size: 16px;
     background-color: transparent;
@@ -1504,7 +1518,7 @@ QGroupBox::title {
 
 /* --- 3. LES LABELS --- */
 QLabel {
-    color: #333333; /* Texte GRIS FONCÉ/NOIR */
+    color: #333333; /* Texte GRIS FONCÃ‰/NOIR */
     font-weight: bold;
     font-size: 13px;
     background-color: transparent;
@@ -1512,12 +1526,12 @@ QLabel {
 
 /* --- 4. CHAMPS DE SAISIE (Inputs Clairs) --- */
 QLineEdit, QComboBox, QDateEdit, QDoubleSpinBox {
-    /* Fond blanc cassé semi-transparent */
+    /* Fond blanc cassÃ© semi-transparent */
     background-color: rgba(245, 245, 245, 200); 
     border: 1px solid #BDBDBD; /* Bordure grise */
     border-radius: 5px;
     padding: 8px;
-    color: #000000; /* Texte NOIR quand on écrit */
+    color: #000000; /* Texte NOIR quand on Ã©crit */
     font-weight: bold;
 }
 
@@ -1526,7 +1540,7 @@ QLineEdit:focus, QComboBox:focus, QDateEdit:focus {
     border: 2px solid #4CAF50; /* Bordure VERTE */
 }
 
-/* Spécifique : La liste de choix de Tri */
+/* SpÃ©cifique : La liste de choix de Tri */
 QComboBox#cb_tri_option {
     min-width: 80px;
     background-color: rgba(255, 255, 255, 200);
@@ -1538,15 +1552,15 @@ QTableView {
     background-color: rgba(255, 255, 255, 200); 
     border: 1px solid rgba(0, 0, 0, 20);
     border-radius: 8px;
-    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises très fines */
+    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises trÃ¨s fines */
     color: #000000; /* Texte Noir */
-    selection-background-color: rgba(76, 175, 80, 180); /* Vert sélection */
+    selection-background-color: rgba(76, 175, 80, 180); /* Vert sÃ©lection */
     selection-color: white;
     outline: 0;
 }
 
 QHeaderView::section {
-    background-color: #2E7D32; /* Entête Vert Foncé */
+    background-color: #2E7D32; /* EntÃªte Vert FoncÃ© */
     color: white;
     padding: 8px;
     border: none;
@@ -1562,10 +1576,10 @@ QTableCornerButton::section {
 QPushButton {
     border-radius: 8px;
     padding: 10px 15px;
-    color: white; /* Texte Blanc sur bouton coloré */
+    color: white; /* Texte Blanc sur bouton colorÃ© */
     font-weight: bold;
     font-size: 13px;
-    border: 1px solid rgba(0,0,0, 10); /* Légère ombre */
+    border: 1px solid rgba(0,0,0, 10); /* LÃ©gÃ¨re ombre */
 }
 
 /* --- COULEURS DES BOUTONS --- */
@@ -1609,7 +1623,7 @@ QPushButton#btn_mailing:hover { background-color: #7B1FA2; }
 /* TRIER : Jaune/Ambre */
 QPushButton#btn_tri {
     background-color: #FFC107;
-    color: #333; /* Texte foncé sur jaune */
+    color: #333; /* Texte foncÃ© sur jaune */
 }
 QPushButton#btn_tri:hover { background-color: #FFB300; }
 
@@ -1621,7 +1635,7 @@ QScrollBar:vertical {
     border-radius: 5px;
 }
 QScrollBar::handle:vertical {
-    background: rgba(0,0,0,30); /* Poignée grise */
+    background: rgba(0,0,0,30); /* PoignÃ©e grise */
     border-radius: 5px;
 }
 
@@ -1744,7 +1758,7 @@ QPushButton:pressed {
 }</string>
             </property>
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Gestion d'équipements&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Gestion d'Ã©quipements&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -1768,9 +1782,9 @@ QPushButton:pressed {
     background-color: transparent;
     border: transparent;
     border-radius: 8px;
-    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises très fines /
+    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises trÃ¨s fines /
     color: #000000; / Texte Noir /
-    selection-background-color: rgba(76, 175, 80, 180); / Vert sélection */
+    selection-background-color: rgba(76, 175, 80, 180); / Vert sÃ©lection */
     selection-color: white;
     outline: 0;
     top: -1px;
@@ -1833,7 +1847,7 @@ QTabBar::tab:hover {
            <property name="styleSheet">
             <string notr="true"> /* --- 2. LE CADRE FORMULAIRE &amp; STATISTIQUES (Verre Blanc) --- */
 QGroupBox {
-    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilité) */
+    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilitÃ©) */
     background-color: rgba(255, 255, 255, 210); 
     border: 1px solid rgba(0, 0, 0, 20); /* Bordure grise subtile */
     border-radius: 15px;
@@ -1844,7 +1858,7 @@ QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
     left: 20px;
-    color: #2E7D32; /* Vert Foncé EcoCycle pour le contraste sur blanc */
+    color: #2E7D32; /* Vert FoncÃ© EcoCycle pour le contraste sur blanc */
     font-weight: bold;
     font-size: 16px;
     background-color: transparent;
@@ -1884,7 +1898,7 @@ QGroupBox::title {
          </property>
          <property name="styleSheet">
           <string notr="true">QGroupBox {
-    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilité) */
+    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilitÃ©) */
     background-color: rgba(255, 255, 255, 210); 
     border: 1px solid rgba(0, 0, 0, 20); /* Bordure grise subtile */
     border-radius: 15px;
@@ -1899,7 +1913,7 @@ QGroupBox::title {
 }</string>
          </property>
          <property name="title">
-          <string>Informations Équipement</string>
+          <string>Informations Ã‰quipement</string>
          </property>
          <layout class="QVBoxLayout" name="infoGroupBoxLayout">
           <item>
@@ -1942,7 +1956,7 @@ QGroupBox::title {
               <item>
                <widget class="QLabel" name="labelNomEquipement">
                 <property name="text">
-                 <string>Nom d'équipement</string>
+                 <string>Nom d'Ã©quipement</string>
                 </property>
                </widget>
               </item>
@@ -1952,7 +1966,7 @@ QGroupBox::title {
               <item>
                <widget class="QLabel" name="labelTypeEquipement">
                 <property name="text">
-                 <string>Type d'équipement</string>
+                 <string>Type d'Ã©quipement</string>
                 </property>
                </widget>
               </item>
@@ -1980,7 +1994,7 @@ QGroupBox::title {
                 </item>
                 <item>
                  <property name="text">
-                  <string>Téléphone</string>
+                  <string>TÃ©lÃ©phone</string>
                  </property>
                 </item>
                </widget>
@@ -2225,7 +2239,7 @@ QGroupBox::title {
          </column>
          <column>
           <property name="text">
-           <string>Assigné à</string>
+           <string>AssignÃ© Ã </string>
           </property>
          </column>
          <column>
@@ -2250,7 +2264,7 @@ QWidget#page_employes {
 
 /* --- 2. LE CADRE FORMULAIRE &amp; STATISTIQUES (Verre Blanc) --- */
 QGroupBox {
-    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilité) */
+    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilitÃ©) */
     background-color: rgba(255, 255, 255, 210); 
     border: 1px solid rgba(0, 0, 0, 20); /* Bordure grise subtile */
     border-radius: 15px;
@@ -2261,7 +2275,7 @@ QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
     left: 20px;
-    color: #2E7D32; /* Vert Foncé EcoCycle pour le contraste sur blanc */
+    color: #2E7D32; /* Vert FoncÃ© EcoCycle pour le contraste sur blanc */
     font-weight: bold;
     font-size: 16px;
     background-color: transparent;
@@ -2269,7 +2283,7 @@ QGroupBox::title {
 
 /* --- 3. LES LABELS --- */
 QLabel {
-    color: #333333; /* Texte GRIS FONCÉ/NOIR */
+    color: #333333; /* Texte GRIS FONCÃ‰/NOIR */
     font-weight: bold;
     font-size: 13px;
     background-color: transparent;
@@ -2277,12 +2291,12 @@ QLabel {
 
 /* --- 4. CHAMPS DE SAISIE (Inputs Clairs) --- */
 QLineEdit, QComboBox, QDateEdit, QDoubleSpinBox {
-    /* Fond blanc cassé semi-transparent */
+    /* Fond blanc cassÃ© semi-transparent */
     background-color: rgba(245, 245, 245, 200); 
     border: 1px solid #BDBDBD; /* Bordure grise */
     border-radius: 5px;
     padding: 8px;
-    color: #000000; /* Texte NOIR quand on écrit */
+    color: #000000; /* Texte NOIR quand on Ã©crit */
     font-weight: bold;
 }
 
@@ -2291,7 +2305,7 @@ QLineEdit:focus, QComboBox:focus, QDateEdit:focus {
     border: 2px solid #4CAF50; /* Bordure VERTE */
 }
 
-/* Spécifique : La liste de choix de Tri */
+/* SpÃ©cifique : La liste de choix de Tri */
 QComboBox#cb_tri_option {
     min-width: 80px;
     background-color: rgba(255, 255, 255, 200);
@@ -2303,15 +2317,15 @@ QTableView {
     background-color: rgba(255, 255, 255, 200); 
     border: 1px solid rgba(0, 0, 0, 20);
     border-radius: 8px;
-    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises très fines */
+    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises trÃ¨s fines */
     color: #000000; /* Texte Noir */
-    selection-background-color: rgba(76, 175, 80, 180); /* Vert sélection */
+    selection-background-color: rgba(76, 175, 80, 180); /* Vert sÃ©lection */
     selection-color: white;
     outline: 0;
 }
 
 QHeaderView::section {
-    background-color: #2E7D32; /* Entête Vert Foncé */
+    background-color: #2E7D32; /* EntÃªte Vert FoncÃ© */
     color: white;
     padding: 8px;
     border: none;
@@ -2327,10 +2341,10 @@ QTableCornerButton::section {
 QPushButton {
     border-radius: 8px;
     padding: 10px 15px;
-    color: white; /* Texte Blanc sur bouton coloré */
+    color: white; /* Texte Blanc sur bouton colorÃ© */
     font-weight: bold;
     font-size: 13px;
-    border: 1px solid rgba(0,0,0, 10); /* Légère ombre */
+    border: 1px solid rgba(0,0,0, 10); /* LÃ©gÃ¨re ombre */
 }
 
 /* --- COULEURS DES BOUTONS --- */
@@ -2374,7 +2388,7 @@ QPushButton#btn_mailing:hover { background-color: #7B1FA2; }
 /* TRIER : Jaune/Ambre */
 QPushButton#btn_tri {
     background-color: #FFC107;
-    color: #333; /* Texte foncé sur jaune */
+    color: #333; /* Texte foncÃ© sur jaune */
 }
 QPushButton#btn_tri:hover { background-color: #FFB300; }
 
@@ -2386,7 +2400,7 @@ QScrollBar:vertical {
     border-radius: 5px;
 }
 QScrollBar::handle:vertical {
-    background: rgba(0,0,0,30); /* Poignée grise */
+    background: rgba(0,0,0,30); /* PoignÃ©e grise */
     border-radius: 5px;
 }
 
@@ -2436,7 +2450,7 @@ font: 8pt &quot;Segoe UI&quot;;
 font: 700 9pt &quot;Segoe UI&quot;;</string>
          </property>
          <property name="title">
-          <string>Opérations</string>
+          <string>OpÃ©rations</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
@@ -2548,7 +2562,7 @@ font: 700 9pt &quot;Segoe UI&quot;;</string>
             </item>
             <item>
              <property name="text">
-              <string>Réservé</string>
+              <string>RÃ©servÃ©</string>
              </property>
             </item>
             <item>
@@ -2599,7 +2613,7 @@ background-color: rgb(200, 221, 211); border-radius: 15px;</string>
          </widget>
          <widget class="QWidget" name="tab_finance">
           <attribute name="title">
-           <string>Valorisation Financiére</string>
+           <string>Valorisation FinanciÃ©re</string>
           </attribute>
          </widget>
         </widget>
@@ -2854,7 +2868,7 @@ QWidget#page_client {
 
 /* --- 2. LE CADRE FORMULAIRE &amp; STATISTIQUES (Verre Blanc) --- */
 QGroupBox {
-    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilité) */
+    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilitÃ©) */
     background-color: rgba(255, 255, 255, 210); 
     border: 1px solid rgba(0, 0, 0, 20); /* Bordure grise subtile */
     border-radius: 15px;
@@ -2865,7 +2879,7 @@ QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
     left: 20px;
-    color: #2E7D32; /* Vert Foncé EcoCycle pour le contraste sur blanc */
+    color: #2E7D32; /* Vert FoncÃ© EcoCycle pour le contraste sur blanc */
     font-weight: bold;
     font-size: 16px;
     background-color: transparent;
@@ -2873,7 +2887,7 @@ QGroupBox::title {
 
 /* --- 3. LES LABELS --- */
 QLabel {
-    color: #333333; /* Texte GRIS FONCÉ/NOIR */
+    color: #333333; /* Texte GRIS FONCÃ‰/NOIR */
     font-weight: bold;
     font-size: 13px;
     background-color: transparent;
@@ -2881,12 +2895,12 @@ QLabel {
 
 /* --- 4. CHAMPS DE SAISIE (Inputs Clairs) --- */
 QLineEdit, QComboBox, QDateEdit, QDoubleSpinBox {
-    /* Fond blanc cassé semi-transparent */
+    /* Fond blanc cassÃ© semi-transparent */
     background-color: rgba(245, 245, 245, 200); 
     border: 1px solid #BDBDBD; /* Bordure grise */
     border-radius: 5px;
     padding: 8px;
-    color: #000000; /* Texte NOIR quand on écrit */
+    color: #000000; /* Texte NOIR quand on Ã©crit */
     font-weight: bold;
 }
 
@@ -2895,7 +2909,7 @@ QLineEdit:focus, QComboBox:focus, QDateEdit:focus {
     border: 2px solid #4CAF50; /* Bordure VERTE */
 }
 
-/* Spécifique : La liste de choix de Tri */
+/* SpÃ©cifique : La liste de choix de Tri */
 QComboBox#cb_tri_option_client {
     min-width: 80px;
     background-color: rgba(255, 255, 255, 200);
@@ -2907,15 +2921,15 @@ QTableView {
     background-color: rgba(255, 255, 255, 200); 
     border: 1px solid rgba(0, 0, 0, 20);
     border-radius: 8px;
-    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises très fines */
+    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises trÃ¨s fines */
     color: #000000; /* Texte Noir */
-    selection-background-color: rgba(76, 175, 80, 180); /* Vert sélection */
+    selection-background-color: rgba(76, 175, 80, 180); /* Vert sÃ©lection */
     selection-color: white;
     outline: 0;
 }
 
 QHeaderView::section {
-    background-color: #2E7D32; /* Entête Vert Foncé */
+    background-color: #2E7D32; /* EntÃªte Vert FoncÃ© */
     color: white;
     padding: 8px;
     border: none;
@@ -2931,10 +2945,10 @@ QTableCornerButton::section {
 QPushButton {
     border-radius: 8px;
     padding: 10px 15px;
-    color: white; /* Texte Blanc sur bouton coloré */
+    color: white; /* Texte Blanc sur bouton colorÃ© */
     font-weight: bold;
     font-size: 13px;
-    border: 1px solid rgba(0,0,0, 10); /* Légère ombre */
+    border: 1px solid rgba(0,0,0, 10); /* LÃ©gÃ¨re ombre */
 }
 
 /* --- COULEURS DES BOUTONS --- */
@@ -2978,7 +2992,7 @@ QPushButton#btn_mailing_client:hover { background-color: #7B1FA2; }
 /* TRIER : Jaune/Ambre */
 QPushButton#btn_tri_client {
     background-color: #FFC107;
-    color: #333; /* Texte foncé sur jaune */
+    color: #333; /* Texte foncÃ© sur jaune */
 }
 QPushButton#btn_tri_client:hover { background-color: #FFB300; }
 
@@ -2990,7 +3004,7 @@ QScrollBar:vertical {
     border-radius: 5px;
 }
 QScrollBar::handle:vertical {
-    background: rgba(0,0,0,30); /* Poignée grise */
+    background: rgba(0,0,0,30); /* PoignÃ©e grise */
     border-radius: 5px;
 }
 
@@ -3073,7 +3087,7 @@ QTabBar::tab:hover {
              <string/>
             </property>
             <property name="placeholderText">
-             <string>Société ABC</string>
+             <string>SociÃ©tÃ© ABC</string>
             </property>
            </widget>
           </item>
@@ -3100,7 +3114,7 @@ QTabBar::tab:hover {
              <string/>
             </property>
             <property name="placeholderText">
-             <string>123 Rue de la République</string>
+             <string>123 Rue de la RÃ©publique</string>
             </property>
            </widget>
           </item>
@@ -3249,7 +3263,7 @@ QTabBar::tab:hover {
            </column>
            <column>
             <property name="text">
-             <string>Points_de_fidélité</string>
+             <string>Points_de_fidÃ©litÃ©</string>
             </property>
            </column>
            <column>
@@ -3423,7 +3437,7 @@ QWidget#page_employes {
 
 /* --- 2. LE CADRE FORMULAIRE &amp; STATISTIQUES (Verre Blanc) --- */
 QGroupBox {
-    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilité) */
+    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilitÃ©) */
     background-color: rgba(255, 255, 255, 210); 
     border: 1px solid rgba(0, 0, 0, 20); /* Bordure grise subtile */
     border-radius: 15px;
@@ -3434,7 +3448,7 @@ QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
     left: 20px;
-    color: #2E7D32; /* Vert Foncé EcoCycle pour le contraste sur blanc */
+    color: #2E7D32; /* Vert FoncÃ© EcoCycle pour le contraste sur blanc */
     font-weight: bold;
     font-size: 16px;
     background-color: transparent;
@@ -3442,7 +3456,7 @@ QGroupBox::title {
 
 /* --- 3. LES LABELS --- */
 QLabel {
-    color: #333333; /* Texte GRIS FONCÉ/NOIR */
+    color: #333333; /* Texte GRIS FONCÃ‰/NOIR */
     font-weight: bold;
     font-size: 13px;
     background-color: transparent;
@@ -3450,12 +3464,12 @@ QLabel {
 
 /* --- 4. CHAMPS DE SAISIE (Inputs Clairs) --- */
 QLineEdit, QComboBox, QDateEdit, QDoubleSpinBox {
-    /* Fond blanc cassé semi-transparent */
+    /* Fond blanc cassÃ© semi-transparent */
     background-color: rgba(245, 245, 245, 200); 
     border: 1px solid #BDBDBD; /* Bordure grise */
     border-radius: 5px;
     padding: 8px;
-    color: #000000; /* Texte NOIR quand on écrit */
+    color: #000000; /* Texte NOIR quand on Ã©crit */
     font-weight: bold;
 }
 
@@ -3464,7 +3478,7 @@ QLineEdit:focus, QComboBox:focus, QDateEdit:focus {
     border: 2px solid #4CAF50; /* Bordure VERTE */
 }
 
-/* Spécifique : La liste de choix de Tri */
+/* SpÃ©cifique : La liste de choix de Tri */
 QComboBox#cb_tri_option {
     min-width: 80px;
     background-color: rgba(255, 255, 255, 200);
@@ -3476,15 +3490,15 @@ QTableView {
     background-color: rgba(255, 255, 255, 200); 
     border: 1px solid rgba(0, 0, 0, 20);
     border-radius: 8px;
-    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises très fines */
+    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises trÃ¨s fines */
     color: #000000; /* Texte Noir */
-    selection-background-color: rgba(76, 175, 80, 180); /* Vert sélection */
+    selection-background-color: rgba(76, 175, 80, 180); /* Vert sÃ©lection */
     selection-color: white;
     outline: 0;
 }
 
 QHeaderView::section {
-    background-color: #2E7D32; /* Entête Vert Foncé */
+    background-color: #2E7D32; /* EntÃªte Vert FoncÃ© */
     color: white;
     padding: 8px;
     border: none;
@@ -3500,10 +3514,10 @@ QTableCornerButton::section {
 QPushButton {
     border-radius: 8px;
     padding: 10px 15px;
-    color: white; /* Texte Blanc sur bouton coloré */
+    color: white; /* Texte Blanc sur bouton colorÃ© */
     font-weight: bold;
     font-size: 13px;
-    border: 1px solid rgba(0,0,0, 10); /* Légère ombre */
+    border: 1px solid rgba(0,0,0, 10); /* LÃ©gÃ¨re ombre */
 }
 
 /* --- COULEURS DES BOUTONS --- */
@@ -3547,7 +3561,7 @@ QPushButton#btn_mailing:hover { background-color: #7B1FA2; }
 /* TRIER : Jaune/Ambre */
 QPushButton#btn_tri {
     background-color: #FFC107;
-    color: #333; /* Texte foncé sur jaune */
+    color: #333; /* Texte foncÃ© sur jaune */
 }
 QPushButton#btn_tri:hover { background-color: #FFB300; }
 
@@ -3559,7 +3573,7 @@ QScrollBar:vertical {
     border-radius: 5px;
 }
 QScrollBar::handle:vertical {
-    background: rgba(0,0,0,30); /* Poignée grise */
+    background: rgba(0,0,0,30); /* PoignÃ©e grise */
     border-radius: 5px;
 }
 
@@ -3603,7 +3617,7 @@ QTabBar::tab:hover {
             </font>
            </property>
            <property name="title">
-            <string>Informations Employé</string>
+            <string>Informations EmployÃ©</string>
            </property>
            <layout class="QFormLayout" name="formLayout">
             <property name="horizontalSpacing">
@@ -3754,7 +3768,7 @@ QTabBar::tab:hover {
               <string notr="true">color: rgb(255, 255, 255);</string>
              </property>
              <property name="text">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Gestion des employés&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;Gestion des employÃ©s&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
             </widget>
            </item>
@@ -3930,7 +3944,7 @@ QWidget#page_employes {
 
 /* --- 2. LE CADRE FORMULAIRE &amp; STATISTIQUES (Verre Blanc) --- */
 QGroupBox {
-    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilité) */
+    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilitÃ©) */
     background-color: rgba(255, 255, 255, 210); 
     border: 1px solid rgba(0, 0, 0, 20); /* Bordure grise subtile */
     border-radius: 15px;
@@ -3941,7 +3955,7 @@ QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
     left: 20px;
-    color: #2E7D32; /* Vert Foncé EcoCycle pour le contraste sur blanc */
+    color: #2E7D32; /* Vert FoncÃ© EcoCycle pour le contraste sur blanc */
     font-weight: bold;
     font-size: 16px;
     background-color: transparent;
@@ -3949,7 +3963,7 @@ QGroupBox::title {
 
 /* --- 3. LES LABELS --- */
 QLabel {
-    color: #333333; /* Texte GRIS FONCÉ/NOIR */
+    color: #333333; /* Texte GRIS FONCÃ‰/NOIR */
     font-weight: bold;
     font-size: 13px;
     background-color: transparent;
@@ -3957,12 +3971,12 @@ QLabel {
 
 /* --- 4. CHAMPS DE SAISIE (Inputs Clairs) --- */
 QLineEdit, QComboBox, QDateEdit, QDoubleSpinBox {
-    /* Fond blanc cassé semi-transparent */
+    /* Fond blanc cassÃ© semi-transparent */
     background-color: rgba(245, 245, 245, 200); 
     border: 1px solid #BDBDBD; /* Bordure grise */
     border-radius: 5px;
     padding: 8px;
-    color: #000000; /* Texte NOIR quand on écrit */
+    color: #000000; /* Texte NOIR quand on Ã©crit */
     font-weight: bold;
 }
 
@@ -3971,7 +3985,7 @@ QLineEdit:focus, QComboBox:focus, QDateEdit:focus {
     border: 2px solid #4CAF50; /* Bordure VERTE */
 }
 
-/* Spécifique : La liste de choix de Tri */
+/* SpÃ©cifique : La liste de choix de Tri */
 QComboBox#cb_tri_option {
     min-width: 80px;
     background-color: rgba(255, 255, 255, 200);
@@ -3983,15 +3997,15 @@ QTableView {
     background-color: rgba(255, 255, 255, 200); 
     border: 1px solid rgba(0, 0, 0, 20);
     border-radius: 8px;
-    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises très fines */
+    gridline-color: rgba(0, 0, 0, 10); /* Lignes grises trÃ¨s fines */
     color: #000000; /* Texte Noir */
-    selection-background-color: rgba(76, 175, 80, 180); /* Vert sélection */
+    selection-background-color: rgba(76, 175, 80, 180); /* Vert sÃ©lection */
     selection-color: white;
     outline: 0;
 }
 
 QHeaderView::section {
-    background-color: #2E7D32; /* Entête Vert Foncé */
+    background-color: #2E7D32; /* EntÃªte Vert FoncÃ© */
     color: white;
     padding: 8px;
     border: none;
@@ -4007,10 +4021,10 @@ QTableCornerButton::section {
 QPushButton {
     border-radius: 8px;
     padding: 10px 15px;
-    color: white; /* Texte Blanc sur bouton coloré */
+    color: white; /* Texte Blanc sur bouton colorÃ© */
     font-weight: bold;
     font-size: 13px;
-    border: 1px solid rgba(0,0,0, 10); /* Légère ombre */
+    border: 1px solid rgba(0,0,0, 10); /* LÃ©gÃ¨re ombre */
 }
 
 /* --- COULEURS DES BOUTONS --- */
@@ -4054,7 +4068,7 @@ QPushButton#btn_mailing:hover { background-color: #7B1FA2; }
 /* TRIER : Jaune/Ambre */
 QPushButton#btn_tri {
     background-color: #FFC107;
-    color: #333; /* Texte foncé sur jaune */
+    color: #333; /* Texte foncÃ© sur jaune */
 }
 QPushButton#btn_tri:hover { background-color: #FFB300; }
 
@@ -4066,7 +4080,7 @@ QScrollBar:vertical {
     border-radius: 5px;
 }
 QScrollBar::handle:vertical {
-    background: rgba(0,0,0,30); /* Poignée grise */
+    background: rgba(0,0,0,30); /* PoignÃ©e grise */
     border-radius: 5px;
 }
 
@@ -4173,7 +4187,7 @@ QTabBar::tab:hover {
           <item>
            <widget class="QLabel" name="label_28">
             <property name="text">
-             <string>Capacité(L)</string>
+             <string>CapacitÃ©(L)</string>
             </property>
            </widget>
           </item>
@@ -4391,7 +4405,7 @@ QTabBar::tab:hover {
          </widget>
          <widget class="QWidget" name="tab_contrat_3">
           <attribute name="title">
-           <string>Carte géolocalisation</string>
+           <string>Carte gÃ©olocalisation</string>
           </attribute>
           <widget class="QTableView" name="tab_poubelle_2">
            <property name="geometry">
@@ -4412,7 +4426,7 @@ QTabBar::tab:hover {
          </widget>
          <widget class="QWidget" name="tab">
           <attribute name="title">
-           <string>Prédiction AI</string>
+           <string>PrÃ©diction AI</string>
           </attribute>
           <widget class="QTableView" name="tab_poubelle_3">
            <property name="geometry">
@@ -4474,7 +4488,7 @@ QTabBar::tab:hover {
             </item>
             <item>
              <property name="text">
-              <string>Type de déchets</string>
+              <string>Type de dÃ©chets</string>
              </property>
             </item>
             <item>

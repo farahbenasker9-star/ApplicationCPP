@@ -3,10 +3,16 @@
 
 #include <QMainWindow>
 #include "employe.h"
-#include "client.h" // Ajout de l'en-tête client
+#include "client.h"
 #include "poubelle.h"
+#include "contrat.h"
 
 #include <QSqlQueryModel>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QMessageBox>
+#include <QDebug>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -45,17 +51,36 @@ private slots:
     void on_btn_tri_poubelle_clicked();
     void on_le_recherche_poubelle_textChanged(const QString &arg1);
 
+    // CRUD Contrat
+    void on_ajouter_contrat_clicked();
+    void on_tab_contrat_2_clicked(const QModelIndex &index);
+    void on_tab_contrat_2_doubleClicked(const QModelIndex &index);
+    void on_supprimer_contrat_clicked();
+    void on_modifier_contrat_clicked();
+
+    // Validation slots Contrat
+    void validateID();
+    void validateDates();
+    void validateFloats();
+    void validateDescription();
+
 private:
     Ui::MainWindow *ui;
     Poubelle tmp_poubelle;
     QSqlQueryModel *model;
+    int currentSelectedId = -1; // Track selected contract ID
     void navigateToPage(int pageIndex);
-    void clearFormPoubelle(); // Nouvelle méthode pour vider le formulaire
+    void clearFormPoubelle();
     bool validerFormulairePoubelle(bool isUpdate);
+
+    // Style & Utils Contrat
+    void setWidgetStyle(QWidget* widget, bool isValid);
+    void resetValidationStyles();
+    void populateComboBoxes();
 
     // Les gestionnaires de pages
     Employe *employe;
-    Client  *client; // Pointeur pour ton module Client
+    Client  *client;
 };
 
 #endif // MAINWINDOW_H
