@@ -1,0 +1,11 @@
+release/connection.o
+release/connection.o
+release/employe.o
+release/employe.o
+release/login.o
+release/login.o
+release/main.o
+release/mainwindow.o
+release/qrc_ressources.o
+release/moc_login.o
+release/moc_mainwindow.o
