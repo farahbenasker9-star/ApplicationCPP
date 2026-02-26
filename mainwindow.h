@@ -6,6 +6,7 @@
 #include "client.h"
 #include "poubelle.h"
 #include "contrat.h"
+#include "produit.h"
 
 #include <QSqlQueryModel>
 #include <QSqlDatabase>
@@ -65,6 +66,13 @@ private slots:
     void validateFloats();
     void validateDescription();
 
+    //CRUD PRODUIT
+    void on_btn_ajouter_4_clicked();
+    void on_btn_supprimer_5_clicked();
+    void on_btn_modifier_4_clicked();
+    void on_cb_statut_currentIndexChanged(int index);
+    void on_tab_stock_clicked(const QModelIndex &index);
+
 private:
     Ui::MainWindow *ui;
     Poubelle tmp_poubelle;
@@ -82,6 +90,9 @@ private:
     // Les gestionnaires de pages
     Employe *employe;
     Client  *client;
+
+    bool controleSaisie();
+
 };
 
 #endif // MAINWINDOW_H

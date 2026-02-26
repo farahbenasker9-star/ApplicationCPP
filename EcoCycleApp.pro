@@ -10,7 +10,8 @@ SOURCES += \
     connection.cpp \
     employe.cpp \
     poubelle.cpp \
-    contrat.cpp
+    contrat.cpp \
+    produit.cpp
 
 HEADERS += \
     client.h \
@@ -19,7 +20,8 @@ HEADERS += \
     connection.h \
     employe.h \
     poubelle.h \
-    contrat.h
+    contrat.h \
+    produit.h
 
 FORMS += \
     login.ui \

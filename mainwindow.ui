@@ -383,7 +383,7 @@ QWidget#centralwidget {
         </rect>
        </property>
        <property name="currentIndex">
-        <number>6</number>
+        <number>4</number>
        </property>
        <widget class="QWidget" name="page_dashboard">
         <widget class="QLabel" name="label_logo_dash">
@@ -1179,9 +1179,9 @@ QGroupBox::title {
             </property>
            </widget>
           </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="combo_ID_Client"/>
-           </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="combo_ID_Client"/>
+          </item>
           <item row="2" column="0">
            <widget class="QLabel" name="label_cin_employe">
             <property name="text">
@@ -1493,7 +1493,6 @@ QGroupBox::title {
          </property>
         </widget>
        </widget>
-
        <widget class="QWidget" name="page_equipement">
         <property name="font">
          <font>
@@ -1943,8 +1942,8 @@ QGroupBox::title {
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>361</width>
-               <height>496</height>
+               <width>357</width>
+               <height>492</height>
               </rect>
              </property>
              <property name="styleSheet">
@@ -2549,7 +2548,7 @@ font: 700 9pt &quot;Segoe UI&quot;;</string>
            </widget>
           </item>
           <item>
-           <widget class="QDateEdit" name="de_date">
+           <widget class="QDateEdit" name="de_date_c">
             <property name="styleSheet">
              <string notr="true">font: 9pt &quot;Segoe UI&quot;;</string>
             </property>
@@ -2585,6 +2584,16 @@ font: 700 9pt &quot;Segoe UI&quot;;</string>
            </widget>
           </item>
           <item>
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;ID client :&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="le_id_client_2"/>
+          </item>
+          <item>
            <widget class="QLabel" name="label_29">
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Date de vent :&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -2592,7 +2601,7 @@ font: 700 9pt &quot;Segoe UI&quot;;</string>
            </widget>
           </item>
           <item>
-           <widget class="QDateEdit" name="dateEdit"/>
+           <widget class="QDateEdit" name="de_date_v"/>
           </item>
          </layout>
         </widget>
@@ -3703,40 +3712,6 @@ QTabBar::tab:hover {
               </property>
              </widget>
             </item>
-            <item row="3" column="0">
-             <widget class="QLabel" name="label_12">
-              <property name="text">
-               <string>Poste</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="1">
-             <widget class="QComboBox" name="cb_poste">
-              <property name="placeholderText">
-               <string>Reponsable RH</string>
-              </property>
-              <item>
-               <property name="text">
-                <string>Responsable RH</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Administratif</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Trieur</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Chauffeur</string>
-               </property>
-              </item>
-             </widget>
-            </item>
             <item row="4" column="0">
              <widget class="QLabel" name="label_13">
               <property name="text">
@@ -3772,6 +3747,52 @@ QTabBar::tab:hover {
              <widget class="QLineEdit" name="le_badge"/>
             </item>
            </layout>
+           <widget class="QLabel" name="label_12">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>100</width>
+              <height>30</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Poste</string>
+            </property>
+           </widget>
+           <widget class="QComboBox" name="cb_poste">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>100</width>
+              <height>30</height>
+             </rect>
+            </property>
+            <property name="placeholderText">
+             <string>Reponsable RH</string>
+            </property>
+            <item>
+             <property name="text">
+              <string>Responsable RH</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Administratif</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Trieur</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Chauffeur</string>
+             </property>
+            </item>
+           </widget>
           </widget>
          </item>
          <item>
@@ -4610,7 +4631,7 @@ background-color: rgb(67, 160, 71);</string>
      <x>0</x>
      <y>0</y>
      <width>1587</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>

@@ -3,7 +3,6 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QRegularExpression>
-
 // ─── Constructeur ────────────────────────────────────────────────────────────
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -317,6 +316,10 @@ void MainWindow::navigateToPage(int pageIndex)
         ui->tab_contrat_2->setModel(Contrat().afficher());
     }
     ui->stackedWidget->setCurrentIndex(pageIndex);
+    if (pageIndex == 4) {
+        Produit P;
+        ui->tab_stock->setModel(P.afficher());
+    }
 }
 
 void MainWindow::on_ajouter_contrat_clicked()
@@ -608,3 +611,123 @@ void MainWindow::on_recherche0_contrat_textChanged(const QString &arg1)
     ui->tab_contrat_2->setModel(model);
 }
 
+void MainWindow::on_btn_ajouter_4_clicked() {
+    if (!controleSaisie()) return; // On s'arrête si c'est faux
+    // Récupération des données
+    int id = ui->le_id->text().toInt();
+    int id_c = ui->le_id_client_2->text().toInt();
+    QString type = ui->cb_type->currentText();
+    float poids = ui->sb_poids->value();
+    float prix = ui->sb_prix->value();
+    QDate dc = ui->de_date_c->date();
+    QDate dv = ui->de_date_v->date();
+    QString statut = ui->cb_statut->currentText();
+
+    Produit P(id, id_c, type, poids, dc, dv, statut, prix);
+
+    if(P.ajouter()) {
+        ui->tab_stock->setModel(P.afficher()); // Refresh du tableau
+        QMessageBox::information(this, "Succès", "Produit ajouté !");
+    } else {
+        QMessageBox::critical(this, "Erreur", "Ajout échoué.");
+    }
+}
+void MainWindow::on_btn_supprimer_5_clicked() {
+    int id = ui->le_id->text().toInt(); // On récupère l'ID à supprimer
+    Produit P;
+    if(P.supprimer(id)) {
+        ui->tab_stock->setModel(P.afficher());
+        QMessageBox::information(this, "Succès", "Produit supprimé !");
+    }
+}
+void MainWindow::on_btn_modifier_4_clicked() {
+    if (!controleSaisie()) return;
+    Produit P(ui->le_id->text().toInt(), ui->le_id_client_2->text().toInt(),
+              ui->cb_type->currentText(), ui->sb_poids->value(),
+              ui->de_date_c->date(), ui->de_date_v->date(),
+              ui->cb_statut->currentText(), ui->sb_prix->value());
+    if(P.modifier()) {
+        ui->tab_stock->setModel(P.afficher());
+        QMessageBox::information(this, "Succès", "Mise à jour effectuée !");
+    }
+}
+void MainWindow::on_cb_statut_currentIndexChanged(int index)
+{
+    QString statut = ui->cb_statut->currentText();
+
+    if (statut == "Vendu") {
+        ui->le_id_client_2->setEnabled(true);
+        ui->de_date_v->setEnabled(true);
+        ui->de_date_v->setDate(QDate::currentDate()); // Met la date du jour par défaut
+    }
+    else if (statut == "Réservé") {
+        ui->le_id_client_2->setEnabled(true); // On a besoin de l'ID pour une réservation
+        ui->de_date_v->setEnabled(false);   // Pas encore de date de vente
+    }
+    else { // Cas "Disponible"
+        ui->le_id_client_2->setEnabled(false);
+        ui->de_date_v->setEnabled(false);
+        ui->le_id_client_2->clear(); // On vide l'ID client pour la propreté
+    }
+}
+
+void MainWindow::on_tab_stock_clicked(const QModelIndex &index)
+{
+    int row = index.row();
+    auto model = ui->tab_stock->model();
+
+    // 1. On récupère d'abord le STATUT (Colonne index 6)
+    QString statut_db = model->index(row, 6).data().toString().trimmed();
+
+    // 2. On met à jour le ComboBox du statut
+    ui->cb_statut->setCurrentText(statut_db);
+
+    // 3. TRÈS IMPORTANT : On appelle la fonction qui active/désactive les cases
+    // Il faut que la case "ID client" soit ACTIVÉE avant de mettre le texte
+    on_cb_statut_currentIndexChanged(ui->cb_statut->currentIndex());
+
+    // 4. Maintenant que la case est peut-être dégrisée, on met l'ID Client (Index 1)
+    QString id_client_db = model->index(row, 1).data().toString().trimmed();
+    ui->le_id_client_2->setText(id_client_db);
+
+    // 5. On remplit le reste normalement
+    ui->le_id->setText(model->index(row, 0).data().toString());
+    ui->cb_type->setCurrentText(model->index(row, 2).data().toString().trimmed());
+    ui->sb_poids->setValue(model->index(row, 3).data().toDouble());
+    ui->de_date_c->setDate(model->index(row, 4).data().toDate());
+    ui->de_date_v->setDate(model->index(row, 5).data().toDate());
+    ui->sb_prix->setValue(model->index(row, 7).data().toDouble());
+}
+bool MainWindow::controleSaisie() {
+    QString id_p = ui->le_id->text();
+    double prix = ui->sb_prix->value();
+    double poids = ui->sb_poids->value(); // On récupère la valeur du poids
+    QString statut = ui->cb_statut->currentText();
+    QString id_c = ui->le_id_client_2->text();
+
+    // 1. Vérifier que l'ID fait exactement 8 chiffres
+    if (id_p.length() != 8) {
+        QMessageBox::warning(this, "Erreur de saisie", "L'ID Produit doit contenir exactement 8 chiffres.");
+        return false;
+    }
+
+    // 2. Vérifier que le poids est bien supérieur à 0
+    if (poids <= 0) {
+        QMessageBox::warning(this, "Erreur de saisie", "Le poids du produit doit être supérieur à 0 kg.");
+        return false;
+    }
+
+    // 3. Vérifier que le prix est bien supérieur à 0
+    if (prix <= 0) {
+        QMessageBox::warning(this, "Erreur de saisie", "Le prix de vente doit être supérieur à 0.00 DT.");
+        return false;
+    }
+
+    // 4. Sécurité supplémentaire : Si Vendu ou Réservé, l'ID Client ne doit pas être vide
+    if (statut != "Disponible" && id_c.isEmpty()) {
+        QMessageBox::warning(this, "Erreur de saisie", "Un ID Client est obligatoire pour un produit Réservé ou Vendu.");
+        return false;
+    }
+
+    return true; // Tout est valide !
+}
