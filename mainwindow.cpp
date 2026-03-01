@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     // 2. INITIALISATION DES MANAGERS (Très important pour le CRUD)
     employe = new Employe(ui, this);
     client  = new Client(ui, this); // Initialise ta gestion client
+    equipement = new Equipement(ui, this);
 
     // ==================== DASHBOARD CONNECTIONS ====================
     connect(ui->btn_dash_employe, &QPushButton::clicked, this, [this]() { navigateToPage(6); ui->btn_nav_employes->setChecked(true); });

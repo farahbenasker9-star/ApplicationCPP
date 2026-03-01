@@ -7,6 +7,7 @@
 #include "poubelle.h"
 #include "contrat.h"
 #include "produit.h"
+#include "equipement.h"
 
 #include <QSqlQueryModel>
 #include <QSqlDatabase>
@@ -90,6 +91,7 @@ private:
     // Les gestionnaires de pages
     Employe *employe;
     Client  *client;
+    Equipement *equipement;
 
     bool controleSaisie();
 

@@ -4,6 +4,7 @@ CONFIG += c++17
 
 SOURCES += \
     client.cpp \
+    equipement.cpp \
     main.cpp \
     login.cpp \
     mainwindow.cpp \
@@ -13,8 +14,10 @@ SOURCES += \
     contrat.cpp \
     produit.cpp
 
+
 HEADERS += \
     client.h \
+    equipement.h \
     login.h \
     mainwindow.h \
     connection.h \
