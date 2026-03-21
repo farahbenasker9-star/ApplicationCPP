@@ -383,7 +383,7 @@ QWidget#centralwidget {
         </rect>
        </property>
        <property name="currentIndex">
-        <number>3</number>
+        <number>6</number>
        </property>
        <widget class="QWidget" name="page_dashboard">
         <widget class="QLabel" name="label_logo_dash">
@@ -3777,14 +3777,14 @@ QTabBar::tab:hover {
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
+            <item row="4" column="0">
              <widget class="QLabel" name="label_10">
               <property name="text">
                <string>Nom</string>
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
+            <item row="4" column="1">
              <widget class="QLineEdit" name="le_nom">
               <property name="text">
                <string/>
@@ -3794,14 +3794,14 @@ QTabBar::tab:hover {
               </property>
              </widget>
             </item>
-            <item row="3" column="0">
+            <item row="5" column="0">
              <widget class="QLabel" name="label_11">
               <property name="text">
                <string>Prenom</string>
               </property>
              </widget>
             </item>
-            <item row="3" column="1">
+            <item row="5" column="1">
              <widget class="QLineEdit" name="le_prenom">
               <property name="text">
                <string/>
@@ -3811,87 +3811,106 @@ QTabBar::tab:hover {
               </property>
              </widget>
             </item>
-            <item row="4" column="0">
+            <item row="6" column="0">
+             <widget class="QLabel" name="label_7">
+              <property name="text">
+               <string>Age</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="1">
+             <widget class="QLineEdit" name="le_age"/>
+            </item>
+            <item row="7" column="0">
+             <widget class="QLabel" name="label_16">
+              <property name="text">
+               <string>H/F</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="1">
+             <widget class="QComboBox" name="cb_genre">
+              <item>
+               <property name="text">
+                <string>Homme</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Femme</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="8" column="0">
+             <widget class="QLabel" name="label_12">
+              <property name="text">
+               <string>Poste</string>
+              </property>
+             </widget>
+            </item>
+            <item row="8" column="1">
+             <widget class="QComboBox" name="cb_poste">
+              <property name="placeholderText">
+               <string>Reponsable RH</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Responsable RH</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Administratif</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Trieur</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Chauffeur</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="9" column="0">
              <widget class="QLabel" name="label_13">
               <property name="text">
                <string>Salaire</string>
               </property>
              </widget>
             </item>
-            <item row="4" column="1">
-             <widget class="QDoubleSpinBox" name="dsb_salaire"/>
+            <item row="9" column="1">
+             <widget class="QLineEdit" name="le_salaire"/>
             </item>
-            <item row="5" column="0">
+            <item row="10" column="0">
              <widget class="QLabel" name="label_14">
               <property name="text">
                <string>Date </string>
               </property>
              </widget>
             </item>
-            <item row="5" column="1">
+            <item row="10" column="1">
              <widget class="QDateEdit" name="de_embauche">
               <property name="calendarPopup">
                <bool>true</bool>
               </property>
              </widget>
             </item>
-            <item row="6" column="0">
+            <item row="11" column="0">
              <widget class="QLabel" name="label_15">
               <property name="text">
                <string>ID Badge</string>
               </property>
              </widget>
             </item>
-            <item row="6" column="1">
+            <item row="11" column="1">
              <widget class="QLineEdit" name="le_badge"/>
             </item>
            </layout>
-           <widget class="QLabel" name="label_12">
-            <property name="geometry">
-             <rect>
-              <x>0</x>
-              <y>0</y>
-              <width>100</width>
-              <height>30</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>Poste</string>
-            </property>
-           </widget>
-           <widget class="QComboBox" name="cb_poste">
-            <property name="geometry">
-             <rect>
-              <x>0</x>
-              <y>0</y>
-              <width>100</width>
-              <height>30</height>
-             </rect>
-            </property>
-            <property name="placeholderText">
-             <string>Reponsable RH</string>
-            </property>
-            <item>
-             <property name="text">
-              <string>Responsable RH</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Administratif</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Trieur</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Chauffeur</string>
-             </property>
-            </item>
-           </widget>
           </widget>
          </item>
          <item>
@@ -4018,12 +4037,12 @@ background-color: rgb(30, 136, 229);</string>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="btn_mailing">
+              <widget class="QPushButton" name="btn_refresh">
                <property name="styleSheet">
                 <string notr="true">background-color: rgb(229, 57, 53);</string>
                </property>
                <property name="text">
-                <string>Mailing</string>
+                <string>Refresh</string>
                </property>
               </widget>
              </item>
@@ -4043,10 +4062,10 @@ background-color: rgb(30, 136, 229);</string>
             <widget class="QGroupBox" name="gb_stats">
              <property name="geometry">
               <rect>
-               <x>11</x>
-               <y>11</y>
-               <width>641</width>
-               <height>646</height>
+               <x>0</x>
+               <y>-30</y>
+               <width>481</width>
+               <height>691</height>
               </rect>
              </property>
              <property name="font">
@@ -4730,7 +4749,7 @@ background-color: rgb(67, 160, 71);</string>
      <x>0</x>
      <y>0</y>
      <width>1587</width>
-     <height>26</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>
