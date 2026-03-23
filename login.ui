@@ -163,7 +163,7 @@ QPushButton#btn_back_login:hover {
 }</string>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QFrame" name="frame_right">
@@ -221,6 +221,13 @@ QPushButton#btn_back_login:hover {
          </property>
          <property name="placeholderText">
           <string>Password</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_forgot">
+         <property name="text">
+          <string>                                                                                                                                                 Reset Password</string>
          </property>
         </widget>
        </item>

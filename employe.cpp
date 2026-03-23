@@ -77,13 +77,13 @@ void Employe::afficherEmployes()
         qDebug() << "Table EMPLOYE is empty. Inserting dummy data...";
 
         query.exec("INSERT INTO EMPLOYE (CIN, NOM, PRENOM, POSTE, SALAIRE, DATE_EMBAUCHE, ID_BADGE, AGE, GENRE) "
-                   "VALUES (11111111, 'Ben Ali', 'Ahmed', 'Manager', 2500.50, TO_DATE('2023-01-15', 'YYYY-MM-DD'), 'B-001', 30, 'Homme')");
+                   "VALUES (11111111, 'Ben Ali', 'Ahmed', 'Trieur', 900.50, TO_DATE('2023-01-15', 'YYYY-MM-DD'), 'B-001', 30, 'Homme')");
 
         query.exec("INSERT INTO EMPLOYE (CIN, NOM, PRENOM, POSTE, SALAIRE, DATE_EMBAUCHE, ID_BADGE, AGE, GENRE) "
-                   "VALUES (22222222, 'Trabelsi', 'Sami', 'Technicien', 1800.00, TO_DATE('2023-06-20', 'YYYY-MM-DD'), 'B-002', 28, 'Homme')");
+                   "VALUES (22222222, 'Trabelsi', 'Sami', 'Chauffeur', 1000.00, TO_DATE('2023-06-20', 'YYYY-MM-DD'), 'B-002', 28, 'Homme')");
 
         query.exec("INSERT INTO EMPLOYE (CIN, NOM, PRENOM, POSTE, SALAIRE, DATE_EMBAUCHE, ID_BADGE, AGE, GENRE) "
-                   "VALUES (33333333, 'Mansour', 'Sarra', 'Ingenieur', 3200.75, TO_DATE('2024-02-10', 'YYYY-MM-DD'), 'B-003', 25, 'Femme')");
+                   "VALUES (33333333, 'Mansour', 'Sarra', 'Trieur', 900.75, TO_DATE('2024-02-10', 'YYYY-MM-DD'), 'B-003', 25, 'Femme')");
 
         db.commit();
     }
