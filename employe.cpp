@@ -15,6 +15,25 @@
 #include <QFileDialog>
 #include <QDateTime>
 #include <QPageSize>
+#include <QStyledItemDelegate>
+
+// ==================== CUSTOM DELEGATE FOR CIN ====================
+class CinDelegate : public QStyledItemDelegate
+{
+public:
+    CinDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent) {}
+
+    QString displayText(const QVariant &value, const QLocale &locale) const override
+    {
+        bool ok = false;
+        double cinDouble = value.toDouble(&ok);
+        if (ok) {
+            // Convert to long long and format as zero-padded 8 digit string
+            return QString::number(static_cast<qulonglong>(cinDouble)).rightJustified(8, '0');
+        }
+        return QStyledItemDelegate::displayText(value, locale);
+    }
+};
 
 // ==================== CONSTRUCTOR ====================
 
@@ -106,6 +125,7 @@ void Employe::afficherEmployes()
     employeModel->setHeaderData(6, Qt::Horizontal, QObject::tr("ID Badge"));
 
     ui->tab_employes->setModel(employeModel);
+    ui->tab_employes->setItemDelegateForColumn(0, new CinDelegate(this));
     ui->tab_employes->setAlternatingRowColors(false);
     ui->tab_employes->resizeColumnsToContents();
 }
@@ -156,7 +176,13 @@ void Employe::onTabEmployesClicked(const QModelIndex &index)
 {
     int row = index.row();
 
-    ui->le_cin->setText(employeModel->data(employeModel->index(row, 0)).toString());
+    // Format CIN carefully
+    QVariant cinData = employeModel->data(employeModel->index(row, 0));
+    bool ok = false;
+    double cinDouble = cinData.toDouble(&ok);
+    QString cinStr = ok ? QString::number(static_cast<qulonglong>(cinDouble)).rightJustified(8, '0') : cinData.toString();
+    
+    ui->le_cin->setText(cinStr);
     ui->le_nom->setText(employeModel->data(employeModel->index(row, 1)).toString());
     ui->le_prenom->setText(employeModel->data(employeModel->index(row, 2)).toString());
     ui->cb_poste->setCurrentText(employeModel->data(employeModel->index(row, 3)).toString());
@@ -376,7 +402,12 @@ void Employe::onBtnPdfClicked()
     html = html.arg(QDateTime::currentDateTime().toString("dd/MM/yyyy HH:mm"));
 
     for (int i = 0; i < employeModel->rowCount(); ++i) {
-        QString cin = employeModel->data(employeModel->index(i, 0)).toString();
+        // Format CIN with leading zeros
+        QVariant cinData = employeModel->data(employeModel->index(i, 0));
+        bool ok = false;
+        double cinDouble = cinData.toDouble(&ok);
+        QString cin = ok ? QString::number(static_cast<qulonglong>(cinDouble)).rightJustified(8, '0') : cinData.toString();
+        
         QString nom = employeModel->data(employeModel->index(i, 1)).toString();
         QString prenom = employeModel->data(employeModel->index(i, 2)).toString();
         QString poste = employeModel->data(employeModel->index(i, 3)).toString();
