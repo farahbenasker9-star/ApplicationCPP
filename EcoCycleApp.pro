@@ -1,6 +1,7 @@
 QT       += core gui widgets sql printsupport charts
 
 CONFIG += c++17
+QMAKE_CXXFLAGS += -std=c++17
 
 SOURCES += \
     client.cpp \

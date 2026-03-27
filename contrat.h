@@ -49,9 +49,21 @@ public:
 
     // CRUD
     bool ajouter();
-    QSqlQueryModel * afficher();
+    QSqlQueryModel * afficher() const;
+    QSqlQueryModel * rechercher(const QString &texte) const;
     bool supprimer(int id);
     bool modifier(int old_id);
+
+    // Export PDF
+    bool exporterPdf(const QString &filePath, QSqlQueryModel *model = nullptr) const;
+
+    // Méthodes de validation statiques
+    static bool validerDateDebut(const QDate &date_debut);
+    static bool validerDateFin(const QDate &date_fin, const QDate &date_debut);
+    static bool validerDates(const QDate &date_debut, const QDate &date_fin);
+    static bool validerID(int id);
+    static bool validerFloats(double obj_ach_ann, double tau_rem_acc);
+    static bool validerDescription(const QString &clause_penale);
 
 private:
     int     id_contrat;

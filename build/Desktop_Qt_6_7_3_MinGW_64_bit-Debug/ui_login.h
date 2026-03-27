@@ -36,6 +36,7 @@ public:
     QSpacerItem *verticalSpacer_2;
     QLineEdit *le_username;
     QLineEdit *le_password;
+    QPushButton *btn_forgot;
     QPushButton *btn_login;
     QSpacerItem *verticalSpacer;
     QLabel *label_2;
@@ -182,14 +183,19 @@ public:
 
         le_username = new QLineEdit(verticalLayoutWidget);
         le_username->setObjectName("le_username");
-        le_username->setEchoMode(QLineEdit::EchoMode::Password);
 
         verticalLayout->addWidget(le_username);
 
         le_password = new QLineEdit(verticalLayoutWidget);
         le_password->setObjectName("le_password");
+        le_password->setEchoMode(QLineEdit::EchoMode::Password);
 
         verticalLayout->addWidget(le_password);
+
+        btn_forgot = new QPushButton(verticalLayoutWidget);
+        btn_forgot->setObjectName("btn_forgot");
+
+        verticalLayout->addWidget(btn_forgot);
 
         btn_login = new QPushButton(verticalLayoutWidget);
         btn_login->setObjectName("btn_login");
@@ -210,7 +216,7 @@ public:
 
         retranslateUi(Login);
 
-        stackedWidget->setCurrentIndex(1);
+        stackedWidget->setCurrentIndex(0);
 
 
         QMetaObject::connectSlotsByName(Login);
@@ -222,6 +228,7 @@ public:
         label->setText(QString());
         le_username->setPlaceholderText(QCoreApplication::translate("Login", "Username", nullptr));
         le_password->setPlaceholderText(QCoreApplication::translate("Login", "Password", nullptr));
+        btn_forgot->setText(QCoreApplication::translate("Login", "                                                                                                                                                 Reset Password", nullptr));
         btn_login->setText(QCoreApplication::translate("Login", "Sign in", nullptr));
         label_2->setText(QCoreApplication::translate("Login", "<html><head/><body><p><span style=\" font-size:24pt; color:#ffffff;\">Welcome Back</span></p></body></html>", nullptr));
     } // retranslateUi

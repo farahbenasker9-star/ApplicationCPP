@@ -3,6 +3,18 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <QFileDialog>
+#include <QPrinter>
+#include <QTextDocument>
+#include <QDateTime>
+#include <QtCharts/QChartView>
+#include <QtCharts/QChart>
+#include <QtCharts/QPieSeries>
+#include <QtCharts/QPieSlice>
+#include <QtCharts/QBarSeries>
+#include <QtCharts/QBarSet>
+#include <QtCharts/QBarCategoryAxis>
+#include <QtCharts/QValueAxis>
 // ─── Constructeur ────────────────────────────────────────────────────────────
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -112,7 +124,128 @@ MainWindow::MainWindow(QWidget *parent)
     // Set default dates to today
     ui->date_debut->setDate(QDate::currentDate());
     ui->date_fin->setDate(QDate::currentDate());
+
+    // Assurer la recherche Contrat est utilisable
+    ui->recherche0_contrat->setReadOnly(false);
+    ui->recherche0_contrat->setEnabled(true);
+    ui->recherche0_contrat->setFocusPolicy(Qt::StrongFocus);
+    ui->recherche0_contrat->setPlaceholderText("🔍 Rechercher par ID contrat, Type, Statut...");
+    ui->recherche0_contrat->setClearButtonEnabled(true);
+    ui->recherche0_contrat->setStyleSheet(
+        "QLineEdit { background: #e8eceb; color: #3a3a3a; border: 1px solid #bfbfbf; border-radius: 8px; padding: 8px; } "
+        "QLineEdit:focus { background: #e8eceb; color: #222; border: 1px solid #6aa84f; }");
+
+    // Connexion explicite du signal de recherche (quand auto-connect échoue)
+    connect(ui->recherche0_contrat, &QLineEdit::textChanged,
+            this, &MainWindow::on_recherche0_contrat_textChanged);
+
+    // Installer un event filter pour focus action
+    ui->recherche0_contrat->installEventFilter(this);
+
+    // Initialiser les statistiques contrat
+    setupContratStatsUI();
+    refreshContratStats();
 }
+
+void MainWindow::setupContratStatsUI()
+{
+    QVBoxLayout *mainLayout = new QVBoxLayout(ui->gb_stats_contrat);
+    mainLayout->setSpacing(4);
+    mainLayout->setContentsMargins(2, 2, 2, 2);
+
+    // Limitez la taille verticale pour s'adapter à l'espace disponible
+    chartViewContratType = new QChartView();
+    chartViewContratType->setRenderHint(QPainter::Antialiasing);
+    chartViewContratType->setMinimumHeight(150);
+    chartViewContratType->setMinimumWidth(0);
+    chartViewContratType->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+    chartViewContratType->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    chartViewContratType->setContentsMargins(2, 2, 2, 2);
+
+    chartViewContratTypePie = new QChartView();
+    chartViewContratTypePie->setRenderHint(QPainter::Antialiasing);
+    chartViewContratTypePie->setMinimumHeight(150);
+    chartViewContratTypePie->setMinimumWidth(0);
+    chartViewContratTypePie->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+    chartViewContratTypePie->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    chartViewContratTypePie->setContentsMargins(2, 2, 2, 2);
+
+    mainLayout->addWidget(chartViewContratType);
+    mainLayout->addWidget(chartViewContratTypePie);
+
+    ui->gb_stats_contrat->setLayout(mainLayout);
+}
+
+void MainWindow::refreshContratStats()
+{
+    QSqlQuery query;
+
+    // 1 - Histogramme: Nombre contrats par type d'exclusivité
+    QChart *chartType = new QChart();
+    QBarSeries *barSeries = new QBarSeries();
+    QBarSet *setType = new QBarSet("Contrats");
+
+    QStringList typeCategories;
+    if (query.exec("SELECT TYPE_EXCLUSIVITE, COUNT(*) FROM CONTRAT GROUP BY TYPE_EXCLUSIVITE ORDER BY COUNT(*) DESC")) {
+        while (query.next()) {
+            QString type = query.value(0).toString();
+            if (type.isEmpty()) type = "Indéfini";
+            typeCategories << type;
+            *setType << query.value(1).toDouble();
+        }
+    }
+
+    barSeries->append(setType);
+    barSeries->setBarWidth(0.35); // barres plus fines, adaptation à l'espace
+    chartType->addSeries(barSeries);
+    chartType->setTitle("Contrats par Type d'exclusivité");
+    chartType->setAnimationOptions(QChart::SeriesAnimations);
+    chartType->setMargins(QMargins(4, 4, 4, 4));
+    chartType->legend()->setVisible(false);
+
+    QBarCategoryAxis *axisX = new QBarCategoryAxis();
+    axisX->append(typeCategories);
+    axisX->setLabelsAngle(-35);
+    axisX->setGridLineVisible(false);
+    axisX->setLabelsFont(QFont("Arial", 8));
+    chartType->addAxis(axisX, Qt::AlignBottom);
+    barSeries->attachAxis(axisX);
+
+    QValueAxis *axisY = new QValueAxis();
+    axisY->setLabelFormat("%i");
+    axisY->setTitleText("Nbre contrats");
+    axisY->setTickCount(4);
+    axisY->setLabelsFont(QFont("Arial", 8));
+    chartType->addAxis(axisY, Qt::AlignLeft);
+    barSeries->attachAxis(axisY);
+
+    chartViewContratType->setChart(chartType);
+
+    // 2 - Camembert : Part (%) par statut contrat
+    QChart *chartPie = new QChart();
+    QPieSeries *pieSeries = new QPieSeries();
+
+    if (query.exec("SELECT STATUT_CONTRAT, COUNT(*) FROM CONTRAT GROUP BY STATUT_CONTRAT")) {
+        while (query.next()) {
+            QString statut = query.value(0).toString();
+            if (statut.isEmpty()) statut = "Indéfini";
+            int count = query.value(1).toInt();
+            QPieSlice *slice = pieSeries->append(statut + " (" + QString::number(count) + ")", count);
+            slice->setLabelVisible(true);
+        }
+    }
+
+    pieSeries->setPieStartAngle(30); // orienter le début du camembert vers la gauche
+    pieSeries->setHoleSize(0.35); // camembert plus compact dans l'espace
+
+    chartPie->addSeries(pieSeries);
+    chartPie->setTitle("Répartition des statuts des contrats");
+    chartPie->legend()->setAlignment(Qt::AlignRight);
+    chartPie->setMargins(QMargins(4, 4, 4, 4));
+    chartPie->setAnimationOptions(QChart::SeriesAnimations);
+    chartViewContratTypePie->setChart(chartPie);
+}
+
 
 // ─── Destructeur ─────────────────────────────────────────────────────────────
 MainWindow::~MainWindow()
@@ -315,6 +448,7 @@ void MainWindow::navigateToPage(int pageIndex)
     if (pageIndex == 2) { // Page Contrat
         populateComboBoxes();
         ui->tab_contrat_2->setModel(Contrat().afficher());
+        refreshContratStats();
     }
     ui->stackedWidget->setCurrentIndex(pageIndex);
     if (pageIndex == 4) {
@@ -338,6 +472,11 @@ void MainWindow::on_ajouter_contrat_clicked()
     QString clause_penale    = ui->clause_penale->toPlainText().trimmed();
 
     // 2. Validation basique
+    if (!checkContratDates()) {
+        QMessageBox::warning(this, "Erreur", "La date de début doit être au plus aujourd'hui et la date de fin doit être après ou égale à la date de début.");
+        return;
+    }
+
     if (id_client == 0) {
         QMessageBox::warning(this, "Erreur", "Veuillez sélectionner ou saisir un Client ID.");
         return;
@@ -366,6 +505,30 @@ void MainWindow::on_ajouter_contrat_clicked()
         QSqlError err = QSqlDatabase::database().lastError();
         QMessageBox::critical(this, "Erreur lors de l'ajout", 
             "L'opération a échoué.\n\nDétails techniques :\n" + err.text());
+    }
+}
+
+void MainWindow::on_exporter_contrat_clicked()
+{
+    QString filePath = QFileDialog::getSaveFileName(this, "Exporter la liste des contrats", "Liste_Contrats.pdf", "PDF (*.pdf)");
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    Contrat c;
+    QSqlQueryModel *contractModel = c.afficher();
+    if (!contractModel) {
+        QMessageBox::critical(this, "Erreur", "Impossible de charger la liste des contrats pour l'export PDF.");
+        return;
+    }
+
+    bool ok = c.exporterPdf(filePath, contractModel);
+    delete contractModel;
+
+    if (ok) {
+        QMessageBox::information(this, "Succès", "La liste des contrats a été exportée en PDF avec succès.");
+    } else {
+        QMessageBox::critical(this, "Erreur", "Échec de l'export PDF pour les contrats.");
     }
 }
 
@@ -470,6 +633,11 @@ void MainWindow::on_modifier_contrat_clicked()
         return;
     }
 
+    if (!checkContratDates()) {
+        QMessageBox::warning(this, "Erreur", "La date de début doit être au plus aujourd'hui et la date de fin doit être après ou égale à la date de début.");
+        return;
+    }
+
     if (id_client == 0) {
         QMessageBox::warning(this, "Erreur", "Veuillez sélectionner un Client.");
         return;
@@ -523,7 +691,7 @@ void MainWindow::validateID() {
     } else {
         bool idOk;
         int id = text.toInt(&idOk);
-        setWidgetStyle(ui->ID_Contrat, idOk && id > 0);
+        setWidgetStyle(ui->ID_Contrat, idOk && Contrat::validerID(id));
     }
     
     if (ui->combo_ID_Client->currentIndex() <= 0) { // "Sélectionner..." ou vide
@@ -533,26 +701,37 @@ void MainWindow::validateID() {
     }
 }
 
-void MainWindow::validateDates() {
-    QDate today = QDate::currentDate();
+bool MainWindow::checkContratDates() {
     QDate debut = ui->date_debut->date();
     QDate fin = ui->date_fin->date();
 
-    setWidgetStyle(ui->date_debut, debut >= today);
-    setWidgetStyle(ui->date_fin, fin >= today && fin >= debut);
+    bool debutOk = Contrat::validerDateDebut(debut);
+    bool finOk = Contrat::validerDateFin(fin, debut);
+
+    setWidgetStyle(ui->date_debut, debutOk);
+    setWidgetStyle(ui->date_fin, finOk);
+
+    return debutOk && finOk;
+}
+
+void MainWindow::validateDates() {
+    checkContratDates();
 }
 
 void MainWindow::validateFloats() {
-    if (ui->obj_ach_ann->value() == 0.0) {
+    double obj = ui->obj_ach_ann->value();
+    double tau = ui->tau_rem_acc->value();
+
+    if (obj == 0.0) {
         ui->obj_ach_ann->setStyleSheet("");
     } else {
-        setWidgetStyle(ui->obj_ach_ann, ui->obj_ach_ann->value() > 0);
+        setWidgetStyle(ui->obj_ach_ann, Contrat::validerFloats(obj, tau));
     }
 
-    if (ui->tau_rem_acc->value() == 0.0) {
+    if (tau == 0.0) {
         ui->tau_rem_acc->setStyleSheet("");
     } else {
-        setWidgetStyle(ui->tau_rem_acc, ui->tau_rem_acc->value() >= 0 && ui->tau_rem_acc->value() <= 100);
+        setWidgetStyle(ui->tau_rem_acc, Contrat::validerFloats(obj, tau));
     }
 }
 
@@ -561,8 +740,27 @@ void MainWindow::validateDescription() {
     if (text.isEmpty()) {
         ui->clause_penale->setStyleSheet("");
     } else {
-        setWidgetStyle(ui->clause_penale, text.length() >= 5);
+        setWidgetStyle(ui->clause_penale, Contrat::validerDescription(text));
     }
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
+    if (watched == ui->recherche0_contrat) {
+        if (event->type() == QEvent::FocusIn) {
+            // Réinitialiser le texte si le placeholder était affiché
+            if (ui->recherche0_contrat->text().isEmpty()) {
+                ui->recherche0_contrat->clear();
+            }
+            ui->recherche0_contrat->setStyleSheet("QLineEdit { background: white; color: black; border: 1px solid #4CAF50; border-radius: 8px; padding: 5px; } "
+                                                 "QLineEdit:focus { background: white; color: black; }");
+        } else if (event->type() == QEvent::FocusOut) {
+            if (ui->recherche0_contrat->text().isEmpty()) {
+                ui->recherche0_contrat->setStyleSheet("QLineEdit { background: #f5f5f5; color: #555; border: 1px solid #c8c8c8; border-radius: 8px; padding: 5px; } "
+                                                     "QLineEdit:focus { background: white; color: black; border: 1px solid #4CAF50; }");
+            }
+        }
+    }
+    return QMainWindow::eventFilter(watched, event);
 }
 
 void MainWindow::populateComboBoxes() {
@@ -587,16 +785,8 @@ void MainWindow::populateComboBoxes() {
     }
 }
 
-void MainWindow::on_recherche0_contrat_textChanged(const QString &arg1)
+void MainWindow::setupContratModelHeaders(QSqlQueryModel *model)
 {
-    QSqlQueryModel *model = new QSqlQueryModel();
-    QString queryStr = "SELECT * FROM CONTRAT WHERE "
-                       "CAST(ID_CONTRAT AS VARCHAR2(50)) LIKE '%" + arg1 + "%' OR "
-                       "UPPER(TYPE_EXCLUSIVITE) LIKE UPPER('%" + arg1 + "%') OR "
-                       "UPPER(PRODUITS_CONCERNES) LIKE UPPER('%" + arg1 + "%')";
-    
-    model->setQuery(queryStr);
-    
     model->setHeaderData(0, Qt::Horizontal, QObject::tr("ID"));
     model->setHeaderData(1, Qt::Horizontal, QObject::tr("ID Client"));
     model->setHeaderData(2, Qt::Horizontal, QObject::tr("CIN Employé"));
@@ -608,7 +798,39 @@ void MainWindow::on_recherche0_contrat_textChanged(const QString &arg1)
     model->setHeaderData(8, Qt::Horizontal, QObject::tr("Taux Rem."));
     model->setHeaderData(9, Qt::Horizontal, QObject::tr("Statut"));
     model->setHeaderData(10, Qt::Horizontal, QObject::tr("Clause Pénale"));
-    
+}
+
+void MainWindow::on_recherche0_contrat_textChanged(const QString &arg1)
+{
+    Contrat c;
+    QSqlQueryModel *model = c.rechercher(arg1);
+    setupContratModelHeaders(model);
+    ui->tab_contrat_2->setModel(model);
+}
+
+void MainWindow::on_tri2_contrat_clicked()
+{
+    QString critere = ui->tri_contrat->currentText();
+    QString orderBy;
+    if (critere == "ID contrat") {
+        orderBy = "ID_CONTRAT";
+    } else if (critere == "Type exclusivité") {
+        orderBy = "TYPE_EXCLUSIVITE";
+    } else if (critere == "Statut contrat") {
+        orderBy = "STATUT_CONTRAT";
+    } else {
+        orderBy = "ID_CONTRAT";
+    }
+
+    QSqlQueryModel *model = new QSqlQueryModel();
+    QString sql = QString(
+        "SELECT ID_CONTRAT, ID_CLIENT, CIN, TYPE_EXCLUSIVITE, PRODUITS_CONCERNES, "
+        "DATE_DEBUT, DATE_FIN, OBJECTIF_ACHAT_ANNUEL, TAUX_REMISE_ACCORDE, STATUT_CONTRAT, CLAUSE_PENALE "
+        "FROM CONTRAT ORDER BY %1"
+    ).arg(orderBy);
+
+    model->setQuery(sql);
+    setupContratModelHeaders(model);
     ui->tab_contrat_2->setModel(model);
 }
 

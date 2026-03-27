@@ -16,6 +16,15 @@
 #include <QMessageBox>
 #include <QDebug>
 
+#include <QtCharts/QChartView>
+#include <QtCharts/QChart>
+#include <QtCharts/QPieSeries>
+#include <QtCharts/QPieSlice>
+#include <QtCharts/QBarSeries>
+#include <QtCharts/QBarSet>
+#include <QtCharts/QBarCategoryAxis>
+#include <QtCharts/QValueAxis>
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -60,6 +69,8 @@ private slots:
     void on_supprimer_contrat_clicked();
     void on_modifier_contrat_clicked();
     void on_recherche0_contrat_textChanged(const QString &arg1);
+    void on_tri2_contrat_clicked();
+    void on_exporter_contrat_clicked();
 
     // Validation slots Contrat
     void validateID();
@@ -87,11 +98,23 @@ private:
     void setWidgetStyle(QWidget* widget, bool isValid);
     void resetValidationStyles();
     void populateComboBoxes();
+    bool checkContratDates();
+    void setupContratModelHeaders(QSqlQueryModel *model);
+
+    // Stats Contrat
+    void setupContratStatsUI();
+    void refreshContratStats();
+
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
     // Les gestionnaires de pages
     Employe *employe;
     Client  *client;
     Equipement *equipement;
+
+    // Stats view for contrats
+    QChartView *chartViewContratType;
+    QChartView *chartViewContratTypePie;
 
     bool controleSaisie();
 

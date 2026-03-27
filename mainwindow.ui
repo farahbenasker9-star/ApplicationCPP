@@ -383,7 +383,7 @@ QWidget#centralwidget {
         </rect>
        </property>
        <property name="currentIndex">
-        <number>6</number>
+        <number>2</number>
        </property>
        <widget class="QWidget" name="page_dashboard">
         <widget class="QLabel" name="label_logo_dash">
@@ -887,17 +887,17 @@ QPushButton#btn_supprimer:hover { background-color: #C62828; }
          </property>
          <item>
           <property name="text">
-           <string>ID</string>
+           <string>ID contrat</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>Type contrat</string>
+           <string>Type exclusivité</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>Type mati├¿re</string>
+           <string>Statut contrat</string>
           </property>
          </item>
         </widget>
@@ -1365,42 +1365,6 @@ QGroupBox::title {
             </property>
            </widget>
           </item>
-         </layout>
-        </widget>
-        <widget class="QFrame" name="recherche_contrat">
-         <property name="geometry">
-          <rect>
-           <x>310</x>
-           <y>60</y>
-           <width>381</width>
-           <height>40</height>
-          </rect>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>35</height>
-          </size>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::Shape::NoFrame</enum>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_recherche">
-          <property name="spacing">
-           <number>4</number>
-          </property>
-          <property name="leftMargin">
-           <number>4</number>
-          </property>
-          <property name="topMargin">
-           <number>2</number>
-          </property>
-          <property name="rightMargin">
-           <number>4</number>
-          </property>
-          <property name="bottomMargin">
-           <number>2</number>
-          </property>
          </layout>
         </widget>
         <widget class="QPushButton" name="exporter_contrat">
