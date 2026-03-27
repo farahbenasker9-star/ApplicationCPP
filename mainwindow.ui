@@ -383,7 +383,7 @@ QWidget#centralwidget {
         </rect>
        </property>
        <property name="currentIndex">
-        <number>4</number>
+        <number>5</number>
        </property>
        <widget class="QWidget" name="page_dashboard">
         <widget class="QLabel" name="label_logo_dash">
@@ -1913,8 +1913,8 @@ QGroupBox::title {
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>357</width>
-               <height>492</height>
+               <width>100</width>
+               <height>30</height>
               </rect>
              </property>
              <property name="styleSheet">
