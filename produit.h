@@ -21,6 +21,7 @@ public:
     QSqlQueryModel* afficher();
     bool supprimer(int id);
     bool modifier();
+    bool modifier(int old_id); // On ajoute old_id
 
     // Recherche et Tri
     QSqlQueryModel* chercher(QString valeur, QString critere);

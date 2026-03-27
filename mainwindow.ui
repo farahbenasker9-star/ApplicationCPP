@@ -383,7 +383,7 @@ QWidget#centralwidget {
         </rect>
        </property>
        <property name="currentIndex">
-        <number>2</number>
+        <number>4</number>
        </property>
        <widget class="QWidget" name="page_dashboard">
         <widget class="QLabel" name="label_logo_dash">
@@ -2549,10 +2549,25 @@ font: 700 9pt &quot;Segoe UI&quot;;</string>
            </widget>
           </item>
           <item>
-           <widget class="QComboBox" name="cb_type">
+           <widget class="QComboBox" name="cb_type_2">
             <property name="styleSheet">
              <string notr="true">font: 9pt &quot;Segoe UI&quot;;</string>
             </property>
+            <item>
+             <property name="text">
+              <string>Verre</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Carton</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Cuivre</string>
+             </property>
+            </item>
             <item>
              <property name="text">
               <string>Plastique</string>
@@ -2560,7 +2575,7 @@ font: 700 9pt &quot;Segoe UI&quot;;</string>
             </item>
             <item>
              <property name="text">
-              <string>Verre</string>
+              <string>Papier</string>
              </property>
             </item>
             <item>
@@ -2570,7 +2585,27 @@ font: 700 9pt &quot;Segoe UI&quot;;</string>
             </item>
             <item>
              <property name="text">
-              <string>Papier</string>
+              <string>acier</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Bois</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Textile</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Pneumatiques</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Déchets Électroniques</string>
              </property>
             </item>
            </widget>
@@ -2654,7 +2689,7 @@ font: 700 9pt &quot;Segoe UI&quot;;</string>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="le_id_client_2"/>
+           <widget class="QComboBox" name="cb_id_client"/>
           </item>
           <item>
            <widget class="QLabel" name="label_29">
@@ -2701,7 +2736,7 @@ background-color: rgb(200, 221, 211); border-radius: 15px;</string>
           </attribute>
          </widget>
         </widget>
-        <widget class="QTableView" name="tab_stock">
+        <widget class="QTableView" name="tab_produit">
          <property name="geometry">
           <rect>
            <x>270</x>
@@ -2876,7 +2911,7 @@ background-color: rgb(254, 164, 0);</string>
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:14pt; color:#ffffff;&quot;&gt;Gestion De Produits&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="btn_ajouter_4">
+        <widget class="QPushButton" name="btn_ajouter_produit">
          <property name="geometry">
           <rect>
            <x>270</x>
@@ -2892,7 +2927,7 @@ background-color: rgb(254, 164, 0);</string>
           <string>AJOUTER</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="btn_modifier_4">
+        <widget class="QPushButton" name="btn_modifier_produit">
          <property name="geometry">
           <rect>
            <x>400</x>
@@ -2909,7 +2944,7 @@ background-color: rgb(30, 136, 229);</string>
           <string>MODIFIER</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="btn_supprimer_5">
+        <widget class="QPushButton" name="btn_supprimer_produit">
          <property name="geometry">
           <rect>
            <x>530</x>
@@ -4713,7 +4748,7 @@ background-color: rgb(67, 160, 71);</string>
      <x>0</x>
      <y>0</y>
      <width>1587</width>
-     <height>25</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>
