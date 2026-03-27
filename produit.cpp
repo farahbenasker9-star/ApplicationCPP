@@ -52,7 +52,7 @@ bool Produit::supprimer(int id) {
     return query.exec();
 }
 
-bool Produit::modifier() {
+/*bool Produit::modifier() {
     QSqlQuery query;
 
     // 1. On prépare la requête SQL de mise à jour
@@ -88,5 +88,36 @@ bool Produit::modifier() {
     }
 
     // 4. Exécution de la requête
+    return query.exec();
+}*/
+bool Produit::modifier(int old_id) {
+    QSqlQuery query;
+    query.prepare("UPDATE PRODUIT SET ID_PRODUIT=:new_id, ID_CLIENT=:idc, TYPE_PRODUIT=:type, "
+                  "POIDS_KG=:poids, DATE_DE_CREATION=:dc, DATE_DE_VENTE=:dv, STATUT=:statut, PRIX_VENTE_ESTIME=:prix "
+                  "WHERE ID_PRODUIT=:old_id");
+
+    query.bindValue(":new_id", id_produit);
+    query.bindValue(":old_id", old_id);
+    query.bindValue(":type", type_produit);
+    query.bindValue(":poids", poids);
+    query.bindValue(":dc", date_creation);
+    query.bindValue(":statut", statut);
+    query.bindValue(":prix", prix);
+
+    QString st = statut.trimmed();
+
+    if (st == "Vendu") {
+        query.bindValue(":dv", date_vente);
+        query.bindValue(":idc", id_client);
+    }
+    else if (st == "Réservé" || st == "Reservé") {
+        query.bindValue(":dv", QVariant(QMetaType::fromType<QDate>())); // NULL
+        query.bindValue(":idc", id_client);
+    }
+    else { // Disponible
+        query.bindValue(":dv", QVariant(QMetaType::fromType<QDate>())); // NULL
+        query.bindValue(":idc", QVariant(QMetaType::fromType<int>()));   // NULL (très important !)
+    }
+
     return query.exec();
 }

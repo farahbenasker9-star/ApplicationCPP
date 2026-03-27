@@ -53,12 +53,13 @@ private slots:
     void on_btn_tri_poubelle_clicked();
     void on_le_recherche_poubelle_textChanged(const QString &arg1);
 
-    // CRUD Produit / Stock
-    void on_btn_ajouter_4_clicked();
-    void on_btn_supprimer_5_clicked();
-    void on_btn_modifier_4_clicked();
+    // === MODULE PRODUIT ===
+    void on_btn_ajouter_produit_clicked();
+    void on_btn_supprimer_produit_clicked();
+    void on_btn_modifier_produit_clicked();
     void on_cb_statut_currentIndexChanged(int index);
-    void on_tab_stock_clicked(const QModelIndex &index);
+    void on_tab_produit_clicked(const QModelIndex &index);
+    void viderFormulaire();
 
 private:
     Ui::MainWindow *ui;
@@ -75,6 +76,9 @@ private:
     Client         *client;
     Equipement     *equipement;
     ContratManager *contrat;
+    bool controleSaisieProduit();
+    void chargerIdsClients();
+    int id_a_modifier = -1;
 };
 
 #endif // MAINWINDOW_H
