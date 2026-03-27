@@ -15,6 +15,10 @@
 #include <QSqlError>
 #include <QMessageBox>
 #include <QDebug>
+#include <QModelIndex>
+#include <QEvent>
+
+#include <QtCharts/QChartView>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -27,6 +31,9 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
     // Navigation
@@ -61,6 +68,20 @@ private slots:
     void on_tab_produit_clicked(const QModelIndex &index);
     void viderFormulaire();
 
+    // === MODULE CONTRAT ===
+    void contrat_onAjouterClicked();
+    void contrat_onModifierClicked();
+    void contrat_onSupprimerClicked();
+    void contrat_onExporterClicked();
+    void contrat_onTabClicked(const QModelIndex &index);
+    void contrat_onTabDoubleClicked(const QModelIndex &index);
+    void contrat_onRechercheTextChanged(const QString &arg1);
+    void contrat_onTriClicked();
+    void contrat_validateID();
+    void contrat_validateDates();
+    void contrat_validateFloats();
+    void contrat_validateDescription();
+
 private:
     Ui::MainWindow *ui;
     Poubelle tmp_poubelle;
@@ -69,16 +90,30 @@ private:
     void navigateToPage(int pageIndex);
     void clearFormPoubelle();
     bool validerFormulairePoubelle(bool isUpdate);
-    bool controleSaisie();
+
 
     // Gestionnaires de pages (même pattern partout)
-    Employe        *employe;
-    Client         *client;
-    Equipement     *equipement;
-    ContratManager *contrat;
+    Employe    *employe;
+    Client     *client;
+    Equipement *equipement;
+
+    // Produit
     bool controleSaisieProduit();
     void chargerIdsClients();
     int id_a_modifier = -1;
+
+    // === CONTRAT ===
+    int contrat_currentSelectedId = -1;
+    QChartView *chartViewContratType    = nullptr;
+    QChartView *chartViewContratTypePie = nullptr;
+
+    void contrat_setupStatsUI();
+    void contrat_refreshStats();
+    void contrat_populateComboBoxes();
+    void contrat_setupModelHeaders(QSqlQueryModel *m);
+    void contrat_setWidgetStyle(QWidget *widget, bool isValid);
+    void contrat_resetValidationStyles();
+    bool contrat_checkDates();
 };
 
 #endif // MAINWINDOW_H
