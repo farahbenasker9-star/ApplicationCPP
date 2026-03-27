@@ -7,7 +7,18 @@
 #include <QSqlError>
 #include <QDebug>
 #include <QSqlQueryModel>
+#include <QObject>
+#include <functional>
+#include <QModelIndex>
+#include <QEvent>
+#include <QWidget>
 
+#include <QtCharts/QChartView>
+
+// Forward-declare the generated UI class to avoid tight coupling in header
+namespace Ui { class MainWindow; }
+
+// ─── Classe modèle / DAO ─────────────────────────────────────────────────────
 class Contrat
 {
 public:
@@ -28,7 +39,7 @@ public:
     QString getType_exclusivite() const      { return type_exclusivite; }
     QString getProduits_concernes() const    { return produits_concernes; }
     QDate getDate_debut() const              { return date_debut; }
-    QDate getDate_fin() const                { return date_fin; }
+    QDate getDate_fin() const               { return date_fin; }
     double getObjectif_achat_annuel() const  { return objectif_achat_annuel; }
     double getTaux_remise_accorde() const    { return taux_remise_accorde; }
     QString getStatut_contrat() const        { return statut_contrat; }
@@ -77,6 +88,55 @@ private:
     double  taux_remise_accorde;
     QString statut_contrat;
     QString clause_penale;
+};
+
+// ─── Gestionnaire UI de la page Contrat (même pattern qu'Employe) ────────────
+// Note : pas de Q_OBJECT — Qt 6 function-pointer connects ne requièrent pas MOC
+class ContratManager : public QObject
+{
+public:
+    // Prend un pointeur vers l'UI de MainWindow pour interagir avec les widgets
+    explicit ContratManager(Ui::MainWindow *ui, QObject *parent = nullptr);
+
+    // Appelé depuis MainWindow::navigateToPage(2) pour rafraîchir la page
+    void populateComboBoxes();
+    void refreshStats();
+
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
+    // CRUD
+    void onAjouterClicked();
+    void onModifierClicked();
+    void onSupprimerClicked();
+    void onExporterClicked();
+
+    // Tableau
+    void onTabClicked(const QModelIndex &index);
+    void onTabDoubleClicked(const QModelIndex &index);
+
+    // Recherche & Tri
+    void onRechercheTextChanged(const QString &arg1);
+    void onTriClicked();
+
+    // Validation en temps réel
+    void validateID();
+    void validateDates();
+    void validateFloats();
+    void validateDescription();
+
+private:
+    Ui::MainWindow *ui;
+    int currentSelectedId = -1;
+
+    void setupStatsUI();
+    void setupModelHeaders(QSqlQueryModel *model);
+    void setWidgetStyle(QWidget *widget, bool isValid);
+    void resetValidationStyles();
+    bool checkContratDates();
+
+    // Vues des graphiques statistiques
+    QChartView *chartViewContratType    = nullptr;
+    QChartView *chartViewContratTypePie = nullptr;
 };
 
 #endif // CONTRAT_H

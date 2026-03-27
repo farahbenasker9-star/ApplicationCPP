@@ -16,15 +16,6 @@
 #include <QMessageBox>
 #include <QDebug>
 
-#include <QtCharts/QChartView>
-#include <QtCharts/QChart>
-#include <QtCharts/QPieSeries>
-#include <QtCharts/QPieSlice>
-#include <QtCharts/QBarSeries>
-#include <QtCharts/QBarSet>
-#include <QtCharts/QBarCategoryAxis>
-#include <QtCharts/QValueAxis>
-
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -62,23 +53,7 @@ private slots:
     void on_btn_tri_poubelle_clicked();
     void on_le_recherche_poubelle_textChanged(const QString &arg1);
 
-    // CRUD Contrat
-    void on_ajouter_contrat_clicked();
-    void on_tab_contrat_2_clicked(const QModelIndex &index);
-    void on_tab_contrat_2_doubleClicked(const QModelIndex &index);
-    void on_supprimer_contrat_clicked();
-    void on_modifier_contrat_clicked();
-    void on_recherche0_contrat_textChanged(const QString &arg1);
-    void on_tri2_contrat_clicked();
-    void on_exporter_contrat_clicked();
-
-    // Validation slots Contrat
-    void validateID();
-    void validateDates();
-    void validateFloats();
-    void validateDescription();
-
-    //CRUD PRODUIT
+    // CRUD Produit / Stock
     void on_btn_ajouter_4_clicked();
     void on_btn_supprimer_5_clicked();
     void on_btn_modifier_4_clicked();
@@ -89,35 +64,17 @@ private:
     Ui::MainWindow *ui;
     Poubelle tmp_poubelle;
     QSqlQueryModel *model;
-    int currentSelectedId = -1; // Track selected contract ID
+
     void navigateToPage(int pageIndex);
     void clearFormPoubelle();
     bool validerFormulairePoubelle(bool isUpdate);
-
-    // Style & Utils Contrat
-    void setWidgetStyle(QWidget* widget, bool isValid);
-    void resetValidationStyles();
-    void populateComboBoxes();
-    bool checkContratDates();
-    void setupContratModelHeaders(QSqlQueryModel *model);
-
-    // Stats Contrat
-    void setupContratStatsUI();
-    void refreshContratStats();
-
-    bool eventFilter(QObject *watched, QEvent *event) override;
-
-    // Les gestionnaires de pages
-    Employe *employe;
-    Client  *client;
-    Equipement *equipement;
-
-    // Stats view for contrats
-    QChartView *chartViewContratType;
-    QChartView *chartViewContratTypePie;
-
     bool controleSaisie();
 
+    // Gestionnaires de pages (même pattern partout)
+    Employe        *employe;
+    Client         *client;
+    Equipement     *equipement;
+    ContratManager *contrat;
 };
 
 #endif // MAINWINDOW_H
