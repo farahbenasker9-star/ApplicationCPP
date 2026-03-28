@@ -100,9 +100,20 @@ private slots:
     void equipement_validateStatut();
     void equipement_validateDateSuivMaint();
 
+    // ─── Module Employe ───────────────────────────────────────────────────────
+    void employe_onAjouterClicked();
+    void employe_onModifierClicked();
+    void employe_onSupprimerClicked();
+    void employe_onTabClicked(const QModelIndex &index);
+    void employe_onRechercheTextChanged(const QString &arg1);
+    void employe_onTriClicked();
+    void employe_onPdfClicked();
+    void employe_onRefreshClicked();
+
 private:
     Ui::MainWindow *ui;
     Poubelle tmp_poubelle;
+    Employe tmp_employe;
     QSqlQueryModel *model;
 
     void navigateToPage(int pageIndex);
@@ -110,7 +121,6 @@ private:
     bool validerFormulairePoubelle(bool isUpdate);
 
     // ─── Gestionnaires de pages ───────────────────────────────────────────────
-    Employe *employe;
     Client  *client;
 
     // ─── Module Produit ───────────────────────────────────────────────────────
@@ -157,6 +167,15 @@ private:
 
     void equipement_setupStatsUI();
     void equipement_refreshStats();
+
+    // ─── Module Employe ───────────────────────────────────────────────────────
+    void employe_setupStatsUI();
+    void employe_refreshStats();
+    void employe_clearForm();
+
+    QChartView *employe_chartViewGenre   = nullptr;
+    QChartView *employe_chartViewPoste   = nullptr;
+    QChartView *employe_chartViewSalaire = nullptr;
 };
 
 #endif // MAINWINDOW_H

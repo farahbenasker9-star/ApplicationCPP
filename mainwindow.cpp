@@ -30,6 +30,24 @@
 #include <QtCharts/QBarSet>
 #include <QtCharts/QBarCategoryAxis>
 #include <QtCharts/QValueAxis>
+#include <QStyledItemDelegate>
+
+// ==================== CUSTOM DELEGATE FOR CIN ====================
+class CinDelegate : public QStyledItemDelegate
+{
+public:
+    CinDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent) {}
+
+    QString displayText(const QVariant &value, const QLocale &locale) const override
+    {
+        bool ok = false;
+        double cinDouble = value.toDouble(&ok);
+        if (ok) {
+            return QString::number(static_cast<qulonglong>(cinDouble)).rightJustified(8, '0');
+        }
+        return QStyledItemDelegate::displayText(value, locale);
+    }
+};
 
 // ─── Constructeur ────────────────────────────────────────────────────────────
 MainWindow::MainWindow(QWidget *parent)
@@ -50,8 +68,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->navbar_container->hide();
     
     // Initialisation des gestionnaires de modules
-    employe = new Employe(ui, this);
-
     // ==================== MODULE EQUIPEMENT ====================
     // ── 1. Créer les labels ✕ d'erreur dans infoScrollContent ────────────────
     //    Géométries depuis le .ui (x, y, w, h) :
@@ -130,6 +146,24 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::equipement_validateDateSuivMaint);
     equipement_setupStatsUI();
     equipement_refreshStats();
+
+    // ==================== MODULE EMPLOYE ====================
+    ui->tab_employes->setModel(tmp_employe.afficher());
+    ui->tab_employes->setItemDelegateForColumn(0, new CinDelegate(this));
+    ui->tab_employes->setAlternatingRowColors(true);
+    ui->tab_employes->resizeColumnsToContents();
+
+    connect(ui->tab_employes,   &QTableView::clicked,  this, &MainWindow::employe_onTabClicked);
+    connect(ui->btn_ajouter,    &QPushButton::clicked, this, &MainWindow::employe_onAjouterClicked);
+    connect(ui->btn_modifier,   &QPushButton::clicked, this, &MainWindow::employe_onModifierClicked);
+    connect(ui->btn_supprimer,  &QPushButton::clicked, this, &MainWindow::employe_onSupprimerClicked);
+    connect(ui->le_recherche,   &QLineEdit::textChanged, this, &MainWindow::employe_onRechercheTextChanged);
+    connect(ui->btn_tri,        &QPushButton::clicked, this, &MainWindow::employe_onTriClicked);
+    connect(ui->btn_pdf,        &QPushButton::clicked, this, &MainWindow::employe_onPdfClicked);
+    connect(ui->btn_refresh,    &QPushButton::clicked, this, &MainWindow::employe_onRefreshClicked);
+
+    employe_setupStatsUI();
+    employe_refreshStats();
 
     // ==================== DASHBOARD CONNECTIONS ====================
     connect(ui->btn_dash_employe,   &QPushButton::clicked, this, [this]() { navigateToPage(6); ui->btn_nav_employes->setChecked(true); });
@@ -1787,6 +1821,203 @@ void MainWindow::equipement_refreshStats()
     chartPie->legend()->setFont(QFont("Arial", 7));
 
     chartViewEquipStatut->setChart(chartPie);
+}
+
+// =========================================================
+// ===                  MODULE EMPLOYE                   ===
+// =========================================================
+
+void MainWindow::employe_clearForm()
+{
+    ui->le_cin->clear();
+    ui->le_nom->clear();
+    ui->le_prenom->clear();
+    ui->cb_poste->setCurrentIndex(0);
+    ui->le_salaire->clear();
+    ui->de_embauche->setDate(QDate::currentDate());
+    ui->le_badge->clear();
+    ui->le_age->clear();
+    ui->cb_genre->setCurrentIndex(0);
+}
+
+void MainWindow::employe_onAjouterClicked()
+{
+    QString cin      = ui->le_cin->text();
+    QString nom      = ui->le_nom->text();
+    QString prenom   = ui->le_prenom->text();
+    QString poste    = ui->cb_poste->currentText();
+    double  salaire  = ui->le_salaire->text().replace(",", ".").toDouble();
+    QDate   dateEmb  = ui->de_embauche->date();
+    QString idBadge  = ui->le_badge->text();
+    int     age      = ui->le_age->text().toInt();
+    QString genre    = ui->cb_genre->currentText();
+
+    QString errorMessage;
+    if (!Employe::validerFormulaire(cin, nom, prenom, idBadge, salaire, errorMessage)) {
+        QMessageBox::warning(this, "Erreur de saisie", errorMessage);
+        return;
+    }
+
+    if (tmp_employe.ajouter(cin, nom, prenom, poste, salaire, dateEmb, idBadge, age, genre)) {
+        QMessageBox::information(this, "Succès", "Employé ajouté avec succès.");
+        ui->tab_employes->setModel(tmp_employe.afficher());
+        employe_clearForm();
+        employe_refreshStats();
+    } else {
+        QMessageBox::critical(this, "Erreur", "Erreur lors de l'ajout.");
+    }
+}
+
+void MainWindow::employe_onModifierClicked()
+{
+    QString cin      = ui->le_cin->text();
+    QString nom      = ui->le_nom->text();
+    QString prenom   = ui->le_prenom->text();
+    QString poste    = ui->cb_poste->currentText();
+    double  salaire  = ui->le_salaire->text().replace(",", ".").toDouble();
+    QDate   dateEmb  = ui->de_embauche->date();
+    QString idBadge  = ui->le_badge->text();
+    int     age      = ui->le_age->text().toInt();
+    QString genre    = ui->cb_genre->currentText();
+
+    QString errorMessage;
+    if (!Employe::validerFormulaire(cin, nom, prenom, idBadge, salaire, errorMessage)) {
+        QMessageBox::warning(this, "Erreur de saisie", errorMessage);
+        return;
+    }
+
+    if (tmp_employe.modifier(cin, nom, prenom, poste, salaire, dateEmb, idBadge, age, genre)) {
+        QMessageBox::information(this, "Succès", "Employé modifié avec succès.");
+        ui->tab_employes->setModel(tmp_employe.afficher());
+        employe_clearForm();
+        employe_refreshStats();
+    } else {
+        QMessageBox::critical(this, "Erreur", "Erreur lors de la modification.");
+    }
+}
+
+void MainWindow::employe_onSupprimerClicked()
+{
+    QString cin = ui->le_cin->text();
+
+    if (cin.isEmpty()) {
+        QMessageBox::warning(this, "Avertissement", "Veuillez sélectionner un employé à supprimer.");
+        return;
+    }
+
+    QString erreurInfo;
+    if (QMessageBox::question(this, "Confirmation", "Voulez-vous vraiment supprimer cet employé ?", QMessageBox::Yes|QMessageBox::No) != QMessageBox::Yes) {
+        return;
+    }
+
+    if (tmp_employe.supprimer(cin, erreurInfo)) {
+        QMessageBox::information(this, "Succès", "Employé supprimé avec succès.");
+        employe_clearForm();
+        ui->tab_employes->setModel(tmp_employe.afficher());
+        employe_refreshStats();
+    } else {
+        QMessageBox::critical(this, "Erreur", "Erreur lors de la suppression.\n" + erreurInfo);
+    }
+}
+
+void MainWindow::employe_onTabClicked(const QModelIndex &index)
+{
+    int row = index.row();
+    QAbstractItemModel *model = ui->tab_employes->model();
+    
+    QVariant cinData = model->data(model->index(row, 0));
+    bool ok = false;
+    double cinDouble = cinData.toDouble(&ok);
+    QString cinStr = ok ? QString::number(static_cast<qulonglong>(cinDouble)).rightJustified(8, '0') : cinData.toString();
+    
+    ui->le_cin->setText(cinStr);
+    ui->le_nom->setText(model->data(model->index(row, 1)).toString());
+    ui->le_prenom->setText(model->data(model->index(row, 2)).toString());
+    ui->cb_poste->setCurrentText(model->data(model->index(row, 3)).toString());
+    ui->le_salaire->setText(model->data(model->index(row, 4)).toString());
+    ui->de_embauche->setDate(model->data(model->index(row, 5)).toDate());
+    ui->le_badge->setText(model->data(model->index(row, 6)).toString());
+    ui->le_age->setText(model->data(model->index(row, 7)).toString());
+    ui->cb_genre->setCurrentText(model->data(model->index(row, 8)).toString());
+}
+
+void MainWindow::employe_onRechercheTextChanged(const QString &arg1)
+{
+    ui->tab_employes->setModel(tmp_employe.rechercher(arg1));
+}
+
+void MainWindow::employe_onTriClicked()
+{
+    QString currentSort = ui->comboBox->currentText();
+    ui->tab_employes->setModel(tmp_employe.trier(currentSort));
+}
+
+void MainWindow::employe_onPdfClicked()
+{
+    QString filePath = QFileDialog::getSaveFileName(this, "Exporter la liste", "Liste_Employes.pdf", "PDF (*.pdf)");
+    if (filePath.isEmpty()) return;
+
+    QSqlTableModel* m = tmp_employe.afficher();
+    if (tmp_employe.exporterPDF(filePath, m)) {
+        QMessageBox::information(this, "Succès", "La liste des employés a été exportée en PDF avec succès.");
+    } else {
+        QMessageBox::critical(this, "Erreur", "Echec de l'export PDF.");
+    }
+    delete m;
+}
+
+void MainWindow::employe_onRefreshClicked()
+{
+    ui->tab_employes->setModel(tmp_employe.afficher());
+    employe_refreshStats();
+}
+
+void MainWindow::employe_setupStatsUI()
+{
+    QVBoxLayout *mainLayout = new QVBoxLayout(ui->gb_stats);
+    mainLayout->setSpacing(20);
+    mainLayout->setContentsMargins(20, 20, 20, 20);
+
+    QHBoxLayout *pieLayout = new QHBoxLayout();
+
+    employe_chartViewGenre = new QChartView();
+    employe_chartViewGenre->setRenderHint(QPainter::Antialiasing);
+    employe_chartViewGenre->setMinimumHeight(300);
+
+    employe_chartViewPoste = new QChartView();
+    employe_chartViewPoste->setRenderHint(QPainter::Antialiasing);
+    employe_chartViewPoste->setMinimumHeight(300);
+
+    pieLayout->addWidget(employe_chartViewGenre);
+    pieLayout->addWidget(employe_chartViewPoste);
+    mainLayout->addLayout(pieLayout);
+
+    employe_chartViewSalaire = new QChartView();
+    employe_chartViewSalaire->setRenderHint(QPainter::Antialiasing);
+    employe_chartViewSalaire->setMinimumHeight(350);
+    mainLayout->addWidget(employe_chartViewSalaire);
+
+    ui->gb_stats->setLayout(mainLayout);
+}
+
+void MainWindow::employe_refreshStats()
+{
+    QChart *cGenre = tmp_employe.createGenreChart();
+    QChart *cPoste = tmp_employe.createPosteChart();
+    QChart *cSalaire = tmp_employe.createSalaireChart();
+    
+    QChart *oldCGenre = employe_chartViewGenre->chart();
+    QChart *oldCPoste = employe_chartViewPoste->chart();
+    QChart *oldCSalaire = employe_chartViewSalaire->chart();
+
+    employe_chartViewGenre->setChart(cGenre);
+    employe_chartViewPoste->setChart(cPoste);
+    employe_chartViewSalaire->setChart(cSalaire);
+    
+    // Memory cleanup
+    if(oldCGenre) delete oldCGenre;
+    if(oldCPoste) delete oldCPoste;
+    if(oldCSalaire) delete oldCSalaire;
 }
 
 // =========================================================
