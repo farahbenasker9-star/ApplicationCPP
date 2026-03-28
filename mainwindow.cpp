@@ -21,6 +21,7 @@
 #include <QSqlDatabase>
 #include <QPushButton>
 #include <QSqlQueryModel>
+#include <QLabel>
 
 #include <QtCharts/QChart>
 #include <QtCharts/QPieSeries>
@@ -50,7 +51,85 @@ MainWindow::MainWindow(QWidget *parent)
     
     // Initialisation des gestionnaires de modules
     employe = new Employe(ui, this);
-    equipement = new Equipement(ui, this);
+
+    // ==================== MODULE EQUIPEMENT ====================
+    // ── 1. Créer les labels ✕ d'erreur dans infoScrollContent ────────────────
+    //    Géométries depuis le .ui (x, y, w, h) :
+    //      Eq_CIN          x=160  y=20   w=121  h=41
+    //      Eq_type         x=160  y=70   w=117  h=40
+    //      Eq_Fab          x=160  y=120  w=121  h=40
+    //      Eq_Statut       x=160  y=170  w=151  h=40
+    //      Eq_Next_Maint   x=160  y=330  w=161  h=37
+    // ─────────────────────────────────────────────────────────────────────────
+    QWidget *eqForm = ui->infoScrollArea->widget();
+
+    auto makeEqErr = [&](int x, int y) -> QLabel* {
+        QLabel *lbl = new QLabel("✕", eqForm);
+        lbl->setGeometry(x, y, 22, 22);
+        lbl->setStyleSheet(
+            "QLabel { color: #D32F2F; font-weight: bold; font-size: 14px;"
+            " background: transparent; border: none; }");
+        lbl->setVisible(false);
+        return lbl;
+    };
+
+    // Position each ✕ just to the right of its widget, vertically centred
+    eq_errCIN       = makeEqErr(160 + 121 + 4,  29);   // Eq_CIN
+    eq_errType      = makeEqErr(160 + 117 + 4,  79);   // Eq_type
+    eq_errFab       = makeEqErr(160 + 121 + 4, 129);   // Eq_Fab
+    eq_errStatut    = makeEqErr(160 + 151 + 4, 179);   // Eq_Statut
+    eq_errNouveaute = makeEqErr(160 + 151 + 4, 229);   // Eq_Statut_2 (Nouveauté)
+    eq_errNextMaint = makeEqErr(160 + 161 + 4, 339);   // Eq_Next_Maint_Date
+
+    // ── 2. Dropdown list colours — applied once; validation helpers preserve this ─
+    QString dropFix =
+        "QComboBox QAbstractItemView {"
+        "  background-color: white; color: #222222;"
+        "  border: 1px solid #BDBDBD;"
+        "  selection-background-color: #4CAF50; selection-color: white; outline: 0;"
+        "}";
+    ui->Eq_CIN->setStyleSheet(dropFix);
+    ui->Eq_type->setStyleSheet(dropFix);
+    ui->Eq_Fab->setStyleSheet(dropFix);
+    ui->Eq_Statut->setStyleSheet(dropFix);
+    ui->Eq_Statut_2->setStyleSheet(dropFix);
+
+    // ── 3. Affichage initial + CIN combo ─────────────────────────────────────
+    equipement_chargerCIN();
+    ui->tab_employes_2->setModel(Equipement().afficher());
+
+    // ── 4. Dates par défaut ───────────────────────────────────────────────────
+    QDateTime now = QDateTime::currentDateTime();
+    ui->Eq_Last_Maint_Date->setDateTime(now);
+    ui->Eq_Next_Maint_Date->setDateTime(now);
+
+    // ── 5. Connexions CRUD ────────────────────────────────────────────────────
+    connect(ui->btn_ajouter_2,   &QPushButton::clicked, this, &MainWindow::equipement_onAjouterClicked);
+    connect(ui->btn_modifier_2,  &QPushButton::clicked, this, &MainWindow::equipement_onModifierClicked);
+    connect(ui->btn_supprimer_2, &QPushButton::clicked, this, &MainWindow::equipement_onSupprimerClicked);
+    connect(ui->tab_employes_2,  &QTableView::clicked,  this, &MainWindow::equipement_onTabClicked);
+
+    // ── 6. Recherche / tri ────────────────────────────────────────────────────
+    connect(ui->le_recherche_2,     &QLineEdit::textChanged,
+            this, &MainWindow::equipement_onRechercheTextChanged);
+    connect(ui->btn_tri_3,          &QPushButton::clicked,
+            this, &MainWindow::equipement_onTriClicked);
+
+    // ── 7. Validation en temps réel ───────────────────────────────────────────
+    connect(ui->Eq_CIN,    qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &MainWindow::equipement_onCINChanged);
+    connect(ui->Eq_Statut, qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &MainWindow::equipement_onStatutChanged);
+    connect(ui->Eq_Statut_2, qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &MainWindow::equipement_onNouveauteChanged);
+    connect(ui->Eq_type,   qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &MainWindow::equipement_validateType);
+    connect(ui->Eq_Fab,    qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &MainWindow::equipement_validateFabricant);
+    connect(ui->Eq_Next_Maint_Date, &QDateTimeEdit::dateTimeChanged,
+            this, &MainWindow::equipement_validateDateSuivMaint);
+    equipement_setupStatsUI();
+    equipement_refreshStats();
 
     // ==================== DASHBOARD CONNECTIONS ====================
     connect(ui->btn_dash_employe,   &QPushButton::clicked, this, [this]() { navigateToPage(6); ui->btn_nav_employes->setChecked(true); });
@@ -194,6 +273,11 @@ void MainWindow::navigateToPage(int pageIndex)
         contrat_populateComboBoxes();
         ui->tab_contrat_2->setModel(Contrat().afficher());
         contrat_refreshStats();
+    }
+    if (pageIndex == 3) { // Page Equipement
+        equipement_chargerCIN();
+        equipement_rafraichirTable();
+        equipement_refreshStats();
     }
     if (pageIndex == 4) {
         Produit P;
@@ -608,6 +692,7 @@ void MainWindow::contrat_setupStatsUI()
     chartViewContratType->setMinimumHeight(160);
     chartViewContratType->setMaximumHeight(295);
     chartViewContratType->setMinimumWidth(0);
+    chartViewContratType->setMaximumWidth(355);
 
     // Camembert
     chartViewContratTypePie = new QChartView();
@@ -616,6 +701,7 @@ void MainWindow::contrat_setupStatsUI()
     chartViewContratTypePie->setMinimumHeight(160);
     chartViewContratTypePie->setMaximumHeight(295);
     chartViewContratTypePie->setMinimumWidth(0);
+    chartViewContratType->setMaximumWidth(355);
 
     mainLayout->addWidget(chartViewContratType);
     mainLayout->addWidget(chartViewContratTypePie);
@@ -734,6 +820,7 @@ void MainWindow::contrat_refreshStats()
     chartPie->legend()->setAlignment(Qt::AlignRight);
     chartPie->legend()->setFont(QFont("Arial", 7));
     chartViewContratTypePie->setChart(chartPie);
+    chartViewContratTypePie->setMaximumWidth(355);
 }
 
 // ─── Remplir les comboboxes Client / Employé ─────────────────────────────────
@@ -1088,6 +1175,618 @@ void MainWindow::contrat_validateDescription()
     } else {
         contrat_setWidgetStyle(ui->clause_penale, Contrat::validerDescription(text));
     }
+}
+
+// =========================================================
+// ===                MODULE EQUIPEMENT                  ===
+// =========================================================
+
+// ─── Remplir la combobox CIN depuis EMPLOYE ───────────────────────────────────
+void MainWindow::equipement_chargerCIN()
+{
+    ui->Eq_CIN->blockSignals(true);
+    ui->Eq_CIN->clear();
+    ui->Eq_CIN->addItem("-", QVariant());   // index 0 → aucun employé assigné
+
+    QSqlQuery q;
+    q.prepare("SELECT CIN, NOM, PRENOM FROM EMPLOYE ORDER BY NOM, PRENOM");
+    if (q.exec()) {
+        while (q.next()) {
+            QString cin    = q.value(0).toString();
+            QString nom    = q.value(1).toString().trimmed();
+            QString prenom = q.value(2).toString().trimmed();
+            ui->Eq_CIN->addItem(QString("%1 %2 (%3)").arg(nom, prenom, cin), cin);
+        }
+    } else {
+        qDebug() << "equipement_chargerCIN error:" << q.lastError().text();
+    }
+
+    ui->Eq_CIN->blockSignals(false);
+}
+
+// ─── Vider le formulaire ──────────────────────────────────────────────────────
+void MainWindow::equipement_clearForm()
+{
+    ui->Eq_CIN->setCurrentIndex(0);
+    ui->Eq_type->setCurrentIndex(0);
+    ui->Eq_Fab->setCurrentIndex(0);
+    ui->Eq_Statut->setCurrentIndex(0);
+    ui->Eq_Statut_2->setCurrentIndex(0);  // Nouveauté → back to "-"
+
+    // Re-enable date fields and restore defaults
+    ui->Eq_Last_Maint_Date->setEnabled(true);
+    ui->Eq_Next_Maint_Date->setEnabled(true);
+    QDateTime now = QDateTime::currentDateTime();
+    ui->Eq_Last_Maint_Date->setDateTime(now);
+    ui->Eq_Next_Maint_Date->setDateTime(now);
+
+    ui->Notes->clear();
+
+    equipement_currentSelectedId = -1;
+    equipement_resetValidationStyles();
+}
+
+// ─── Rafraîchir le tableau ────────────────────────────────────────────────────
+void MainWindow::equipement_rafraichirTable()
+{
+    Equipement eq;
+    QSqlQueryModel *m = eq.afficher();
+    equipement_setupModelHeaders(m);
+    ui->tab_employes_2->setModel(m);
+    ui->tab_employes_2->resizeColumnsToContents();
+    ui->tab_employes_2->horizontalHeader()->setStretchLastSection(true);
+}
+
+// ─── En-têtes du modèle ───────────────────────────────────────────────────────
+void MainWindow::equipement_setupModelHeaders(QSqlQueryModel *m)
+{
+    m->setHeaderData(0, Qt::Horizontal, QObject::tr("ID"));
+    m->setHeaderData(1, Qt::Horizontal, QObject::tr("CIN"));
+    m->setHeaderData(2, Qt::Horizontal, QObject::tr("Employé"));
+    m->setHeaderData(3, Qt::Horizontal, QObject::tr("Type"));
+    m->setHeaderData(4, Qt::Horizontal, QObject::tr("Fabricant"));
+    m->setHeaderData(5, Qt::Horizontal, QObject::tr("Statut"));
+    m->setHeaderData(6, Qt::Horizontal, QObject::tr("Dern. Maint."));
+    m->setHeaderData(7, Qt::Horizontal, QObject::tr("Proch. Maint."));
+    m->setHeaderData(8, Qt::Horizontal, QObject::tr("Notes"));
+}
+
+// ─── Style validation ─────────────────────────────────────────────────────────
+// The dropdown-fix rule must be present in EVERY stylesheet applied to a QComboBox.
+// Calling setStyleSheet() on a combobox replaces the entire stylesheet, which
+// would strip the QAbstractItemView rule and make the popup list transparent.
+static const QString EQ_DROPDOWN_FIX =
+    "QComboBox QAbstractItemView {"
+    "  background-color: white; color: #222222;"
+    "  border: 1px solid #BDBDBD;"
+    "  selection-background-color: #4CAF50; selection-color: white; outline: 0;"
+    "}";
+
+// Applies red/green border AND shows/hides the ✕ label beside the field.
+void MainWindow::equipement_setWidgetStyle(QWidget *widget, QLabel *errLabel, bool isValid)
+{
+    QString base = isValid
+        ? "QComboBox, QDateTimeEdit { border: 2px solid #43A047; border-radius: 5px;"
+          " background-color: rgba(67,160,71,15); }"
+        : "QComboBox, QDateTimeEdit { border: 2px solid #D32F2F; border-radius: 5px;"
+          " background-color: rgba(211,47,47,15); }";
+
+    widget->setStyleSheet(base + EQ_DROPDOWN_FIX);
+    errLabel->setVisible(!isValid);
+}
+
+// Clears border AND hides ✕ — used when a field is back to its blank/default state.
+void MainWindow::equipement_clearWidgetStyle(QWidget *widget, QLabel *errLabel)
+{
+    // Restore only the dropdown fix so the popup list stays readable.
+    widget->setStyleSheet(EQ_DROPDOWN_FIX);
+    errLabel->setVisible(false);
+}
+
+void MainWindow::equipement_resetValidationStyles()
+{
+    equipement_clearWidgetStyle(ui->Eq_CIN,             eq_errCIN);
+    equipement_clearWidgetStyle(ui->Eq_type,            eq_errType);
+    equipement_clearWidgetStyle(ui->Eq_Fab,             eq_errFab);
+    equipement_clearWidgetStyle(ui->Eq_Statut,          eq_errStatut);
+    equipement_clearWidgetStyle(ui->Eq_Statut_2,        eq_errNouveaute);
+    equipement_clearWidgetStyle(ui->Eq_Next_Maint_Date, eq_errNextMaint);
+}
+
+// ─── Validation globale du formulaire (appelée au moment de soumettre) ────────
+bool MainWindow::equipement_validerFormulaire()
+{
+    bool ok = true;
+
+    // Type
+    bool typeErr = (ui->Eq_type->currentIndex() == 0);
+    equipement_setWidgetStyle(ui->Eq_type, eq_errType, !typeErr);
+    if (typeErr) ok = false;
+
+    // Fabricant
+    bool fabErr = (ui->Eq_Fab->currentIndex() == 0);
+    equipement_setWidgetStyle(ui->Eq_Fab, eq_errFab, !fabErr);
+    if (fabErr) ok = false;
+
+    // Statut
+    bool statutErr = (ui->Eq_Statut->currentIndex() == 0);
+    equipement_setWidgetStyle(ui->Eq_Statut, eq_errStatut, !statutErr);
+    if (statutErr) ok = false;
+
+    // Nouveauté — must be chosen
+    bool nouveauteErr = (ui->Eq_Statut_2->currentIndex() == 0);
+    equipement_setWidgetStyle(ui->Eq_Statut_2, eq_errNouveaute, !nouveauteErr);
+    if (nouveauteErr) ok = false;
+
+    // Cohérence CIN / Statut
+    QString cinVal = ui->Eq_CIN->currentData().toString();
+    QString statut = ui->Eq_Statut->currentText();
+    if (!statutErr) {
+        bool coherent = Equipement::validerCoherenceCinStatut(cinVal, statut);
+        equipement_setWidgetStyle(ui->Eq_CIN,    eq_errCIN,    coherent);
+        equipement_setWidgetStyle(ui->Eq_Statut, eq_errStatut, coherent);
+        if (!coherent) ok = false;
+    } else {
+        equipement_clearWidgetStyle(ui->Eq_CIN, eq_errCIN);
+    }
+
+    // Date prochaine maintenance — only required for "Ancien"
+    if (ui->Eq_Statut_2->currentText() == "Ancien") {
+        bool dateOk = Equipement::validerDateSuivMaint(ui->Eq_Next_Maint_Date->dateTime());
+        equipement_setWidgetStyle(ui->Eq_Next_Maint_Date, eq_errNextMaint, dateOk);
+        if (!dateOk) ok = false;
+    } else {
+        equipement_clearWidgetStyle(ui->Eq_Next_Maint_Date, eq_errNextMaint);
+    }
+
+    return ok;
+}
+
+// ─── Validation en temps réel ─────────────────────────────────────────────────
+// Rule: index 0 = blank/not chosen → reset to neutral (no colour, no ✕).
+//       index > 0 = chosen          → show green (valid by definition for these combos).
+void MainWindow::equipement_validateType()
+{
+    if (ui->Eq_type->currentIndex() == 0)
+        equipement_clearWidgetStyle(ui->Eq_type, eq_errType);
+    else
+        equipement_setWidgetStyle(ui->Eq_type, eq_errType, true);
+}
+
+void MainWindow::equipement_validateFabricant()
+{
+    if (ui->Eq_Fab->currentIndex() == 0)
+        equipement_clearWidgetStyle(ui->Eq_Fab, eq_errFab);
+    else
+        equipement_setWidgetStyle(ui->Eq_Fab, eq_errFab, true);
+}
+
+void MainWindow::equipement_validateStatut()
+{
+    if (ui->Eq_Statut->currentIndex() == 0)
+        equipement_clearWidgetStyle(ui->Eq_Statut, eq_errStatut);
+    else
+        equipement_setWidgetStyle(ui->Eq_Statut, eq_errStatut, true);
+}
+
+void MainWindow::equipement_validateDateSuivMaint()
+{
+    bool ok = Equipement::validerDateSuivMaint(ui->Eq_Next_Maint_Date->dateTime());
+    equipement_setWidgetStyle(ui->Eq_Next_Maint_Date, eq_errNextMaint, ok);
+}
+
+// ─── Suggestion automatique de statut quand le CIN change ────────────────────
+void MainWindow::equipement_onCINChanged(int index)
+{
+    // Only auto-suggest if statut is still at blank position
+    if (ui->Eq_Statut->currentIndex() == 0) {
+        // blockSignals so the Statut change doesn't trigger onStatutChanged mid-update
+        ui->Eq_Statut->blockSignals(true);
+        ui->Eq_Statut->setCurrentText(index == 0 ? "Disponible" : "Non Disponible");
+        ui->Eq_Statut->blockSignals(false);
+    }
+    // Re-run full validation so CIN+Statut coherence border updates immediately
+    equipement_validerFormulaire();
+}
+
+void MainWindow::equipement_onStatutChanged(int /*index*/)
+{
+    equipement_validerFormulaire();
+}
+
+// ─── Nouveauté changed : enable/disable date fields accordingly ───────────────
+void MainWindow::equipement_onNouveauteChanged(int index)
+{
+    QString choix = ui->Eq_Statut_2->currentText();
+
+    if (choix == "Vierge") {
+        // Brand new — last maintenance is irrelevant, next is auto-set to +1 month
+        ui->Eq_Last_Maint_Date->setEnabled(false);
+        ui->Eq_Last_Maint_Date->setDateTime(QDateTime());   // clear / empty
+        ui->Eq_Next_Maint_Date->setEnabled(false);
+        ui->Eq_Next_Maint_Date->setDateTime(
+            QDateTime::currentDateTime().addMonths(1));
+        // Date field is auto-managed — clear any error style
+        equipement_clearWidgetStyle(ui->Eq_Next_Maint_Date, eq_errNextMaint);
+
+    } else if (choix == "Ancien") {
+        // Existing equipment — both dates are required and editable
+        ui->Eq_Last_Maint_Date->setEnabled(true);
+        ui->Eq_Next_Maint_Date->setEnabled(true);
+        // Re-validate the next-maintenance date immediately
+        equipement_validateDateSuivMaint();
+
+    } else {
+        // Back to "-" — restore defaults and clear styles
+        ui->Eq_Last_Maint_Date->setEnabled(true);
+        ui->Eq_Next_Maint_Date->setEnabled(true);
+        QDateTime now = QDateTime::currentDateTime();
+        ui->Eq_Last_Maint_Date->setDateTime(now);
+        ui->Eq_Next_Maint_Date->setDateTime(now);
+        equipement_clearWidgetStyle(ui->Eq_Next_Maint_Date, eq_errNextMaint);
+    }
+
+    // Always re-validate the Nouveauté field itself
+    if (index == 0)
+        equipement_clearWidgetStyle(ui->Eq_Statut_2, eq_errNouveaute);
+    else
+        equipement_setWidgetStyle(ui->Eq_Statut_2, eq_errNouveaute, true);
+}
+
+// ─── Clic sur une ligne du tableau ───────────────────────────────────────────
+void MainWindow::equipement_onTabClicked(const QModelIndex &index)
+{
+    if (!index.isValid()) return;
+
+    int row = index.row();
+    auto *m = ui->tab_employes_2->model();
+
+    // Colonne 0 → EQUIPMENT_ID
+    equipement_currentSelectedId = m->data(m->index(row, 0)).toInt();
+
+    // Récupérer le détail complet depuis la DB
+    QSqlQuery q;
+    q.prepare(
+        "SELECT CIN, EQUIPMENT_TYPE, FABRICANT, STATUT, "
+        "       DATE_DER_MAINT, DATE_SUIV_MAINT, NOTES "
+        "FROM EQUIPMENT WHERE EQUIPMENT_ID = :id"
+    );
+    q.bindValue(":id", equipement_currentSelectedId);
+
+    if (!q.exec() || !q.next()) {
+        qDebug() << "equipement_onTabClicked error:" << q.lastError().text();
+        return;
+    }
+
+    // CIN : retrouver l'entrée combo dont la userData correspond
+    QString cinDB = q.value(0).toString();
+    int cinIdx = 0;
+    for (int i = 1; i < ui->Eq_CIN->count(); ++i) {
+        if (ui->Eq_CIN->itemData(i).toString() == cinDB) { cinIdx = i; break; }
+    }
+    ui->Eq_CIN->blockSignals(true);
+    ui->Eq_CIN->setCurrentIndex(cinIdx);
+    ui->Eq_CIN->blockSignals(false);
+
+    ui->Eq_type->setCurrentText(q.value(1).toString().trimmed());
+    ui->Eq_Fab->setCurrentText(q.value(2).toString().trimmed());
+    ui->Eq_Statut->setCurrentText(q.value(3).toString().trimmed());
+
+    QDateTime lastMaint = q.value(4).toDateTime();
+    QDateTime nextMaint = q.value(5).toDateTime();
+    if (lastMaint.isValid()) ui->Eq_Last_Maint_Date->setDateTime(lastMaint);
+    if (nextMaint.isValid()) ui->Eq_Next_Maint_Date->setDateTime(nextMaint);
+
+    ui->Notes->setPlainText(q.value(6).toString());
+
+    equipement_resetValidationStyles();
+}
+
+// ─── Recherche en temps réel ──────────────────────────────────────────────────
+void MainWindow::equipement_onRechercheTextChanged(const QString &arg1)
+{
+    Equipement eq;
+    QSqlQueryModel *m = eq.rechercher(arg1);
+    equipement_setupModelHeaders(m);
+    ui->tab_employes_2->setModel(m);
+    ui->tab_employes_2->resizeColumnsToContents();
+    ui->tab_employes_2->horizontalHeader()->setStretchLastSection(true);
+}
+
+// ─── Tri ──────────────────────────────────────────────────────────────────────
+void MainWindow::equipement_onTriClicked()
+{
+    QString champ = ui->comboBox_2->currentText();
+    if      (champ == "Fabricant") equipement_sortColumn = "EQ.FABRICANT";
+    else if (champ == "Statut")    equipement_sortColumn = "EQ.STATUT";
+    else                           equipement_sortColumn = "EQ.EQUIPMENT_TYPE";
+
+    equipement_sortAscending = !equipement_sortAscending;
+    ui->btn_tri_3->setText(equipement_sortAscending ? "Trier ↑" : "Trier ↓");
+
+    QString direction = equipement_sortAscending ? "ASC" : "DESC";
+    QString text      = ui->le_recherche_2->text().trimmed();
+
+    QString whereClause;
+    if (!text.isEmpty()) {
+        whereClause = QString(
+            "WHERE UPPER(EQ.FABRICANT)      LIKE UPPER('%%%1%') "
+            "OR    UPPER(EQ.EQUIPMENT_TYPE) LIKE UPPER('%%%1%') "
+            "OR    UPPER(EQ.STATUT)         LIKE UPPER('%%%1%') "
+            "OR    UPPER(E.NOM)             LIKE UPPER('%%%1%') "
+            "OR    UPPER(E.PRENOM)          LIKE UPPER('%%%1%')"
+        ).arg(text);
+    }
+
+    QSqlQueryModel *m = new QSqlQueryModel();
+    m->setQuery(QString(
+        "SELECT EQ.EQUIPMENT_ID, EQ.CIN, "
+        "       E.NOM || ' ' || E.PRENOM AS EMPLOYE, "
+        "       EQ.EQUIPMENT_TYPE, EQ.FABRICANT, EQ.STATUT, "
+        "       EQ.DATE_DER_MAINT, EQ.DATE_SUIV_MAINT, EQ.NOTES "
+        "FROM   EQUIPMENT EQ "
+        "LEFT JOIN EMPLOYE E ON EQ.CIN = E.CIN "
+        "%1 "
+        "ORDER BY %2 %3"
+    ).arg(whereClause, equipement_sortColumn, direction));
+
+    equipement_setupModelHeaders(m);
+    ui->tab_employes_2->setModel(m);
+    ui->tab_employes_2->resizeColumnsToContents();
+    ui->tab_employes_2->horizontalHeader()->setStretchLastSection(true);
+}
+
+// ─── Ajouter un équipement ────────────────────────────────────────────────────
+void MainWindow::equipement_onAjouterClicked()
+{
+    if (!equipement_validerFormulaire()) {
+        QMessageBox::warning(this, "Saisie invalide",
+                             "Veuillez corriger les champs en rouge avant de continuer.");
+        return;
+    }
+
+    QString cinVal    = ui->Eq_CIN->currentData().toString();
+    bool    isVierge  = (ui->Eq_Statut_2->currentText() == "Vierge");
+    QDateTime lastDT  = isVierge ? QDateTime() : ui->Eq_Last_Maint_Date->dateTime();
+
+    Equipement eq(cinVal,
+                  ui->Eq_type->currentText(),
+                  ui->Eq_Fab->currentText(),
+                  ui->Eq_Statut->currentText(),
+                  lastDT,
+                  ui->Eq_Next_Maint_Date->dateTime(),
+                  ui->Notes->toPlainText());
+
+    if (eq.ajouter()) {
+        QMessageBox::information(this, "Succès", "Équipement ajouté avec succès !");
+        equipement_clearForm();
+        equipement_rafraichirTable();
+    } else {
+        QMessageBox::critical(this, "Erreur DB", "L'ajout de l'équipement a échoué.");
+    }
+}
+
+// ─── Modifier un équipement ───────────────────────────────────────────────────
+void MainWindow::equipement_onModifierClicked()
+{
+    if (equipement_currentSelectedId == -1) {
+        QMessageBox::warning(this, "Aucune sélection",
+                             "Veuillez sélectionner un équipement dans le tableau.");
+        return;
+    }
+
+    if (!equipement_validerFormulaire()) {
+        QMessageBox::warning(this, "Saisie invalide",
+                             "Veuillez corriger les champs en rouge avant de continuer.");
+        return;
+    }
+
+    QString cinVal   = ui->Eq_CIN->currentData().toString();
+    bool    isVierge = (ui->Eq_Statut_2->currentText() == "Vierge");
+    QDateTime lastDT = isVierge ? QDateTime() : ui->Eq_Last_Maint_Date->dateTime();
+
+    Equipement eq(cinVal,
+                  ui->Eq_type->currentText(),
+                  ui->Eq_Fab->currentText(),
+                  ui->Eq_Statut->currentText(),
+                  lastDT,
+                  ui->Eq_Next_Maint_Date->dateTime(),
+                  ui->Notes->toPlainText());
+
+    if (eq.modifier(equipement_currentSelectedId)) {
+        QMessageBox::information(this, "Succès", "Équipement modifié avec succès !");
+        equipement_clearForm();
+        equipement_rafraichirTable();
+    } else {
+        QMessageBox::critical(this, "Erreur DB", "La modification a échoué.");
+    }
+}
+
+// ─── Supprimer un équipement ──────────────────────────────────────────────────
+void MainWindow::equipement_onSupprimerClicked()
+{
+    if (equipement_currentSelectedId == -1) {
+        QMessageBox::warning(this, "Aucune sélection",
+                             "Veuillez sélectionner un équipement à supprimer.");
+        return;
+    }
+
+    if (QMessageBox::question(this, "Confirmer suppression",
+            QString("Supprimer l'équipement ID %1 ?").arg(equipement_currentSelectedId),
+            QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) return;
+
+    Equipement eq;
+    if (eq.supprimer(equipement_currentSelectedId)) {
+        QMessageBox::information(this, "Succès", "Équipement supprimé avec succès !");
+        equipement_clearForm();
+        equipement_rafraichirTable();
+    } else {
+        QMessageBox::critical(this, "Erreur DB", "La suppression a échoué.");
+    }
+}
+
+// ─── Exporter PDF ─────────────────────────────────────────────────────────────
+void MainWindow::equipement_onExporterClicked()
+{
+    QString filePath = QFileDialog::getSaveFileName(this,
+        "Exporter la liste des équipements", "Liste_Equipements.pdf", "PDF (*.pdf)");
+    if (filePath.isEmpty()) return;
+
+    Equipement eq;
+    QSqlQueryModel *m = eq.afficher();
+    if (!m) {
+        QMessageBox::critical(this, "Erreur",
+            "Impossible de charger la liste des équipements pour l'export PDF.");
+        return;
+    }
+
+    bool ok = eq.exporterPdf(filePath, m);
+    delete m;
+
+    if (ok) {
+        QMessageBox::information(this, "Succès",
+            "La liste des équipements a été exportée en PDF avec succès.");
+    } else {
+        QMessageBox::critical(this, "Erreur", "Échec de l'export PDF.");
+    }
+}
+void MainWindow::equipement_setupStatsUI()
+{
+    QVBoxLayout *mainLayout = new QVBoxLayout(ui->gb_stats_equipement);
+    mainLayout->setSpacing(8);
+    mainLayout->setContentsMargins(8, 24, 8, 8);
+
+    // Bar chart – Répartition par type
+    chartViewEquipType = new QChartView();
+    chartViewEquipType->setRenderHint(QPainter::Antialiasing);
+    chartViewEquipType->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    chartViewEquipType->setMinimumHeight(140);
+    chartViewEquipType->setMaximumWidth(300);
+
+    // Pie/donut – Répartition par statut
+    chartViewEquipStatut = new QChartView();
+    chartViewEquipStatut->setRenderHint(QPainter::Antialiasing);
+    chartViewEquipStatut->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    chartViewEquipStatut->setMinimumHeight(140);
+    chartViewEquipType->setMaximumWidth(300);
+
+    mainLayout->addWidget(chartViewEquipType,    1);
+    mainLayout->addWidget(chartViewEquipStatut,  1);
+
+    ui->gb_stats_equipement->setLayout(mainLayout);
+}
+void MainWindow::equipement_refreshStats()
+{
+    QSqlQuery q;
+
+    // ── 1. Histogramme : Nombre d'équipements par type ───────────────────────
+    QBarSeries *barSeries = new QBarSeries();
+    barSeries->setBarWidth(0.55);
+    barSeries->setLabelsVisible(true);
+    barSeries->setLabelsPosition(QAbstractBarSeries::LabelsOutsideEnd);
+    barSeries->setLabelsFormat("@value");
+
+    // Fixed palette – one colour per bar set
+    QList<QColor> barColors = {
+        QColor("#1b5e20"), QColor("#e53935"), QColor("#1565c0"),
+        QColor("#f57f17"), QColor("#6a1b9a"), QColor("#00695c")
+    };
+
+    QStringList typeCategories;
+    int maxBarVal = 1;
+    int colorIdx  = 0;
+
+    if (q.exec("SELECT EQUIPMENT_TYPE, COUNT(*) FROM EQUIPMENT "
+               "GROUP BY EQUIPMENT_TYPE ORDER BY COUNT(*) DESC"))
+    {
+        while (q.next()) {
+            QString typeName = q.value(0).toString().trimmed();
+            int     cnt      = q.value(1).toInt();
+            if (typeName.isEmpty()) typeName = "Inconnu";
+
+            QBarSet *bs = new QBarSet(typeName);
+            bs->setColor(barColors[colorIdx % barColors.size()]);
+            bs->setBorderColor(bs->color().darker(130));
+            bs->setLabelColor(Qt::black);
+            *bs << cnt;
+
+            barSeries->append(bs);
+            typeCategories << typeName;
+            if (cnt > maxBarVal) maxBarVal = cnt;
+            ++colorIdx;
+        }
+    }
+
+    QChart *chartType = new QChart();
+    chartType->setTitle("Équipements par Type");
+    chartType->setTitleFont(QFont("Arial", 9, QFont::Bold));
+    chartType->setAnimationOptions(QChart::SeriesAnimations);
+    chartType->setMargins(QMargins(4, 4, 8, 0));
+    chartType->setBackgroundRoundness(0);
+    chartType->legend()->setVisible(true);
+    chartType->legend()->setAlignment(Qt::AlignBottom);
+    chartType->legend()->setFont(QFont("Arial", 7));
+    chartType->addSeries(barSeries);
+
+    QBarCategoryAxis *axisX = new QBarCategoryAxis();
+    axisX->append(QStringList{""});    // single grouped category
+    axisX->setLabelsFont(QFont("Arial", 7));
+    axisX->setGridLineVisible(false);
+    chartType->addAxis(axisX, Qt::AlignBottom);
+    barSeries->attachAxis(axisX);
+
+    QValueAxis *axisY = new QValueAxis();
+    axisY->setMin(0);
+    axisY->setMax(maxBarVal + 2);
+    axisY->setLabelFormat("%i");
+    axisY->setLabelsFont(QFont("Arial", 7));
+    axisY->setTickCount(qMin(maxBarVal + 3, 7));
+    chartType->addAxis(axisY, Qt::AlignLeft);
+    barSeries->attachAxis(axisY);
+
+    chartViewEquipType->setChart(chartType);
+
+    // ── 2. Donut : Répartition par statut ────────────────────────────────────
+    QChart *chartPie = new QChart();
+    chartPie->setTitle("Disponibilité des équipements");
+    chartPie->setTitleFont(QFont("Arial", 8, QFont::Bold));
+    chartPie->setMargins(QMargins(0, 4, 0, 0));
+    chartPie->setBackgroundRoundness(0);
+    chartPie->setAnimationOptions(QChart::SeriesAnimations);
+
+    QPieSeries *pieSeries = new QPieSeries();
+    pieSeries->setPieStartAngle(30);
+    pieSeries->setHoleSize(0.3);
+    pieSeries->setPieSize(0.62);
+
+    QList<QColor> pieColors = {
+        QColor("#43a047"), QColor("#e53935"),
+        QColor("#fb8c00"), QColor("#1565c0"),
+        QColor("#6a1b9a")
+    };
+    int ci = 0;
+
+    if (q.exec("SELECT STATUT, COUNT(*) FROM EQUIPMENT GROUP BY STATUT"))
+    {
+        while (q.next()) {
+            QString statut = q.value(0).toString().trimmed();
+            int     count  = q.value(1).toInt();
+            if (statut.isEmpty()) statut = "Indéfini";
+
+            QPieSlice *slice = pieSeries->append(
+                statut + " (" + QString::number(count) + ")", count);
+            slice->setLabelVisible(true);
+            slice->setLabelFont(QFont("Arial", 7));
+            slice->setColor(pieColors[ci % pieColors.size()]);
+            ++ci;
+        }
+    }
+
+    chartPie->addSeries(pieSeries);
+    chartPie->legend()->setAlignment(Qt::AlignRight);
+    chartPie->legend()->setFont(QFont("Arial", 7));
+
+    chartViewEquipStatut->setChart(chartPie);
 }
 
 // =========================================================
