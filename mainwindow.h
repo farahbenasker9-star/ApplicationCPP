@@ -59,6 +59,8 @@ private slots:
     void on_cb_etat_poubelle_currentIndexChanged(int index);
     void on_btn_tri_poubelle_clicked();
     void on_le_recherche_poubelle_textChanged(const QString &arg1);
+    void on_btn_pdf_poubelle_clicked();
+
 
     // === MODULE PRODUIT ===
     void on_btn_ajouter_produit_clicked();

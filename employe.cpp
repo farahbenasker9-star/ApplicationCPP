@@ -89,24 +89,6 @@ void Employe::afficherEmployes()
 {
     QSqlDatabase db = QSqlDatabase::database();
 
-    // Insert dummy data if the table is empty (for testing)
-    QSqlQuery query(db);
-    query.exec("SELECT COUNT(*) FROM EMPLOYE");
-    if (query.next() && query.value(0).toInt() == 0) {
-        qDebug() << "Table EMPLOYE is empty. Inserting dummy data...";
-
-        query.exec("INSERT INTO EMPLOYE (CIN, NOM, PRENOM, POSTE, SALAIRE, DATE_EMBAUCHE, ID_BADGE, AGE, GENRE) "
-                   "VALUES (11111111, 'Ben Ali', 'Ahmed', 'Trieur', 900.50, TO_DATE('2023-01-15', 'YYYY-MM-DD'), 'B-001', 30, 'Homme')");
-
-        query.exec("INSERT INTO EMPLOYE (CIN, NOM, PRENOM, POSTE, SALAIRE, DATE_EMBAUCHE, ID_BADGE, AGE, GENRE) "
-                   "VALUES (22222222, 'Trabelsi', 'Sami', 'Chauffeur', 1000.00, TO_DATE('2023-06-20', 'YYYY-MM-DD'), 'B-002', 28, 'Homme')");
-
-        query.exec("INSERT INTO EMPLOYE (CIN, NOM, PRENOM, POSTE, SALAIRE, DATE_EMBAUCHE, ID_BADGE, AGE, GENRE) "
-                   "VALUES (33333333, 'Mansour', 'Sarra', 'Trieur', 900.75, TO_DATE('2024-02-10', 'YYYY-MM-DD'), 'B-003', 25, 'Femme')");
-
-        db.commit();
-    }
-
     employeModel = new QSqlTableModel(this, db);
     employeModel->setTable("EMPLOYE");
     employeModel->setEditStrategy(QSqlTableModel::OnManualSubmit);
@@ -119,14 +101,13 @@ void Employe::afficherEmployes()
     employeModel->setHeaderData(3, Qt::Horizontal, QObject::tr("Poste"));
     employeModel->setHeaderData(4, Qt::Horizontal, QObject::tr("Salaire (TND)"));
     employeModel->setHeaderData(5, Qt::Horizontal, QObject::tr("Date d'embauche"));
-    employeModel->setHeaderData(6, Qt::Horizontal, QObject::tr("Badge"));
+    employeModel->setHeaderData(6, Qt::Horizontal, QObject::tr("ID Badge"));
     employeModel->setHeaderData(7, Qt::Horizontal, QObject::tr("Âge"));
     employeModel->setHeaderData(8, Qt::Horizontal, QObject::tr("Genre"));
-    employeModel->setHeaderData(6, Qt::Horizontal, QObject::tr("ID Badge"));
 
     ui->tab_employes->setModel(employeModel);
     ui->tab_employes->setItemDelegateForColumn(0, new CinDelegate(this));
-    ui->tab_employes->setAlternatingRowColors(false);
+    ui->tab_employes->setAlternatingRowColors(true);
     ui->tab_employes->resizeColumnsToContents();
 }
 

@@ -41,16 +41,15 @@ MainWindow::MainWindow(QWidget *parent)
     // Initialisation de l'affichage des poubelles
     ui->tab_poubelle->setModel(tmp_poubelle.afficher());
 
-    // Initialisation du formulaire (bloquer les champs si "En stock" au début)
-    on_cb_etat_poubelle_currentIndexChanged(ui->cb_etat_poubelle->currentIndex());
-
-    // 1. Initialisation de l'affichage
-    ui->stackedWidget->setCurrentIndex(0); // Dashboard par défaut
+    // Initialisation du formulaire avec VALEURS PAR DÉFAUT
+    clearFormPoubelle();
+    
+    // S'assurer que l'application démarre bien sur le Dashboard (index 0)
+    ui->stackedWidget->setCurrentIndex(0);
     ui->navbar_container->hide();
-
-    // 2. INITIALISATION DES MANAGERS
-    employe    = new Employe(ui, this);
-    client     = new Client(ui, this);
+    
+    // Initialisation des gestionnaires de modules
+    employe = new Employe(ui, this);
     equipement = new Equipement(ui, this);
 
     // ==================== DASHBOARD CONNECTIONS ====================
@@ -217,10 +216,10 @@ void MainWindow::on_btn_ajouter_poubelle_clicked()
     int capacite = ui->sb_capacite->value();
     QString etat = ui->cb_etat_poubelle->currentText();
 
-    int remplissage = ui->sb_remplissage->value();
-    int batterie = ui->sb_batterie->value();
+    int remplissage = (etat == "EN_STOCK" || etat == "EN STOCK") ? 0 : ui->sb_remplissage->value();
+    int batterie = (etat == "EN_STOCK" || etat == "EN STOCK") ? 100 : ui->sb_batterie->value();
     QString statut_capteur = ui->cb_statut_capteur->currentText();
-    QDate date_inst = ui->de_installation->date();
+    QDate date_inst = (etat == "EN_STOCK" || etat == "EN STOCK") ? QDate::currentDate() : ui->de_installation->date();
     QDate date_coll = ui->de_collecte->date();
 
     Poubelle p(id, type, adresse, capacite, etat, remplissage, batterie, statut_capteur, date_inst, date_coll);
@@ -269,10 +268,7 @@ void MainWindow::on_btn_modifier_poubelle_clicked()
     QDate date_inst = ui->de_installation->date();
     QDate date_coll = ui->de_collecte->date();
 
-    Poubelle p;
-    p.setId(id); p.setAdresse(adresse); p.setType(type); p.setCapacite(capacite); p.setEtat(etat);
-    p.setNiveauRemplissage(remplissage); p.setEtatBatterie(batterie); p.setStatutCapteur(statut_capteur);
-    p.setDateInstallation(date_inst); p.setDateCollecte(date_coll);
+    Poubelle p(id, type, adresse, capacite, etat, remplissage, batterie, statut_capteur, date_inst, date_coll);
 
     if(p.modifier()) {
         QMessageBox::information(this, "Succès", "Poubelle modifiée");
@@ -323,10 +319,10 @@ void MainWindow::clearFormPoubelle()
     ui->sb_capacite->setValue(0);
     ui->cb_etat_poubelle->setCurrentIndex(0);
     ui->sb_remplissage->setValue(0);
-    ui->sb_batterie->setValue(0);
+    ui->sb_batterie->setValue(100);
     ui->cb_statut_capteur->setCurrentIndex(-1);
     ui->de_installation->setDate(QDate::currentDate());
-    ui->de_collecte->setDate(QDate::currentDate());
+    ui->de_collecte->setDate(QDate::currentDate().addDays(7));
 }
 
 bool MainWindow::validerFormulairePoubelle(bool isUpdate)
@@ -354,6 +350,26 @@ bool MainWindow::validerFormulairePoubelle(bool isUpdate)
         QMessageBox::warning(this, "Erreur", "Type invalide.");
         return false;
     }
+
+    QDate dateInst = ui->de_installation->date();
+    QDate dateColl = ui->de_collecte->date();
+    QDate today = QDate::currentDate();
+
+    if (etat == "INSTALLE" || etat == "INSTALLÉ") {
+        if (dateColl < today) {
+            QMessageBox::warning(this, "Erreur", "La date de collecte ne peut pas être dans le passé.");
+            return false;
+        }
+        if (dateColl <= dateInst) {
+            QMessageBox::warning(this, "Erreur", "La date de collecte doit être strictement supérieure à la date d'installation.");
+            return false;
+        }
+        if (dateColl.year() < 2026 || dateColl.year() > 2026) {
+            QMessageBox::warning(this, "Erreur", "La date de collecte ne doit pas être en dehors de l'année 2026.");
+            return false;
+        }
+    }
+    
     if (etat == "INSTALLE") {
         if (ui->sb_capacite->value() <= 0) return false;
         if (ui->de_installation->date() > QDate::currentDate()) return false;
@@ -363,18 +379,38 @@ bool MainWindow::validerFormulairePoubelle(bool isUpdate)
 
 void MainWindow::on_btn_tri_poubelle_clicked()
 {
-    QString critere = ui->cb_tri_poubelle->currentText();
+    QString critere = ui->cb_tri_poubelle->currentText().trimmed();
     QString tri;
-    if (critere == "Niveau de remplissage") tri = "NIVEAU_REMPLISSAGE";
+    
+    if (critere == "Niveau de remplissage") tri = "NIVEAU_REMPLISSAGE DESC";
     else if (critere == "Etat batterie") tri = "ETAT_BATTERIE";
     else if (critere == "Adresse") tri = "ADRESSE";
+    else {
+        // Fallback si le texte ne correspond pas exactement (ex: espaces invisibles)
+        int index = ui->cb_tri_poubelle->currentIndex();
+        if (index == 0) tri = "NIVEAU_REMPLISSAGE DESC";
+        else if (index == 1) tri = "ETAT_BATTERIE";
+        else if (index == 2) tri = "ADRESSE";
+    }
 
     ui->tab_poubelle->setModel(tmp_poubelle.trier(tri));
 }
 
 void MainWindow::on_le_recherche_poubelle_textChanged(const QString &arg1)
 {
-    ui->tab_poubelle->setModel(tmp_poubelle.rechercher(arg1));
+    QString critere = ui->comboBox_client_2->currentText();
+    ui->tab_poubelle->setModel(tmp_poubelle.rechercher(critere, arg1));
+}
+
+void MainWindow::on_btn_pdf_poubelle_clicked()
+{
+    int row = ui->tab_poubelle->currentIndex().row();
+    if (row == -1) {
+        QMessageBox::warning(this, "Sélection", "Veuillez sélectionner une poubelle dans le tableau pour générer le PDF.");
+        return;
+    }
+    int id = ui->tab_poubelle->model()->data(ui->tab_poubelle->model()->index(row, 0)).toInt();
+    tmp_poubelle.exporterPDF(id);
 }
 
 // =========================================================
