@@ -54,6 +54,7 @@ public:
 
     // ─── Export PDF ───────────────────────────────────────────────────────────
     bool exporterPdf(const QString &filePath, QSqlQueryModel *model = nullptr) const;
+    QString getLastError() const;
 
     // ─── Méthodes de validation statiques ────────────────────────────────────
     static bool validerType(const QString &equipment_type);
@@ -71,6 +72,7 @@ private:
     QDateTime date_der_maint;
     QDateTime date_suiv_maint;
     QString   notes;
+    QString   last_error;
 };
 
 #endif // EQUIPEMENT_H

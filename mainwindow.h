@@ -110,15 +110,28 @@ private slots:
     void employe_onPdfClicked();
     void employe_onRefreshClicked();
 
+    // ─── Module Client ───────────────────────────────────────────────────────
+    void onBtnAjouterClicked();
+    void onBtnModifierClicked();
+    void onBtnSupprimerClicked();
+    void onTableClicked(const QModelIndex &index);
+    void onRechercheTextChanged(const QString &text);
+
 private:
     Ui::MainWindow *ui;
     Poubelle tmp_poubelle;
+    int poubelle_currentSelectedId = -1;
     Employe tmp_employe;
     QSqlQueryModel *model;
+    QString currentFilter;
+    int selectedClientId = -1;
 
     void navigateToPage(int pageIndex);
     void clearFormPoubelle();
     bool validerFormulairePoubelle(bool isUpdate);
+    void rafraichirAffichage();
+    bool verifierSaisie();
+    bool reaffecterIdClientDansRelations(int oldId, int newId);
 
     // ─── Gestionnaires de pages ───────────────────────────────────────────────
     Client  *client;

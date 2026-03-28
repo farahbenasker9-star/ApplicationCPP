@@ -35,8 +35,19 @@ Equipement::Equipement(const QString &cin,
 // ─── Méthode AJOUTER ─────────────────────────────────────────────────────────
 bool Equipement::ajouter()
 {
-    QSqlQuery query;
+    last_error.clear();
 
+    auto bindCommon = [&](QSqlQuery &q) {
+        q.bindValue(":cin",    cin.isEmpty() ? QVariant(QVariant::String) : QVariant(cin));
+        q.bindValue(":type",   equipment_type);
+        q.bindValue(":fab",    fabricant);
+        q.bindValue(":statut", statut);
+        q.bindValue(":last",   date_der_maint.isValid() ? QVariant(date_der_maint) : QVariant(QVariant::DateTime));
+        q.bindValue(":next",   date_suiv_maint.isValid() ? QVariant(date_suiv_maint) : QVariant(QVariant::DateTime));
+        q.bindValue(":notes",  notes);
+    };
+
+    QSqlQuery query;
     query.prepare(
         "INSERT INTO EQUIPMENT "
         "  (EQUIPMENT_ID, CIN, EQUIPMENT_TYPE, FABRICANT, STATUT, "
@@ -45,18 +56,42 @@ bool Equipement::ajouter()
         "  (SEQ_EQUIPMENT.NEXTVAL, :cin, :type, :fab, :statut, "
         "   :last, :next, :notes)"
     );
-
-    query.bindValue(":cin",    cin.isEmpty() ? QVariant(QVariant::String) : QVariant(cin));
-    query.bindValue(":type",   equipment_type);
-    query.bindValue(":fab",    fabricant);
-    query.bindValue(":statut", statut);
-    query.bindValue(":last",   date_der_maint);
-    query.bindValue(":next",   date_suiv_maint);
-    query.bindValue(":notes",  notes);
+    bindCommon(query);
 
     if (!query.exec()) {
-        qDebug() << "Erreur ajouter equipement:" << query.lastError().text();
-        return false;
+        last_error = query.lastError().text();
+
+        // Fallback for schemas where SEQ_EQUIPMENT does not exist.
+        if (last_error.contains("ORA-02289", Qt::CaseInsensitive) ||
+            last_error.contains("SEQ_EQUIPMENT", Qt::CaseInsensitive)) {
+            QSqlQuery qId;
+            if (!qId.exec("SELECT NVL(MAX(EQUIPMENT_ID), 0) + 1 FROM EQUIPMENT") || !qId.next()) {
+                last_error = qId.lastError().text();
+                qDebug() << "Erreur ajouter equipement (fallback id):" << last_error;
+                return false;
+            }
+
+            const int nextId = qId.value(0).toInt();
+            QSqlQuery qInsert;
+            qInsert.prepare(
+                "INSERT INTO EQUIPMENT "
+                "  (EQUIPMENT_ID, CIN, EQUIPMENT_TYPE, FABRICANT, STATUT, "
+                "   DATE_DER_MAINT, DATE_SUIV_MAINT, NOTES) "
+                "VALUES "
+                "  (:id, :cin, :type, :fab, :statut, :last, :next, :notes)"
+            );
+            qInsert.bindValue(":id", nextId);
+            bindCommon(qInsert);
+
+            if (!qInsert.exec()) {
+                last_error = qInsert.lastError().text();
+                qDebug() << "Erreur ajouter equipement (fallback insert):" << last_error;
+                return false;
+            }
+        } else {
+            qDebug() << "Erreur ajouter equipement:" << last_error;
+            return false;
+        }
     }
 
     qDebug() << "Équipement ajouté avec succès.";
@@ -137,6 +172,7 @@ QSqlQueryModel * Equipement::rechercher(const QString &texte) const
 bool Equipement::modifier(int old_id)
 {
     QSqlQuery query;
+    last_error.clear();
 
     query.prepare(
         "UPDATE EQUIPMENT SET "
@@ -154,16 +190,22 @@ bool Equipement::modifier(int old_id)
     query.bindValue(":type",   equipment_type);
     query.bindValue(":fab",    fabricant);
     query.bindValue(":statut", statut);
-    query.bindValue(":last",   date_der_maint);
-    query.bindValue(":next",   date_suiv_maint);
+    query.bindValue(":last",   date_der_maint.isValid() ? QVariant(date_der_maint) : QVariant(QVariant::DateTime));
+    query.bindValue(":next",   date_suiv_maint.isValid() ? QVariant(date_suiv_maint) : QVariant(QVariant::DateTime));
     query.bindValue(":notes",  notes);
     query.bindValue(":old_id", old_id);
 
     if (!query.exec()) {
-        qDebug() << "Erreur modification equipement:" << query.lastError().text();
+        last_error = query.lastError().text();
+        qDebug() << "Erreur modification equipement:" << last_error;
         return false;
     }
     return true;
+}
+
+QString Equipement::getLastError() const
+{
+    return last_error;
 }
 
 // ─── Méthode SUPPRIMER ───────────────────────────────────────────────────────

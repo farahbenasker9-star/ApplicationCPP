@@ -22,6 +22,7 @@
 #include <QPushButton>
 #include <QSqlQueryModel>
 #include <QLabel>
+#include <QHeaderView>
 
 #include <QtCharts/QChart>
 #include <QtCharts/QPieSeries>
@@ -59,6 +60,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Initialisation de l'affichage des poubelles
     ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+
+    // Module poubelle: slots `on_<object>_<signal>` are auto-connected by setupUi.
 
     // Initialisation du formulaire avec VALEURS PAR DÉFAUT
     clearFormPoubelle();
@@ -164,6 +167,20 @@ MainWindow::MainWindow(QWidget *parent)
 
     employe_setupStatsUI();
     employe_refreshStats();
+
+    // ==================== MODULE CLIENT ====================
+    ui->tab_clients->setModel(model);
+    ui->tab_clients->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tab_clients->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tab_clients->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    rafraichirAffichage();
+
+    connect(ui->btn_ajouter_client,  &QPushButton::clicked, this, &MainWindow::onBtnAjouterClicked);
+    connect(ui->btn_modifier_client, &QPushButton::clicked, this, &MainWindow::onBtnModifierClicked);
+    connect(ui->btn_supprimer_client,&QPushButton::clicked, this, &MainWindow::onBtnSupprimerClicked);
+    connect(ui->tab_clients,         &QTableView::clicked,  this, &MainWindow::onTableClicked);
+    connect(ui->le_recherche_client, &QLineEdit::textChanged, this, &MainWindow::onRechercheTextChanged);
 
     // ==================== DASHBOARD CONNECTIONS ====================
     connect(ui->btn_dash_employe,   &QPushButton::clicked, this, [this]() { navigateToPage(6); ui->btn_nav_employes->setChecked(true); });
@@ -288,11 +305,19 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 void MainWindow::on_btn_nav_employes_clicked()   { ui->stackedWidget->setCurrentIndex(6); }
 void MainWindow::on_btn_nav_client_clicked()     { ui->stackedWidget->setCurrentIndex(5); }
 void MainWindow::on_btn_nav_contrat_clicked()    { navigateToPage(2); }
-void MainWindow::on_btn_nav_poubelle_clicked()   { ui->stackedWidget->setCurrentIndex(7); }
+void MainWindow::on_btn_nav_poubelle_clicked()   {
+    ui->stackedWidget->setCurrentIndex(7);
+    ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+    clearFormPoubelle();
+}
 void MainWindow::on_btn_nav_equipements_clicked(){ ui->stackedWidget->setCurrentIndex(3); }
 void MainWindow::on_btn_nav_stock_clicked()      { ui->stackedWidget->setCurrentIndex(4); }
 
-void MainWindow::on_btn_dash_poubelle_clicked()  { ui->stackedWidget->setCurrentIndex(7); }
+void MainWindow::on_btn_dash_poubelle_clicked()  {
+    ui->stackedWidget->setCurrentIndex(7);
+    ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+    clearFormPoubelle();
+}
 void MainWindow::on_btn_dash_employe_clicked()   { ui->stackedWidget->setCurrentIndex(6); }
 void MainWindow::on_btn_dash_client_clicked()    { ui->stackedWidget->setCurrentIndex(5); }
 void MainWindow::on_btn_dash_contrat_clicked()   { navigateToPage(2); }
@@ -317,6 +342,10 @@ void MainWindow::navigateToPage(int pageIndex)
         Produit P;
         ui->tab_produit->setModel(P.afficher());
         chargerIdsClients();
+    }
+    if (pageIndex == 7) {
+        ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+        clearFormPoubelle();
     }
 }
 
@@ -372,9 +401,19 @@ void MainWindow::on_btn_supprimer_poubelle_clicked()
 
 void MainWindow::on_btn_modifier_poubelle_clicked()
 {
+    if (poubelle_currentSelectedId == -1) {
+        QMessageBox::warning(this, "Selection", "Veuillez sélectionner une poubelle à modifier dans le tableau.");
+        return;
+    }
+
     if (!validerFormulairePoubelle(true)) return;
 
     int id = ui->le_id_poubelle->text().toInt();
+    if (id != poubelle_currentSelectedId && tmp_poubelle.existe(id)) {
+        QMessageBox::warning(this, "Erreur", "ID existant. Veuillez saisir un ID unique.");
+        return;
+    }
+
     QString adresse = ui->le_adresse_poubelle->text();
     QString type = ui->le_type_dechet->text();
     int capacite = ui->sb_capacite->value();
@@ -388,12 +427,12 @@ void MainWindow::on_btn_modifier_poubelle_clicked()
 
     Poubelle p(id, type, adresse, capacite, etat, remplissage, batterie, statut_capteur, date_inst, date_coll);
 
-    if(p.modifier()) {
+    if(p.modifier(poubelle_currentSelectedId)) {
         QMessageBox::information(this, "Succès", "Poubelle modifiée");
         ui->tab_poubelle->setModel(tmp_poubelle.afficher());
         clearFormPoubelle();
     } else {
-        QMessageBox::critical(this, "Erreur", "Échec de la modification");
+        QMessageBox::critical(this, "Erreur", "Échec de la modification.\nDétail : " + p.getLastError());
     }
 }
 
@@ -401,8 +440,9 @@ void MainWindow::on_tab_poubelle_clicked(const QModelIndex &index)
 {
     int row = index.row();
     QAbstractItemModel *model = ui->tab_poubelle->model();
+    poubelle_currentSelectedId = model->data(model->index(row, 0)).toInt();
     ui->le_id_poubelle->setText(model->data(model->index(row, 0)).toString());
-    ui->le_id_poubelle->setEnabled(false);
+    ui->le_id_poubelle->setEnabled(true);
     ui->le_type_dechet->setText(model->data(model->index(row, 1)).toString());
     ui->le_adresse_poubelle->setText(model->data(model->index(row, 2)).toString());
     ui->sb_capacite->setValue(model->data(model->index(row, 3)).toInt());
@@ -412,24 +452,46 @@ void MainWindow::on_tab_poubelle_clicked(const QModelIndex &index)
     ui->cb_statut_capteur->setCurrentText(model->data(model->index(row, 7)).toString());
     ui->de_installation->setDate(model->data(model->index(row, 8)).toDate());
     ui->de_collecte->setDate(model->data(model->index(row, 9)).toDate());
+
+    // Ensure editable/locked fields always match the selected state.
+    on_cb_etat_poubelle_currentIndexChanged(ui->cb_etat_poubelle->currentIndex());
 }
 
 void MainWindow::on_cb_etat_poubelle_currentIndexChanged(int index)
 {
-    bool estInstalle = (index == 1);
-    ui->le_id_poubelle->setEnabled(true);
+    Q_UNUSED(index)
+    QString etat = ui->cb_etat_poubelle->currentText().trimmed().toUpper();
+    bool estInstalle = (etat == "INSTALLE" || etat == "INSTALLÉ");
+
+    // These fields stay editable regardless of state.
     ui->le_adresse_poubelle->setEnabled(true);
     ui->le_type_dechet->setEnabled(true);
     ui->sb_capacite->setEnabled(true);
+    ui->sb_capacite->setMinimum(estInstalle ? 1 : 0);
+    if (estInstalle && ui->sb_capacite->value() < 1) {
+        ui->sb_capacite->setValue(1);
+    }
+
+    // Only editable when the bin is installed.
     ui->sb_remplissage->setEnabled(estInstalle);
     ui->sb_batterie->setEnabled(estInstalle);
     ui->de_installation->setEnabled(estInstalle);
     ui->de_collecte->setEnabled(estInstalle);
     ui->cb_statut_capteur->setEnabled(estInstalle);
+
+    if (!estInstalle) {
+        // Keep stable defaults while locked in EN_STOCK mode.
+        ui->sb_remplissage->setValue(0);
+        ui->sb_batterie->setValue(100);
+        ui->cb_statut_capteur->setCurrentIndex(-1);
+        ui->de_installation->setDate(QDate::currentDate());
+        ui->de_collecte->setDate(QDate::currentDate().addDays(7));
+    }
 }
 
 void MainWindow::clearFormPoubelle()
 {
+    poubelle_currentSelectedId = -1;
     ui->le_id_poubelle->clear();
     ui->le_id_poubelle->setEnabled(true);
     ui->le_adresse_poubelle->clear();
@@ -441,6 +503,9 @@ void MainWindow::clearFormPoubelle()
     ui->cb_statut_capteur->setCurrentIndex(-1);
     ui->de_installation->setDate(QDate::currentDate());
     ui->de_collecte->setDate(QDate::currentDate().addDays(7));
+
+    // Force lock/unlock according to default state even if index did not change.
+    on_cb_etat_poubelle_currentIndexChanged(ui->cb_etat_poubelle->currentIndex());
 }
 
 bool MainWindow::validerFormulairePoubelle(bool isUpdate)
@@ -448,7 +513,8 @@ bool MainWindow::validerFormulairePoubelle(bool isUpdate)
     QString idStr = ui->le_id_poubelle->text();
     QString adresse = ui->le_adresse_poubelle->text();
     QString type = ui->le_type_dechet->text();
-    QString etat = ui->cb_etat_poubelle->currentText();
+    QString etat = ui->cb_etat_poubelle->currentText().trimmed().toUpper();
+    bool estInstallee = (etat == "INSTALLE" || etat == "INSTALLÉ");
     QRegularExpression idRegex("^\\d{5}$");
     QRegularExpression addrRegex("^[a-zA-Z\\s,]+$");
     QRegularExpression typeRegex("^[a-zA-Z\\s]+$");
@@ -473,7 +539,7 @@ bool MainWindow::validerFormulairePoubelle(bool isUpdate)
     QDate dateColl = ui->de_collecte->date();
     QDate today = QDate::currentDate();
 
-    if (etat == "INSTALLE" || etat == "INSTALLÉ") {
+    if (estInstallee) {
         if (dateColl < today) {
             QMessageBox::warning(this, "Erreur", "La date de collecte ne peut pas être dans le passé.");
             return false;
@@ -488,9 +554,15 @@ bool MainWindow::validerFormulairePoubelle(bool isUpdate)
         }
     }
     
-    if (etat == "INSTALLE") {
-        if (ui->sb_capacite->value() <= 0) return false;
-        if (ui->de_installation->date() > QDate::currentDate()) return false;
+    if (estInstallee) {
+        if (ui->sb_capacite->value() <= 0) {
+            QMessageBox::warning(this, "Erreur", "La capacite doit etre strictement superieure a 0 pour une poubelle installee.");
+            return false;
+        }
+        if (ui->de_installation->date() > QDate::currentDate()) {
+            QMessageBox::warning(this, "Erreur", "La date d'installation ne peut pas etre dans le futur.");
+            return false;
+        }
     }
     return true;
 }
@@ -942,6 +1014,25 @@ void MainWindow::contrat_onTabDoubleClicked(const QModelIndex &index)
 // ─── Ajouter un contrat ───────────────────────────────────────────────────────
 void MainWindow::contrat_onAjouterClicked()
 {
+    bool hasCustomId = !ui->ID_Contrat->text().trimmed().isEmpty();
+    bool idOk = false;
+    int newId = ui->ID_Contrat->text().trimmed().toInt(&idOk);
+    if (hasCustomId && (!idOk || !Contrat::validerID(newId))) {
+        QMessageBox::warning(this, "ID invalide", "Veuillez saisir un ID de contrat numérique valide (supérieur à 0).");
+        return;
+    }
+    if (!hasCustomId) {
+        QSqlQuery q;
+        if (!q.exec("SELECT NVL(MAX(ID_CONTRAT), 0) + 1 FROM CONTRAT") || !q.next()) {
+            QMessageBox::critical(this, "Erreur lors de l'ajout",
+                                  "Impossible de générer automatiquement l'ID du contrat.\n\nDétails techniques :\n"
+                                  + q.lastError().text());
+            return;
+        }
+        newId = q.value(0).toInt();
+        ui->ID_Contrat->setText(QString::number(newId));
+    }
+
     int     id_client       = ui->combo_ID_Client->currentText().toInt();
     int     cin             = ui->combo_CIN_Employe->currentText().toInt();
     QString type_ex         = ui->type_ex->currentText();
@@ -969,6 +1060,7 @@ void MainWindow::contrat_onAjouterClicked()
 
     Contrat c(id_client, cin, type_ex, prod_con, date_debut, date_fin,
               obj_ach_ann, tau_rem_acc, statut_contrat, clause_penale);
+    c.setId_contrat(newId);
 
     if (c.ajouter()) {
         QMessageBox::information(this, "Succès", "Le contrat a été ajouté avec succès !");
@@ -979,9 +1071,10 @@ void MainWindow::contrat_onAjouterClicked()
         contrat_resetValidationStyles();
         contrat_refreshStats();
     } else {
-        QSqlError err = QSqlDatabase::database().lastError();
+        QString err = c.getLastError().trimmed();
+        if (err.isEmpty()) err = "Erreur SQL inconnue (aucun détail retourné par le pilote).";
         QMessageBox::critical(this, "Erreur lors de l'ajout",
-                              "L'opération a échoué.\n\nDétails techniques :\n" + err.text());
+                              "L'opération a échoué.\n\nDétails techniques :\n" + err);
     }
 }
 
@@ -1036,9 +1129,10 @@ void MainWindow::contrat_onModifierClicked()
         ui->tab_contrat_2->setModel(Contrat().afficher());
         contrat_refreshStats();
     } else {
-        QSqlError err = QSqlDatabase::database().lastError();
+        QString err = c.getLastError().trimmed();
+        if (err.isEmpty()) err = "Erreur SQL inconnue (aucun détail retourné par le pilote).";
         QMessageBox::critical(this, "Erreur lors de la modification",
-                              "L'opération a échoué.\n\nDétails techniques :\n" + err.text());
+                              "L'opération a échoué.\n\nDétails techniques :\n" + err);
     }
 }
 
@@ -1596,7 +1690,10 @@ void MainWindow::equipement_onAjouterClicked()
         equipement_clearForm();
         equipement_rafraichirTable();
     } else {
-        QMessageBox::critical(this, "Erreur DB", "L'ajout de l'équipement a échoué.");
+        QString err = eq.getLastError().trimmed();
+        if (err.isEmpty()) err = "Erreur SQL inconnue (aucun détail retourné par le pilote).";
+        QMessageBox::critical(this, "Erreur DB",
+                              "L'ajout de l'équipement a échoué.\n\nDétails techniques :\n" + err);
     }
 }
 
@@ -1632,7 +1729,10 @@ void MainWindow::equipement_onModifierClicked()
         equipement_clearForm();
         equipement_rafraichirTable();
     } else {
-        QMessageBox::critical(this, "Erreur DB", "La modification a échoué.");
+        QString err = eq.getLastError().trimmed();
+        if (err.isEmpty()) err = "Erreur SQL inconnue (aucun détail retourné par le pilote).";
+        QMessageBox::critical(this, "Erreur DB",
+                              "La modification a échoué.\n\nDétails techniques :\n" + err);
     }
 }
 
@@ -2024,7 +2124,115 @@ void MainWindow::employe_refreshStats()
 // ===                  MODULE CLIENT                    ===
 // =========================================================
 
-void Client::onBtnAjouterClicked() {
+void MainWindow::rafraichirAffichage()
+{
+    QString sql = "SELECT ID_CLIENT, NOM_CLIENT, VILLE, CODE_POSTAL, NUM_TEL, PDG, ADRESSE FROM CLIENT";
+    if (!currentFilter.isEmpty()) {
+        sql += " WHERE " + currentFilter;
+    }
+
+    model->setQuery(sql, QSqlDatabase::database());
+
+    model->setHeaderData(0, Qt::Horizontal, "ID Client");
+    model->setHeaderData(1, Qt::Horizontal, "Nom Client");
+    model->setHeaderData(2, Qt::Horizontal, "Ville");
+    model->setHeaderData(3, Qt::Horizontal, "Code Postal");
+    model->setHeaderData(4, Qt::Horizontal, "Num Tel");
+    model->setHeaderData(5, Qt::Horizontal, "Responsable");
+    model->setHeaderData(6, Qt::Horizontal, "Adresse");
+
+    if (model->lastError().isValid()) {
+        qDebug() << "Erreur requête Client:" << model->lastError().text();
+    }
+}
+
+bool MainWindow::verifierSaisie()
+{
+    QString id = ui->le_id_client->text();
+    QString nom = ui->le_nom_client->text();
+    QString tel = ui->le_tel_client->text();
+    QString adr = ui->le_adresse_client->text();
+    QString responsable = ui->le_responsable_client->text();
+    QString cp = ui->dsb_codepostal_client->text();
+
+    if (id.isEmpty() || nom.isEmpty() || tel.isEmpty() || adr.isEmpty() || responsable.isEmpty() || cp.isEmpty()) {
+        QMessageBox::warning(this, "Champs vides", "Veuillez remplir tous les champs du formulaire.");
+        return false;
+    }
+
+    QRegularExpression rxNom("^[A-Za-zÀ-ÿ\\s]+$");
+    if (!rxNom.match(nom).hasMatch()) {
+        QMessageBox::warning(this, "Erreur Nom", "Le nom ne doit contenir que des lettres.");
+        return false;
+    }
+
+    QRegularExpression rxTel("^[0-9]{8}$");
+    if (!rxTel.match(tel).hasMatch()) {
+        QMessageBox::warning(this, "Erreur Téléphone", "Le numéro de téléphone doit contenir 8 chiffres.");
+        return false;
+    }
+
+    if (id.toInt() <= 0) {
+        QMessageBox::warning(this, "Erreur ID", "L'ID doit être un nombre positif.");
+        return false;
+    }
+
+    QRegularExpression rxCP("^[0-9]+$");
+    if (!rxCP.match(cp).hasMatch()) {
+        QMessageBox::warning(this, "Erreur Code Postal", "Le code postal doit être numérique.");
+        return false;
+    }
+
+    return true;
+}
+
+bool MainWindow::reaffecterIdClientDansRelations(int oldId, int newId)
+{
+    QSqlQuery q(QSqlDatabase::database());
+
+    q.prepare("UPDATE CONTRAT SET ID_CLIENT = :newId WHERE ID_CLIENT = :oldId");
+    q.bindValue(":newId", newId);
+    q.bindValue(":oldId", oldId);
+    if (!q.exec()) {
+        QMessageBox::critical(this, "Erreur de base de données", "Échec de la mise à jour des contrats :\n" + q.lastError().text());
+        return false;
+    }
+
+    q.prepare("UPDATE PRODUIT SET ID_CLIENT = :newId WHERE ID_CLIENT = :oldId");
+    q.bindValue(":newId", newId);
+    q.bindValue(":oldId", oldId);
+    if (!q.exec()) {
+        QMessageBox::critical(this, "Erreur de base de données", "Échec de la mise à jour des produits :\n" + q.lastError().text());
+        return false;
+    }
+
+    return true;
+}
+
+void MainWindow::onTableClicked(const QModelIndex &index)
+{
+    int r = index.row();
+    selectedClientId = model->data(model->index(r, 0)).toInt();
+    ui->le_id_client->setText(model->data(model->index(r, 0)).toString());
+    ui->le_nom_client->setText(model->data(model->index(r, 1)).toString());
+    ui->cb_ville_client->setCurrentText(model->data(model->index(r, 2)).toString());
+    ui->dsb_codepostal_client->setText(model->data(model->index(r, 3)).toString());
+    ui->le_tel_client->setText(model->data(model->index(r, 4)).toString());
+    ui->le_responsable_client->setText(model->data(model->index(r, 5)).toString());
+    ui->le_adresse_client->setText(model->data(model->index(r, 6)).toString());
+}
+
+void MainWindow::onRechercheTextChanged(const QString &text)
+{
+    if (text.isEmpty()) {
+        currentFilter.clear();
+    } else {
+        currentFilter = QString("UPPER(NOM_CLIENT) LIKE UPPER('%%1%')").arg(text);
+    }
+    rafraichirAffichage();
+}
+
+void MainWindow::onBtnAjouterClicked() {
     if(!verifierSaisie()) return;
 
     QSqlQuery query;
@@ -2049,7 +2257,7 @@ void Client::onBtnAjouterClicked() {
     }
 }
 
-void Client::onBtnModifierClicked() {
+void MainWindow::onBtnModifierClicked() {
     if(!verifierSaisie()) return;
 
     if (selectedClientId == -1) {
@@ -2066,27 +2274,82 @@ void Client::onBtnModifierClicked() {
     }
 
     QSqlQuery query(db);
-    query.prepare("UPDATE CLIENT SET ID_CLIENT=:newId, NOM_CLIENT=:nom, VILLE=:ville, CODE_POSTAL=:cp, NUM_TEL=:tel, PDG=:pdg, ADRESSE=:adr WHERE ID_CLIENT=:oldId");
 
-    query.bindValue(":newId", newId);
-    query.bindValue(":oldId", selectedClientId);
-    query.bindValue(":nom", ui->le_nom_client->text());
-    query.bindValue(":ville", ui->cb_ville_client->currentText());
-    query.bindValue(":cp", ui->dsb_codepostal_client->text());
-    query.bindValue(":tel", ui->le_tel_client->text());
-    query.bindValue(":pdg", ui->le_responsable_client->text());
-    query.bindValue(":adr", ui->le_adresse_client->text());
+    if (newId == selectedClientId) {
+        query.prepare("UPDATE CLIENT SET NOM_CLIENT=:nom, VILLE=:ville, CODE_POSTAL=:cp, NUM_TEL=:tel, PDG=:pdg, ADRESSE=:adr WHERE ID_CLIENT=:id");
+        query.bindValue(":id", selectedClientId);
+        query.bindValue(":nom", ui->le_nom_client->text());
+        query.bindValue(":ville", ui->cb_ville_client->currentText());
+        query.bindValue(":cp", ui->dsb_codepostal_client->text());
+        query.bindValue(":tel", ui->le_tel_client->text());
+        query.bindValue(":pdg", ui->le_responsable_client->text());
+        query.bindValue(":adr", ui->le_adresse_client->text());
 
-    if(!query.exec()) {
-        db.rollback();
-        QMessageBox::critical(nullptr, "Erreur de base de données", 
-                              "Erreur lors de la modification :\n" + query.lastError().text());
-        return;
-    }
+        if(!query.exec()) {
+            db.rollback();
+            QMessageBox::critical(nullptr, "Erreur de base de données",
+                                  "Erreur lors de la modification :\n" + query.lastError().text());
+            return;
+        }
+    } else {
+        // Oracle does not support ON UPDATE CASCADE; migrate to a new row then move child records.
+        query.prepare("SELECT COUNT(*) FROM CLIENT WHERE ID_CLIENT = :id");
+        query.bindValue(":id", newId);
+        if (!query.exec() || !query.next()) {
+            db.rollback();
+            QMessageBox::critical(nullptr, "Erreur de base de données",
+                                  "Impossible de vérifier le nouvel ID client :\n" + query.lastError().text());
+            return;
+        }
+        if (query.value(0).toInt() > 0) {
+            db.rollback();
+            QMessageBox::warning(nullptr, "ID déjà utilisé",
+                                 "Ce nouvel ID client existe déjà. Veuillez choisir un autre ID.");
+            return;
+        }
 
-    if (!reaffecterIdClientDansRelations(selectedClientId, newId)) {
-        db.rollback();
-        return;
+        int pointsFidelite = 0;
+        query.prepare("SELECT POINT_DE_FIDELITE FROM CLIENT WHERE ID_CLIENT = :oldId");
+        query.bindValue(":oldId", selectedClientId);
+        if (!query.exec() || !query.next()) {
+            db.rollback();
+            QMessageBox::critical(nullptr, "Erreur de base de données",
+                                  "Impossible de lire le client actuel :\n" + query.lastError().text());
+            return;
+        }
+        pointsFidelite = query.value(0).toInt();
+
+        query.prepare("INSERT INTO CLIENT (ID_CLIENT, NOM_CLIENT, VILLE, CODE_POSTAL, NUM_TEL, PDG, ADRESSE, POINT_DE_FIDELITE) "
+                      "VALUES (:id, :nom, :ville, :cp, :tel, :pdg, :adr, :points)");
+        query.bindValue(":id", newId);
+        query.bindValue(":nom", ui->le_nom_client->text());
+        query.bindValue(":ville", ui->cb_ville_client->currentText());
+        query.bindValue(":cp", ui->dsb_codepostal_client->text());
+        query.bindValue(":tel", ui->le_tel_client->text());
+        query.bindValue(":pdg", ui->le_responsable_client->text());
+        query.bindValue(":adr", ui->le_adresse_client->text());
+        query.bindValue(":points", pointsFidelite);
+
+        if (!query.exec()) {
+            db.rollback();
+            QMessageBox::critical(nullptr, "Erreur de base de données",
+                                  "Impossible de créer le client avec le nouvel ID :\n" + query.lastError().text());
+            return;
+        }
+
+        if (!reaffecterIdClientDansRelations(selectedClientId, newId)) {
+            db.rollback();
+            return;
+        }
+
+        query.prepare("DELETE FROM CLIENT WHERE ID_CLIENT = :oldId");
+        query.bindValue(":oldId", selectedClientId);
+        if (!query.exec()) {
+            db.rollback();
+            QMessageBox::critical(nullptr, "Erreur de base de données",
+                                  "Impossible de supprimer l'ancien client :\n" + query.lastError().text());
+            return;
+        }
     }
 
     if (!db.commit()) {
@@ -2099,7 +2362,7 @@ void Client::onBtnModifierClicked() {
     rafraichirAffichage();
 }
 
-void Client::onBtnSupprimerClicked() {
+void MainWindow::onBtnSupprimerClicked() {
     int row = ui->tab_clients->currentIndex().row();
     if(row < 0) {
         QMessageBox::warning(nullptr, "Sélection", "Veuillez sélectionner un client dans le tableau.");

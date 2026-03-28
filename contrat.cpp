@@ -34,27 +34,29 @@ bool Contrat::ajouter()
 
     query.prepare(
         "INSERT INTO CONTRAT "
-        "(ID_CLIENT, CIN, TYPE_EXCLUSIVITE, PRODUITS_CONCERNES, "
+        "(ID_CONTRAT, ID_CLIENT, CIN, TYPE_EXCLUSIVITE, PRODUITS_CONCERNES, "
         " DATE_DEBUT, DATE_FIN, OBJECTIF_ACHAT_ANNUEL, TAUX_REMISE_ACCORDE, STATUT_CONTRAT, CLAUSE_PENALE) "
         "VALUES "
-        "(:id_client, :cin, :type_ex, :prod_con, "
-        " TO_DATE(:date_deb, 'DD/MM/YYYY'), TO_DATE(:date_fin, 'DD/MM/YYYY'), "
-        " :ob_ach_an, :tau_rem_acc, :status, :clause)"
+        "(:id_contrat, :id_client, :cin, :type_ex, :prod_con, "
+        " :date_deb, :date_fin, :ob_ach_an, :tau_rem_acc, :status, :clause)"
     );
 
+    last_error.clear();
+    query.bindValue(":id_contrat", id_contrat);
     query.bindValue(":id_client",   id_client);
     query.bindValue(":cin",         cin);
     query.bindValue(":type_ex",     type_exclusivite);
     query.bindValue(":prod_con",    produits_concernes);
-    query.bindValue(":date_deb",    date_debut.toString("dd/MM/yyyy"));
-    query.bindValue(":date_fin",    date_fin.toString("dd/MM/yyyy"));
-    query.bindValue(":ob_ach_an",   QString::number(objectif_achat_annuel, 'f', 2));
-    query.bindValue(":tau_rem_acc", QString::number(taux_remise_accorde, 'f', 2));
+    query.bindValue(":date_deb",    date_debut);
+    query.bindValue(":date_fin",    date_fin);
+    query.bindValue(":ob_ach_an",   objectif_achat_annuel);
+    query.bindValue(":tau_rem_acc", taux_remise_accorde);
     query.bindValue(":status",      statut_contrat);
     query.bindValue(":clause",      clause_penale);
 
     if (!query.exec()) {
-        qDebug() << "Erreur ajouter contrat:" << query.lastError().text();
+        last_error = query.lastError().text();
+        qDebug() << "Erreur ajouter contrat:" << last_error;
         return false;
     }
 
@@ -219,32 +221,39 @@ bool Contrat::modifier(int old_id)
                   "CIN = :cin, "
                   "TYPE_EXCLUSIVITE = :type_ex, "
                   "PRODUITS_CONCERNES = :prod_con, "
-                  "DATE_DEBUT = TO_DATE(:date_deb, 'DD/MM/YYYY'), "
-                  "DATE_FIN = TO_DATE(:date_fin, 'DD/MM/YYYY'), "
+                  "DATE_DEBUT = :date_deb, "
+                  "DATE_FIN = :date_fin, "
                   "OBJECTIF_ACHAT_ANNUEL = :ob_ach_an, "
                   "TAUX_REMISE_ACCORDE = :tau_rem_acc, "
                   "STATUT_CONTRAT = :status, "
                   "CLAUSE_PENALE = :clause "
                   "WHERE ID_CONTRAT = :old_id");
 
+    last_error.clear();
     query.bindValue(":new_id",      id_contrat);
     query.bindValue(":old_id",      old_id);
     query.bindValue(":id_client",   id_client);
     query.bindValue(":cin",         cin);
     query.bindValue(":type_ex",     type_exclusivite);
     query.bindValue(":prod_con",    produits_concernes);
-    query.bindValue(":date_deb",    date_debut.toString("dd/MM/yyyy"));
-    query.bindValue(":date_fin",    date_fin.toString("dd/MM/yyyy"));
-    query.bindValue(":ob_ach_an",   QString::number(objectif_achat_annuel, 'f', 2));
-    query.bindValue(":tau_rem_acc", QString::number(taux_remise_accorde, 'f', 2));
+    query.bindValue(":date_deb",    date_debut);
+    query.bindValue(":date_fin",    date_fin);
+    query.bindValue(":ob_ach_an",   objectif_achat_annuel);
+    query.bindValue(":tau_rem_acc", taux_remise_accorde);
     query.bindValue(":status",      statut_contrat);
     query.bindValue(":clause",      clause_penale);
 
     if (!query.exec()) {
-        qDebug() << "Erreur modification contrat:" << query.lastError().text();
+        last_error = query.lastError().text();
+        qDebug() << "Erreur modification contrat:" << last_error;
         return false;
     }
     return true;
+}
+
+QString Contrat::getLastError() const
+{
+    return last_error;
 }
 
 // ─── Méthodes de validation statiques ────────────────────────────────────────

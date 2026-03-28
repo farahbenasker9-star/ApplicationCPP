@@ -54,7 +54,7 @@ public:
     bool ajouter();
     QSqlQueryModel * afficher();
     bool supprimer(int id);
-    bool modifier();
+    bool modifier(int oldId);
     bool existe(int id);
     QSqlQueryModel* trier(QString critere);
     QSqlQueryModel* rechercher(QString critere, QString val);

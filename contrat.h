@@ -54,6 +54,7 @@ public:
     QSqlQueryModel * rechercher(const QString &texte) const;
     bool supprimer(int id);
     bool modifier(int old_id);
+    QString getLastError() const;
 
     // Export PDF
     bool exporterPdf(const QString &filePath, QSqlQueryModel *model = nullptr) const;
@@ -78,6 +79,7 @@ private:
     double  taux_remise_accorde;
     QString statut_contrat;
     QString clause_penale;
+    QString last_error;
 };
 
 #endif // CONTRAT_H

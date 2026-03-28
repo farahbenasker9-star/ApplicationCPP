@@ -105,14 +105,15 @@ bool Poubelle::supprimer(int id)
     return query.exec();
 }
 
-bool Poubelle::modifier()
+bool Poubelle::modifier(int oldId)
 {
     QSqlQuery query;
-    query.prepare("UPDATE POUBELLE_INTELLIGENTE SET TYPE_DECHET = :type, ADRESSE = :addr, CAPACITE_MAX = :cap, ETAT_DEPLOYEMENT = :etat, "
+    query.prepare("UPDATE POUBELLE_INTELLIGENTE SET ID_POUBELLE = :new_id, TYPE_DECHET = :type, ADRESSE = :addr, CAPACITE_MAX = :cap, ETAT_DEPLOYEMENT = :etat, "
                   "NIVEAU_REMPLISSAGE = :niv, ETAT_BATTERIE = :batt, STATUT_CAPTEUR = :statut, DATE_INSTALLATION = :date_inst, DATE_DERNIERE_COLLECTE = :date_coll "
-                  "WHERE ID_POUBELLE = :id");
+                  "WHERE ID_POUBELLE = :old_id");
     
-    query.bindValue(":id", id_poubelle);
+    query.bindValue(":new_id", id_poubelle);
+    query.bindValue(":old_id", oldId);
     query.bindValue(":type", type_dechet);
     query.bindValue(":addr", adresse);
     query.bindValue(":cap", capacite_max);
@@ -139,6 +140,10 @@ bool Poubelle::modifier()
     
     if(!query.exec()) {
         lastError = query.lastError().text();
+        return false;
+    }
+    if (query.numRowsAffected() == 0) {
+        lastError = "Aucune poubelle trouvée avec l'ID sélectionné.";
         return false;
     }
     return true;
