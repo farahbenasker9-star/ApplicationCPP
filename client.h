@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QSqlTableModel>
+#include <QSqlQueryModel>
 #include <QModelIndex>
 
 namespace Ui { class MainWindow; }
@@ -21,9 +22,13 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    QSqlTableModel *model;
+    QSqlQueryModel *model;
+    QString currentFilter;
+    int selectedClientId = -1; // Id currently selected in the table
+
     void rafraichirAffichage();
     bool verifierSaisie(); // Fonction de contrôle de saisie centralisée
+    bool reaffecterIdClientDansRelations(int oldId, int newId);
 };
 
 #endif

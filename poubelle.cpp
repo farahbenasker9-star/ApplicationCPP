@@ -3,6 +3,11 @@
 #include <QSqlError>
 #include <QDebug>
 #include <QVariant>
+#include <QPdfWriter>
+#include <QPainter>
+#include <QFileDialog>
+#include <QDesktopServices>
+#include <QUrl>
 
 Poubelle::Poubelle()
 {
@@ -42,7 +47,7 @@ bool Poubelle::ajouter()
     query.bindValue(":niv", niveau_remplissage);
     query.bindValue(":batt", etat_batterie);
     
-    if(statut_capteur.isEmpty() || statut_capteur == " ") query.bindValue(":statut", QVariant(QVariant::String));
+    if(statut_capteur.isEmpty() || statut_capteur == " ") query.bindValue(":statut", QVariant(QMetaType::fromType<QString>()));
     else query.bindValue(":statut", statut_capteur);
     
     // Mapping etat pour contrainte Oracle
@@ -52,8 +57,8 @@ bool Poubelle::ajouter()
     else if (etat == "MAINTENANCE") etat = "MAINTENANCE";
 
     if (etat == "EN_STOCK") {
-        query.bindValue(":date_inst", QVariant(QVariant::Date));
-        query.bindValue(":date_coll", QVariant(QVariant::Date));
+        query.bindValue(":date_inst", QVariant(QMetaType::fromType<QDate>()));
+        query.bindValue(":date_coll", QVariant(QMetaType::fromType<QDate>()));
     } else {
         query.bindValue(":date_inst", date_installation);
         query.bindValue(":date_coll", date_derniere_collecte);
@@ -73,13 +78,10 @@ bool Poubelle::ajouter()
 QSqlQueryModel * Poubelle::afficher()
 {
     QSqlQueryModel * model = new QSqlQueryModel();
-    QSqlDatabase db = QSqlDatabase::database();
-
-    // Insert dummy data if the table is empty (for testing)
-    QSqlQuery query(db);
+    QSqlQuery query;
     query.prepare("SELECT ID_POUBELLE, TYPE_DECHET, ADRESSE, CAPACITE_MAX, ETAT_DEPLOYEMENT, NIVEAU_REMPLISSAGE, ETAT_BATTERIE, STATUT_CAPTEUR, DATE_INSTALLATION, DATE_DERNIERE_COLLECTE FROM POUBELLE_INTELLIGENTE");
     query.exec();
-    model->setQuery(query);
+    model->setQuery(std::move(query));
     
     model->setHeaderData(0, Qt::Horizontal, QObject::tr("ID"));
     model->setHeaderData(1, Qt::Horizontal, QObject::tr("Type"));
@@ -103,14 +105,15 @@ bool Poubelle::supprimer(int id)
     return query.exec();
 }
 
-bool Poubelle::modifier()
+bool Poubelle::modifier(int oldId)
 {
     QSqlQuery query;
-    query.prepare("UPDATE POUBELLE_INTELLIGENTE SET TYPE_DECHET = :type, ADRESSE = :addr, CAPACITE_MAX = :cap, ETAT_DEPLOYEMENT = :etat, "
+    query.prepare("UPDATE POUBELLE_INTELLIGENTE SET ID_POUBELLE = :new_id, TYPE_DECHET = :type, ADRESSE = :addr, CAPACITE_MAX = :cap, ETAT_DEPLOYEMENT = :etat, "
                   "NIVEAU_REMPLISSAGE = :niv, ETAT_BATTERIE = :batt, STATUT_CAPTEUR = :statut, DATE_INSTALLATION = :date_inst, DATE_DERNIERE_COLLECTE = :date_coll "
-                  "WHERE ID_POUBELLE = :id");
+                  "WHERE ID_POUBELLE = :old_id");
     
-    query.bindValue(":id", id_poubelle);
+    query.bindValue(":new_id", id_poubelle);
+    query.bindValue(":old_id", oldId);
     query.bindValue(":type", type_dechet);
     query.bindValue(":addr", adresse);
     query.bindValue(":cap", capacite_max);
@@ -124,12 +127,12 @@ bool Poubelle::modifier()
     query.bindValue(":niv", niveau_remplissage);
     query.bindValue(":batt", etat_batterie);
     
-    if(statut_capteur.isEmpty() || statut_capteur == " ") query.bindValue(":statut", QVariant(QVariant::String));
+    if(statut_capteur.isEmpty() || statut_capteur == " ") query.bindValue(":statut", QVariant(QMetaType::fromType<QString>()));
     else query.bindValue(":statut", statut_capteur);
 
     if (etat == "EN_STOCK") {
-        query.bindValue(":date_inst", QVariant(QVariant::Date));
-        query.bindValue(":date_coll", QVariant(QVariant::Date));
+        query.bindValue(":date_inst", QVariant(QMetaType::fromType<QDate>()));
+        query.bindValue(":date_coll", QVariant(QMetaType::fromType<QDate>()));
     } else {
         query.bindValue(":date_inst", date_installation);
         query.bindValue(":date_coll", date_derniere_collecte);
@@ -139,29 +142,62 @@ bool Poubelle::modifier()
         lastError = query.lastError().text();
         return false;
     }
+    if (query.numRowsAffected() == 0) {
+        lastError = "Aucune poubelle trouvée avec l'ID sélectionné.";
+        return false;
+    }
     return true;
 }
 
 QSqlQueryModel* Poubelle::trier(QString critere)
 {
-    QSqlQueryModel* model = new QSqlQueryModel();
+    QSqlQueryModel * model = new QSqlQueryModel();
     QSqlQuery query;
-    QString queryStr = "SELECT * FROM POUBELLE_INTELLIGENTE ORDER BY " + critere;
+    QString queryStr = "SELECT ID_POUBELLE, TYPE_DECHET, ADRESSE, CAPACITE_MAX, ETAT_DEPLOYEMENT, NIVEAU_REMPLISSAGE, ETAT_BATTERIE, STATUT_CAPTEUR, DATE_INSTALLATION, DATE_DERNIERE_COLLECTE FROM POUBELLE_INTELLIGENTE ORDER BY " + critere;
     query.prepare(queryStr);
     query.exec();
-    model->setQuery(query);
+    model->setQuery(std::move(query));
+    
+    model->setHeaderData(0, Qt::Horizontal, QObject::tr("ID"));
+    model->setHeaderData(1, Qt::Horizontal, QObject::tr("Type"));
+    model->setHeaderData(2, Qt::Horizontal, QObject::tr("Adresse"));
+    model->setHeaderData(3, Qt::Horizontal, QObject::tr("Capacité (L)"));
+    model->setHeaderData(4, Qt::Horizontal, QObject::tr("État"));
+    model->setHeaderData(5, Qt::Horizontal, QObject::tr("Remplissage (%)"));
+    model->setHeaderData(6, Qt::Horizontal, QObject::tr("Batterie (%)"));
+    model->setHeaderData(7, Qt::Horizontal, QObject::tr("Statut Capteur"));
+    model->setHeaderData(8, Qt::Horizontal, QObject::tr("Installation"));
+    model->setHeaderData(9, Qt::Horizontal, QObject::tr("Dernière Collecte"));
+
     return model;
 }
 
-QSqlQueryModel* Poubelle::rechercher(QString val)
+QSqlQueryModel* Poubelle::rechercher(QString critere, QString val)
 {
-    QSqlQueryModel* model = new QSqlQueryModel();
+    QSqlQueryModel * model = new QSqlQueryModel();
     QSqlQuery query;
-    QString queryStr = "SELECT * FROM POUBELLE_INTELLIGENTE WHERE ID_POUBELLE LIKE :val OR ADRESSE LIKE :val";
+    
+    QString column = "ID_POUBELLE";
+    if (critere == "Type de déchets" || critere == "Type de déchet" || critere == "Type") column = "TYPE_DECHET";
+    else if (critere == "Adresse") column = "ADRESSE";
+    
+    QString queryStr = "SELECT ID_POUBELLE, TYPE_DECHET, ADRESSE, CAPACITE_MAX, ETAT_DEPLOYEMENT, NIVEAU_REMPLISSAGE, ETAT_BATTERIE, STATUT_CAPTEUR, DATE_INSTALLATION, DATE_DERNIERE_COLLECTE FROM POUBELLE_INTELLIGENTE WHERE UPPER(" + column + ") LIKE UPPER(:val)";
     query.prepare(queryStr);
-    query.bindValue(":val", val + "%");
+    query.bindValue(":val", "%" + val + "%");
     query.exec();
-    model->setQuery(query);
+    model->setQuery(std::move(query));
+
+    model->setHeaderData(0, Qt::Horizontal, QObject::tr("ID"));
+    model->setHeaderData(1, Qt::Horizontal, QObject::tr("Type"));
+    model->setHeaderData(2, Qt::Horizontal, QObject::tr("Adresse"));
+    model->setHeaderData(3, Qt::Horizontal, QObject::tr("Capacité (L)"));
+    model->setHeaderData(4, Qt::Horizontal, QObject::tr("État"));
+    model->setHeaderData(5, Qt::Horizontal, QObject::tr("Remplissage (%)"));
+    model->setHeaderData(6, Qt::Horizontal, QObject::tr("Batterie (%)"));
+    model->setHeaderData(7, Qt::Horizontal, QObject::tr("Statut Capteur"));
+    model->setHeaderData(8, Qt::Horizontal, QObject::tr("Installation"));
+    model->setHeaderData(9, Qt::Horizontal, QObject::tr("Dernière Collecte"));
+
     return model;
 }
 
@@ -197,3 +233,64 @@ Poubelle Poubelle::getPoubelle(int id)
     }
     return Poubelle();
 }
+
+void Poubelle::exporterPDF(int id)
+{
+    Poubelle p = getPoubelle(id);
+    if (p.getId() == 0) return;
+
+    QString fileName = QFileDialog::getSaveFileName(nullptr, "Exporter en PDF", 
+                        QString("Fiche_Poubelle_%1.pdf").arg(id), "*.pdf");
+    
+    if (fileName.isEmpty()) return;
+
+    QPdfWriter pdfWriter(fileName);
+    pdfWriter.setPageSize(QPageSize(QPageSize::A4));
+    pdfWriter.setPageMargins(QMarginsF(30, 30, 30, 30));
+
+    QPainter painter(&pdfWriter);
+    int width = pdfWriter.width();
+    int height = pdfWriter.height();
+
+    // -- DESIGN --
+    painter.setPen(QColor(46, 125, 50)); // Vert foncé
+    painter.setFont(QFont("Arial", 25, QFont::Bold));
+    painter.drawText(0, 500, width, 500, Qt::AlignCenter, "FICHE TECHNIQUE POUBELLE");
+    
+    painter.setPen(Qt::black);
+    painter.drawLine(100, 1100, width-100, 1100);
+
+    // Infos
+    QFont labelFont("Arial", 12, QFont::Bold);
+    QFont valFont("Arial", 12);
+    int y = 1800;
+    int step = 600;
+
+    auto drawRow = [&](QString label, QString value) {
+        painter.setFont(labelFont);
+        painter.setPen(QColor(70, 70, 70));
+        painter.drawText(200, y, label);
+        painter.setFont(valFont);
+        painter.setPen(Qt::black);
+        painter.drawText(2500, y, value);
+        y += step;
+    };
+
+    drawRow("Identifiant :", QString::number(p.getId()));
+    drawRow("Type de Déchet :", p.getType());
+    drawRow("Adresse :", p.getAdresse());
+    drawRow("Capacité Max :", QString::number(p.getCapacite()) + " Litres");
+    drawRow("État Déploiement :", p.getEtat());
+    drawRow("Niveau Remplissage :", QString::number(p.getNiveauRemplissage()) + " %");
+    drawRow("État Batterie :", QString::number(p.getEtatBatterie()) + " %");
+    drawRow("Statut Capteur :", p.getStatutCapteur());
+    drawRow("Date Installation :", p.getDateInstallation().toString("dd/MM/yyyy"));
+    drawRow("Prochaine Collecte :", p.getDateCollecte().toString("dd/MM/yyyy"));
+
+    painter.setFont(QFont("Arial", 10, QFont::StyleItalic));
+    painter.drawText(0, height - 500, width, 500, Qt::AlignCenter, "Généré par EcoCycleApp - 2026");
+
+    painter.end();
+    QDesktopServices::openUrl(QUrl::fromLocalFile(fileName));
+}
+
