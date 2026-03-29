@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <QRegularExpressionValidator>
 #include <QFileDialog>
 #include <QPrinter>
 #include <QTextDocument>
@@ -32,6 +33,17 @@
 #include <QtCharts/QBarCategoryAxis>
 #include <QtCharts/QValueAxis>
 #include <QStyledItemDelegate>
+
+// Helper to keep contract combo boxes black by default
+static void contrat_applyComboBoxBlackStyle(QComboBox *combo)
+{
+    if (!combo) return;
+    combo->setStyleSheet(
+        "QComboBox { color: black; background-color: white; } "
+        "QComboBox QLineEdit { color: black; background-color: white; } "
+        "QComboBox QAbstractItemView { background-color: white; color: black; }"
+    );
+}
 
 // ==================== CUSTOM DELEGATE FOR CIN ====================
 class CinDelegate : public QStyledItemDelegate
@@ -214,6 +226,11 @@ MainWindow::MainWindow(QWidget *parent)
     // Affichage initial du tableau
     ui->tab_contrat_2->setModel(Contrat().afficher());
     contrat_populateComboBoxes();
+    contrat_applyComboBoxBlackStyle(ui->combo_ID_Client);
+    contrat_applyComboBoxBlackStyle(ui->combo_CIN_Employe);
+    contrat_applyComboBoxBlackStyle(ui->type_ex);
+    contrat_applyComboBoxBlackStyle(ui->prod_con);
+    contrat_applyComboBoxBlackStyle(ui->status_contrat);
 
     // Connexions CRUD
     connect(ui->tab_contrat_2, &QTableView::clicked,       this, &MainWindow::contrat_onTabClicked);
@@ -1232,7 +1249,11 @@ void MainWindow::contrat_setWidgetStyle(QWidget *widget, bool isValid)
 void MainWindow::contrat_resetValidationStyles()
 {
     ui->ID_Contrat->setStyleSheet("");
-    ui->combo_ID_Client->setStyleSheet("");
+    contrat_applyComboBoxBlackStyle(ui->combo_ID_Client);
+    contrat_applyComboBoxBlackStyle(ui->combo_CIN_Employe);
+    contrat_applyComboBoxBlackStyle(ui->type_ex);
+    contrat_applyComboBoxBlackStyle(ui->prod_con);
+    contrat_applyComboBoxBlackStyle(ui->status_contrat);
     ui->date_debut->setStyleSheet("");
     ui->date_fin->setStyleSheet("");
     ui->obj_ach_ann->setStyleSheet("");
@@ -1261,12 +1282,14 @@ void MainWindow::contrat_validateID()
         ui->ID_Contrat->setStyleSheet("");
     } else {
         bool idOk;
-        int id = text.toInt(&idOk);
-        contrat_setWidgetStyle(ui->ID_Contrat, idOk && Contrat::validerID(id));
+        qlonglong id = text.toLongLong(&idOk);
+        bool lengthOk = text.length() <= 8;
+        bool valid = idOk && lengthOk && Contrat::validerID(static_cast<int>(id));
+        contrat_setWidgetStyle(ui->ID_Contrat, valid);
     }
 
     if (ui->combo_ID_Client->currentIndex() <= 0) {
-        ui->combo_ID_Client->setStyleSheet("");
+        contrat_applyComboBoxBlackStyle(ui->combo_ID_Client);
     } else {
         contrat_setWidgetStyle(ui->combo_ID_Client, true);
     }
