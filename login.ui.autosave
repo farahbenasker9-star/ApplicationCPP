@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Login</class>
+ <widget class="QDialog" name="Login">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1300</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">/* --- 1. LE FOND GÉNÉRAL --- */
+QDialog {
+    /* Vérifie que ce chemin est bon dans tes ressources ! */
+    border-image: url(:/new/prefix1/images/bg_left.jpg) 0 0 0 0 stretch stretch;
+}
+
+/* --- 2. LE PANNEAU GAUCHE (Vert Foncé Transparent) --- */
+QFrame#frame_left {
+    background-color: rgba(20, 60, 30, 210); 
+    border-top-left-radius: 15px;
+    border-bottom-left-radius: 15px;
+}
+
+/* Texte à gauche en BLANC */
+QFrame#frame_left QLabel {
+    color: #ffffff;
+    font-family: &quot;Segoe UI&quot;, sans-serif;
+    font-size: 14px;
+}
+
+/* Le titre EcoCycle Staff */
+QFrame#frame_left QLabel:first-child {
+    font-size: 26px;
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+/* --- 3. LE PANNEAU DROIT (Blanc Transparent) --- */
+QFrame#frame_right {
+  pour voir l'image */
+    border-top-right-radius: 15px;
+    border-bottom-right-radius: 15px;
+}
+
+/* Texte à droite */
+QFrame#frame_right QLabel {
+    color: #1B5E20;
+    font-family: &quot;Segoe UI&quot;, sans-serif;
+    font-size: 22px; 
+    font-weight: bold; 
+    qproperty-alignment: AlignCenter;
+}
+
+/* --- 4. CHAMPS DE SAISIE --- */
+QLineEdit {
+    background-color: rgba(255, 255, 255, 180);
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 10px; /* Un peu d'espace entre les champs */
+}
+
+QLineEdit:focus {
+    background-color: #ffffff;
+    border: 2px solid #4CAF50;
+}
+
+/* --- 5. BOUTON SIGN IN --- */
+QPushButton#btn_login {
+    background-color: #2E7D32; 
+    color: white;
+    border-radius: 5px;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: bold;
+    border: none;
+    margin-top: 10px;
+}
+
+QPushButton#btn_login:hover {
+    background-color: #1B5E20;
+    cursor: pointer;
+}
+
+QPushButton#btn_login:pressed {
+    background-color: #003300;
+}</string>
+  </property>
+  <widget class="QFrame" name="frame_left">
+   <property name="geometry">
+    <rect>
+     <x>1</x>
+     <y>1</y>
+     <width>451</width>
+     <height>811</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgb(180, 219, 199);</string>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Shape::StyledPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Shadow::Raised</enum>
+   </property>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>200</y>
+      <width>221</width>
+      <height>251</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="pixmap">
+     <pixmap resource="ressources.qrc">:/images/logo-removebg-preview (1).png</pixmap>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QStackedWidget" name="stackedWidget">
+   <property name="geometry">
+    <rect>
+     <x>460</x>
+     <y>10</y>
+     <width>841</width>
+     <height>701</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">
+
+/* --- BOUTON &quot;MOT DE PASSE OUBLIÉ&quot; (Style Lien) --- */
+QPushButton#btn_forgot_nav {
+    border: none;
+    color: #2E7D32; /* Vert */
+    text-decoration: underline;
+    font-size: 12px;
+}
+QPushButton#btn_forgot_nav:hover {
+    color: #1B5E20; /* Plus foncé au survol */
+}
+
+/* --- BOUTON RETOUR (Page Recovery) --- */
+QPushButton#btn_back_login {
+    border: 1px solid #aaa;
+    color: #555;
+    margin-top: 10px;
+}
+QPushButton#btn_back_login:hover {
+    background-color: #eee;
+}</string>
+   </property>
+   <property name="currentIndex">
+    <number>1</number>
+   </property>
+   <widget class="QWidget" name="page">
+    <widget class="QFrame" name="frame_right">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>821</width>
+       <height>701</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true"/>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::Shape::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Shadow::Raised</enum>
+     </property>
+     <widget class="QWidget" name="verticalLayoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>300</y>
+        <width>711</width>
+        <height>351</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="le_username">
+         <property name="placeholderText">
+          <string>Username</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="le_password">
+         <property name="echoMode">
+          <enum>QLineEdit::EchoMode::Password</enum>
+         </property>
+         <property name="placeholderText">
+          <string>Password</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_forgot">
+         <property name="text">
+          <string>                                                                                                                                                 Reset Password</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btn_login">
+         <property name="text">
+          <string>Sign in</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>250</x>
+        <y>150</y>
+        <width>321</width>
+        <height>71</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:24pt; color:#ffffff;&quot;&gt;Welcome Back&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="page_2"/>
+  </widget>
+ </widget>
+ <resources>
+  <include location="ressources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

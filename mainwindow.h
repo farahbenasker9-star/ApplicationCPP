@@ -109,6 +109,7 @@ private slots:
     void employe_onTriClicked();
     void employe_onPdfClicked();
     void employe_onRefreshClicked();
+    void employe_onGenererContratClicked();
 
     // ─── Module Client ───────────────────────────────────────────────────────
     void onBtnAjouterClicked();

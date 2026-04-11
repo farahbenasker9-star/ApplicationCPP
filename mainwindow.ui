@@ -374,7 +374,7 @@ QWidget#centralwidget {
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>7</number>
+       <number>6</number>
       </property>
       <widget class="QWidget" name="page_dashboard">
        <widget class="QLabel" name="label_logo_dash">
@@ -4085,7 +4085,7 @@ background-color: rgb(30, 136, 229);</string>
         <item>
          <widget class="QTabWidget" name="tabWidget_right">
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab_stats">
            <attribute name="title">
@@ -4114,6 +4114,133 @@ background-color: rgb(30, 136, 229);</string>
            <attribute name="title">
             <string>Contrat</string>
            </attribute>
+           <widget class="QGroupBox" name="gb_contrat">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>-40</y>
+              <width>481</width>
+              <height>691</height>
+             </rect>
+            </property>
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="title">
+             <string>Statistiques</string>
+            </property>
+            <widget class="QComboBox" name="cb_type_contrat_emp">
+             <property name="geometry">
+              <rect>
+               <x>130</x>
+               <y>190</y>
+               <width>161</width>
+               <height>41</height>
+              </rect>
+             </property>
+             <item>
+              <property name="text">
+               <string>CDI</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>CDD</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Stage</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>SIVP</string>
+              </property>
+             </item>
+            </widget>
+            <widget class="QLabel" name="label_17">
+             <property name="geometry">
+              <rect>
+               <x>150</x>
+               <y>150</y>
+               <width>101</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Type de contrat</string>
+             </property>
+            </widget>
+            <widget class="QSpinBox" name="sb_periode_essai_emp">
+             <property name="geometry">
+              <rect>
+               <x>110</x>
+               <y>300</y>
+               <width>221</width>
+               <height>41</height>
+              </rect>
+             </property>
+            </widget>
+            <widget class="QLabel" name="label_18">
+             <property name="geometry">
+              <rect>
+               <x>140</x>
+               <y>260</y>
+               <width>161</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Période d'essai (en mois)</string>
+             </property>
+            </widget>
+            <widget class="QLabel" name="label_19">
+             <property name="geometry">
+              <rect>
+               <x>170</x>
+               <y>350</y>
+               <width>161</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Lieu de travail</string>
+             </property>
+            </widget>
+            <widget class="QLineEdit" name="le_lieu_travail_emp">
+             <property name="geometry">
+              <rect>
+               <x>110</x>
+               <y>400</y>
+               <width>231</width>
+               <height>51</height>
+              </rect>
+             </property>
+             <property name="placeholderText">
+              <string>Siège EcoCycle, Tunis</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="btn_generer_contrat_emp">
+             <property name="geometry">
+              <rect>
+               <x>140</x>
+               <y>560</y>
+               <width>191</width>
+               <height>41</height>
+              </rect>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">
+background-color: rgb(67, 160, 71);</string>
+             </property>
+             <property name="text">
+              <string>Génerer</string>
+             </property>
+            </widget>
+           </widget>
           </widget>
          </widget>
         </item>
@@ -4773,7 +4900,7 @@ background-color: rgb(67, 160, 71);</string>
      <x>0</x>
      <y>0</y>
      <width>1587</width>
-     <height>26</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

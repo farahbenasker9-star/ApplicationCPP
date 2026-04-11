@@ -164,7 +164,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->btn_tri,        &QPushButton::clicked, this, &MainWindow::employe_onTriClicked);
     connect(ui->btn_pdf,        &QPushButton::clicked, this, &MainWindow::employe_onPdfClicked);
     connect(ui->btn_refresh,    &QPushButton::clicked, this, &MainWindow::employe_onRefreshClicked);
-
+    connect(ui->btn_generer_contrat_emp, &QPushButton::clicked, this, &MainWindow::employe_onGenererContratClicked);
     employe_setupStatsUI();
     employe_refreshStats();
 
@@ -2118,6 +2118,47 @@ void MainWindow::employe_refreshStats()
     if(oldCGenre) delete oldCGenre;
     if(oldCPoste) delete oldCPoste;
     if(oldCSalaire) delete oldCSalaire;
+}
+
+void MainWindow::employe_onGenererContratClicked()
+{
+    // 1. Vérifier si un employé a été sélectionné dans le tableau 
+    // (s'il est sélectionné, le champ CIN est rempli)
+    QString cin = ui->le_cin->text();
+    if (cin.isEmpty()) {
+        QMessageBox::warning(this, "Sélection requise", "Veuillez d'abord sélectionner un employé dans le tableau pour générer son contrat.");
+        return;
+    }
+
+    // 2. Récupérer les données de l'employé depuis les champs existants
+    QString nom     = ui->le_nom->text();
+    QString prenom  = ui->le_prenom->text();
+    QString poste   = ui->cb_poste->currentText();
+    double  salaire = ui->le_salaire->text().replace(",", ".").toDouble();
+    QDate   dateEmb = ui->de_embauche->date();
+
+    // 3. Récupérer les données spécifiques au contrat depuis la groupBox gb_contrat
+    QString typeContrat = ui->cb_type_contrat_emp->currentText();
+    int periodeEssai    = ui->sb_periode_essai_emp->value();
+    QString lieuTravail = ui->le_lieu_travail_emp->text();
+
+    if (lieuTravail.isEmpty()) {
+        QMessageBox::warning(this, "Champ vide", "Veuillez préciser le lieu de travail.");
+        return;
+    }
+
+    // 4. Demander où enregistrer le PDF
+    QString nomFichierDefaut = QString("Contrat_%1_%2_%3.pdf").arg(typeContrat, nom, prenom);
+    QString filePath = QFileDialog::getSaveFileName(this, "Enregistrer le contrat", nomFichierDefaut, "PDF (*.pdf)");
+    
+    if (filePath.isEmpty()) return; // L'utilisateur a annulé
+
+    // 5. Générer le document
+    if (tmp_employe.genererContratPDF(filePath, cin, nom, prenom, poste, salaire, dateEmb, typeContrat, periodeEssai, lieuTravail)) {
+        QMessageBox::information(this, "Succès", "Le contrat de travail a été généré et sauvegardé avec succès !");
+    } else {
+        QMessageBox::critical(this, "Erreur", "Une erreur est survenue lors de la création du PDF.");
+    }
 }
 
 // =========================================================
