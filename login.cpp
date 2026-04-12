@@ -3,6 +3,8 @@
 #include <QMessageBox>
 #include "smtp.h"
 #include <QRandomGenerator>
+#include <QSettings>
+
 
 Login::Login(QWidget *parent) :
     QDialog(parent),
@@ -10,6 +12,13 @@ Login::Login(QWidget *parent) :
 {
     ui->setupUi(this);
 
+
+    // --Récupération des mots de passe sauvegardés--
+    QSettings settings("EcoCycle", "Securite");
+    // S'il trouve une sauvegarde, il la prend. Sinon, il garde les valeurs par défaut.
+    hr_password = settings.value("hr_password", "hr123").toString();
+    admin_password = settings.value("admin_password", "admin123").toString();
+    
     // 1. Enlever la barre de titre Windows (Design moderne)
     setWindowFlags(Qt::FramelessWindowHint);
 
@@ -90,6 +99,11 @@ void Login::on_btn_reset_clicked()
         
         // 5. Si l'envoi a réussi, on met à jour la variable dans le code
         admin_password = nouveauMdp; 
+        
+        // sauvegarde pour toujours (même après fermeture de l'application)
+        QSettings settings("EcoCycle", "Securite");
+        settings.setValue("admin_password", nouveauMdp);
+
 
         QMessageBox::information(this, "Succès", "Un nouveau mot de passe a été envoyé à votre adresse e-mail !");
         
