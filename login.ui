@@ -134,8 +134,8 @@ QPushButton#btn_login:pressed {
     <rect>
      <x>460</x>
      <y>10</y>
-     <width>841</width>
-     <height>701</height>
+     <width>831</width>
+     <height>711</height>
     </rect>
    </property>
    <property name="styleSheet">
@@ -163,7 +163,7 @@ QPushButton#btn_back_login:hover {
 }</string>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QFrame" name="frame_right">
@@ -263,12 +263,127 @@ QPushButton#btn_back_login:hover {
        </rect>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:24pt; color:#ffffff;&quot;&gt;Welcome Back&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:24pt; color:#ffffff;&quot;&gt;Bienvenue&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
      </widget>
     </widget>
    </widget>
-   <widget class="QWidget" name="page_2"/>
+   <widget class="QWidget" name="page_2">
+    <widget class="QWidget" name="verticalLayoutWidget_2">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>190</y>
+       <width>711</width>
+       <height>351</height>
+      </rect>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <spacer name="verticalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="le_reset_email">
+        <property name="styleSheet">
+         <string notr="true">QLineEdit {
+    background-color: white;
+    border: none;
+    border-radius: 5px; /* Les bords arrondis */
+    padding: 8px 15px;  /* L'espace à l'intérieur */
+    color: #333333;
+    font-size: 14px;
+}
+QLineEdit:focus {
+    border: 1px solid #A5D6A7; /* Petite bordure verte quand on clique dessus */
+}</string>
+        </property>
+        <property name="placeholderText">
+         <string>Mail de Récupération</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btn_reset">
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: #388E3C; /* Le fond vert */
+    color: white;              /* Texte en blanc */
+    border: none;
+    border-radius: 5px;        /* Bords arrondis */
+    padding: 10px;
+    font-weight: bold;
+    font-size: 14px;
+}
+QPushButton:hover {
+    background-color: #2E7D32; /* Vert un peu plus foncé quand la souris passe dessus */
+}
+QPushButton:pressed {
+    background-color: #1B5E20; /* Vert très foncé quand on clique */
+}</string>
+        </property>
+        <property name="text">
+         <string>Réinitialiser</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer_4">
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btn_back">
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: transparent; /* Fond invisible */
+    color: #A5D6A7;                /* Vert clair/grisâtre */
+    border: none;
+    font-size: 13px;
+}
+QPushButton:hover {
+    color: white;                  /* Devient blanc au survol */
+    text-decoration: underline;    /* Souligné au survol */
+}</string>
+        </property>
+        <property name="text">
+         <string>Retour</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QLabel" name="label_3">
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>110</y>
+       <width>321</width>
+       <height>71</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:24pt; font-weight:700; color:#ffffff;&quot;&gt;Réinitialisation&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </widget>
   </widget>
  </widget>
  <resources>
