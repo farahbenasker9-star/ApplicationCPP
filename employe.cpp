@@ -1,215 +1,41 @@
 #include "employe.h"
-#include "ui_mainwindow.h"   // Full definition needed in the .cpp
-#include "connection.h"      // For database connection
-
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDebug>
-#include <QMessageBox>
-#include <QDate>
 #include <QRegularExpression>
-#include <QIntValidator>
-#include <QDoubleValidator>
 #include <QPrinter>
 #include <QTextDocument>
-#include <QFileDialog>
 #include <QDateTime>
 #include <QPageSize>
-#include <QStyledItemDelegate>
+#include <QtCharts/QPieSeries>
+#include <QtCharts/QPieSlice>
+#include <QtCharts/QBarSeries>
+#include <QtCharts/QBarSet>
+#include <QtCharts/QHorizontalBarSeries>
+#include <QtCharts/QBarCategoryAxis>
+#include <QtCharts/QValueAxis>
 
-// ==================== CUSTOM DELEGATE FOR CIN ====================
-class CinDelegate : public QStyledItemDelegate
+Employe::Employe()
 {
-public:
-    CinDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent) {}
-
-    QString displayText(const QVariant &value, const QLocale &locale) const override
-    {
-        bool ok = false;
-        double cinDouble = value.toDouble(&ok);
-        if (ok) {
-            // Convert to long long and format as zero-padded 8 digit string
-            return QString::number(static_cast<qulonglong>(cinDouble)).rightJustified(8, '0');
-        }
-        return QStyledItemDelegate::displayText(value, locale);
-    }
-};
-
-// ==================== CONSTRUCTOR ====================
-
-Employe::Employe(Ui::MainWindow *ui, QObject *parent)
-    : QObject(parent), ui(ui), employeModel(nullptr)
-{
-    // Ajout du contrôle de saisie pour l'âge (ex: entre 18 et 100 ans)
-    ui->le_age->setValidator(new QIntValidator(18, 100, this));
-    
-    // Ajout du contrôle de saisie pour le salaire (uniquement des nombres avec décimales)
-    ui->le_salaire->setValidator(new QDoubleValidator(0.0, 999999.99, 2, this));
-
-    // Load the table data
-    afficherEmployes();
-
-    // Manually connect UI signals to this object's slots
-    // (replaces Qt's auto-connect which only works for slots on the form's own class)
-    connect(ui->tab_employes,   &QTableView::clicked,
-            this, &Employe::onTabEmployesClicked);
-
-    connect(ui->btn_ajouter,    &QPushButton::clicked,
-            this, &Employe::onBtnAjouterClicked);
-
-    connect(ui->btn_modifier,   &QPushButton::clicked,
-            this, &Employe::onBtnModifierClicked);
-
-    connect(ui->btn_supprimer,  &QPushButton::clicked,
-            this, &Employe::onBtnSupprimerClicked);
-
-    connect(ui->le_recherche,   &QLineEdit::textChanged,
-            this, &Employe::onLeRechercheTextChanged);
-
-    connect(ui->btn_tri,        &QPushButton::clicked,
-            this, &Employe::onBtnTriClicked);
-    connect(ui->btn_pdf,        &QPushButton::clicked,
-            this, &Employe::onBtnPdfClicked);
-
-    // Actualiser les statistiques et le tableau
-    connect(ui->btn_refresh,    &QPushButton::clicked,
-            this, [this]() {
-                employeModel->select(); // Actualise le tableau
-                updateStats();          // Actualise les graphiques
-            });
-
-    // Initialiser les widgets statistiques
-    setupStatsUI();
-    updateStats();
+    m_salaire = 0.0;
+    m_age = 0;
 }
 
-// ==================== DISPLAY / LOAD ====================
-
-void Employe::afficherEmployes()
+Employe::Employe(QString cin, QString nom, QString prenom, QString poste, double salaire, QDate dateEmb, QString idBadge, int age, QString genre)
 {
-    QSqlDatabase db = QSqlDatabase::database();
-
-    // Insert dummy data if the table is empty (for testing)
-    QSqlQuery query(db);
-    query.exec("SELECT COUNT(*) FROM EMPLOYE");
-    if (query.next() && query.value(0).toInt() == 0) {
-        qDebug() << "Table EMPLOYE is empty. Inserting dummy data...";
-
-        query.exec("INSERT INTO EMPLOYE (CIN, NOM, PRENOM, POSTE, SALAIRE, DATE_EMBAUCHE, ID_BADGE, AGE, GENRE) "
-                   "VALUES (11111111, 'Ben Ali', 'Ahmed', 'Trieur', 900.50, TO_DATE('2023-01-15', 'YYYY-MM-DD'), 'B-001', 30, 'Homme')");
-
-        query.exec("INSERT INTO EMPLOYE (CIN, NOM, PRENOM, POSTE, SALAIRE, DATE_EMBAUCHE, ID_BADGE, AGE, GENRE) "
-                   "VALUES (22222222, 'Trabelsi', 'Sami', 'Chauffeur', 1000.00, TO_DATE('2023-06-20', 'YYYY-MM-DD'), 'B-002', 28, 'Homme')");
-
-        query.exec("INSERT INTO EMPLOYE (CIN, NOM, PRENOM, POSTE, SALAIRE, DATE_EMBAUCHE, ID_BADGE, AGE, GENRE) "
-                   "VALUES (33333333, 'Mansour', 'Sarra', 'Trieur', 900.75, TO_DATE('2024-02-10', 'YYYY-MM-DD'), 'B-003', 25, 'Femme')");
-
-        db.commit();
-    }
-
-    employeModel = new QSqlTableModel(this, db);
-    employeModel->setTable("EMPLOYE");
-    employeModel->setEditStrategy(QSqlTableModel::OnManualSubmit);
-    employeModel->select();
-
-    // Human-readable column headers
-    employeModel->setHeaderData(0, Qt::Horizontal, QObject::tr("CIN"));
-    employeModel->setHeaderData(1, Qt::Horizontal, QObject::tr("Nom"));
-    employeModel->setHeaderData(2, Qt::Horizontal, QObject::tr("Prénom"));
-    employeModel->setHeaderData(3, Qt::Horizontal, QObject::tr("Poste"));
-    employeModel->setHeaderData(4, Qt::Horizontal, QObject::tr("Salaire (TND)"));
-    employeModel->setHeaderData(5, Qt::Horizontal, QObject::tr("Date d'embauche"));
-    employeModel->setHeaderData(6, Qt::Horizontal, QObject::tr("Badge"));
-    employeModel->setHeaderData(7, Qt::Horizontal, QObject::tr("Âge"));
-    employeModel->setHeaderData(8, Qt::Horizontal, QObject::tr("Genre"));
-    employeModel->setHeaderData(6, Qt::Horizontal, QObject::tr("ID Badge"));
-
-    ui->tab_employes->setModel(employeModel);
-    ui->tab_employes->setItemDelegateForColumn(0, new CinDelegate(this));
-    ui->tab_employes->setAlternatingRowColors(false);
-    ui->tab_employes->resizeColumnsToContents();
+    m_cin = cin;
+    m_nom = nom;
+    m_prenom = prenom;
+    m_poste = poste;
+    m_salaire = salaire;
+    m_dateEmb = dateEmb;
+    m_idBadge = idBadge;
+    m_age = age;
+    m_genre = genre;
 }
 
-// ==================== SHARED VALIDATION ====================
-
-bool Employe::validerFormulaire(const QString &cin, const QString &nom,
-                                const QString &prenom, const QString &idBadge,
-                                double salaire)
+bool Employe::ajouter(QString cin, QString nom, QString prenom, QString poste, double salaire, QDate dateEmb, QString idBadge, int age, QString genre)
 {
-    QRegularExpression cinRegex("^[0-9]{8}$");
-    if (!cinRegex.match(cin).hasMatch()) {
-        QMessageBox::warning(nullptr, "Erreur de saisie",
-                             "Le CIN doit contenir exactement 8 chiffres.");
-        return false;
-    }
-
-    QRegularExpression nameRegex("^[A-Za-zÀ-ÿ\\s]+$");
-    if (nom.isEmpty() || nom.length() > 50 || !nameRegex.match(nom).hasMatch()) {
-        QMessageBox::warning(nullptr, "Erreur de saisie",
-                             "Le nom est invalide (lettres uniquement, max 50 caractères).");
-        return false;
-    }
-    if (prenom.isEmpty() || prenom.length() > 50 || !nameRegex.match(prenom).hasMatch()) {
-        QMessageBox::warning(nullptr, "Erreur de saisie",
-                             "Le prénom est invalide (lettres uniquement, max 50 caractères).");
-        return false;
-    }
-
-    if (idBadge.isEmpty() || idBadge.length() > 20) {
-        QMessageBox::warning(nullptr, "Erreur de saisie",
-                             "L'ID Badge ne peut pas être vide et doit faire max 20 caractères.");
-        return false;
-    }
-
-    if (salaire <= 0) {
-        QMessageBox::warning(nullptr, "Erreur de saisie",
-                             "Le salaire doit être supérieur à 0.");
-        return false;
-    }
-
-    return true;
-}
-
-// ==================== TABLE CLICK (populate form) ====================
-
-void Employe::onTabEmployesClicked(const QModelIndex &index)
-{
-    int row = index.row();
-
-    // Format CIN carefully
-    QVariant cinData = employeModel->data(employeModel->index(row, 0));
-    bool ok = false;
-    double cinDouble = cinData.toDouble(&ok);
-    QString cinStr = ok ? QString::number(static_cast<qulonglong>(cinDouble)).rightJustified(8, '0') : cinData.toString();
-    
-    ui->le_cin->setText(cinStr);
-    ui->le_nom->setText(employeModel->data(employeModel->index(row, 1)).toString());
-    ui->le_prenom->setText(employeModel->data(employeModel->index(row, 2)).toString());
-    ui->cb_poste->setCurrentText(employeModel->data(employeModel->index(row, 3)).toString());
-    ui->le_salaire->setText(employeModel->data(employeModel->index(row, 4)).toString());
-    ui->de_embauche->setDate(employeModel->data(employeModel->index(row, 5)).toDate());
-    ui->le_badge->setText(employeModel->data(employeModel->index(row, 6)).toString());
-    ui->le_age->setText(employeModel->data(employeModel->index(row, 7)).toString());
-    ui->cb_genre->setCurrentText(employeModel->data(employeModel->index(row, 8)).toString());
-}
-
-// ==================== ADD ====================
-
-void Employe::onBtnAjouterClicked()
-{
-    QString cin      = ui->le_cin->text();
-    QString nom      = ui->le_nom->text();
-    QString prenom   = ui->le_prenom->text();
-    QString poste    = ui->cb_poste->currentText();
-    double  salaire  = ui->le_salaire->text().replace(",", ".").toDouble();
-    QDate   dateEmb  = ui->de_embauche->date();
-    QString idBadge  = ui->le_badge->text();
-    int     age      = ui->le_age->text().toInt();
-    QString genre    = ui->cb_genre->currentText();
-
-    if (!validerFormulaire(cin, nom, prenom, idBadge, salaire))
-        return;
-
     QSqlQuery query;
     query.prepare("INSERT INTO EMPLOYE (CIN, NOM, PRENOM, POSTE, SALAIRE, DATE_EMBAUCHE, ID_BADGE, AGE, GENRE) "
                   "VALUES (:cin, :nom, :prenom, :poste, :salaire, :date_embauche, :id_badge, :age, :genre)");
@@ -223,32 +49,11 @@ void Employe::onBtnAjouterClicked()
     query.bindValue(":age",          age);
     query.bindValue(":genre",        genre);
 
-    if (query.exec()) {
-        QMessageBox::information(nullptr, "Succès", "Employé ajouté avec succès.");
-        employeModel->select();
-    } else {
-        QMessageBox::critical(nullptr, "Erreur",
-                              "Erreur lors de l'ajout: " + query.lastError().text());
-    }
+    return query.exec();
 }
 
-// ==================== EDIT ====================
-
-void Employe::onBtnModifierClicked()
+bool Employe::modifier(QString cin, QString nom, QString prenom, QString poste, double salaire, QDate dateEmb, QString idBadge, int age, QString genre)
 {
-    QString cin      = ui->le_cin->text();
-    QString nom      = ui->le_nom->text();
-    QString prenom   = ui->le_prenom->text();
-    QString poste    = ui->cb_poste->currentText();
-    double  salaire  = ui->le_salaire->text().replace(",", ".").toDouble();
-    QDate   dateEmb  = ui->de_embauche->date();
-    QString idBadge  = ui->le_badge->text();
-    int     age      = ui->le_age->text().toInt();
-    QString genre    = ui->cb_genre->currentText();
-
-    if (!validerFormulaire(cin, nom, prenom, idBadge, salaire))
-        return;
-
     QSqlQuery query;
     query.prepare("UPDATE EMPLOYE SET NOM = :nom, PRENOM = :prenom, POSTE = :poste, "
                   "SALAIRE = :salaire, DATE_EMBAUCHE = :date_embauche, ID_BADGE = :id_badge, "
@@ -264,53 +69,25 @@ void Employe::onBtnModifierClicked()
     query.bindValue(":genre",        genre);
     query.bindValue(":cin",          cin);
 
-    if (query.exec()) {
-        QMessageBox::information(nullptr, "Succès", "Employé modifié avec succès.");
-        employeModel->select();
-    } else {
-        QMessageBox::critical(nullptr, "Erreur",
-                              "Erreur lors de la modification: " + query.lastError().text());
-    }
+    return query.exec();
 }
 
-// ==================== DELETE ====================
-
-void Employe::onBtnSupprimerClicked()
+bool Employe::supprimer(QString cin, QString &erreurDetachement)
 {
-    QString cin = ui->le_cin->text();
-
-    if (cin.isEmpty()) {
-        QMessageBox::warning(nullptr, "Avertissement",
-                             "Veuillez sélectionner un employé à supprimer.");
-        return;
-    }
-
+    erreurDetachement.clear();
     QSqlQuery checkQuery;
     checkQuery.prepare("SELECT COUNT(*) FROM CONTRAT WHERE CIN = :cin");
     checkQuery.bindValue(":cin", cin);
-    checkQuery.exec();
-    checkQuery.next();
-    int count = checkQuery.value(0).toInt();
-
-    QString msg = "Voulez-vous vraiment supprimer cet employé ?";
-    if (count > 0) {
-        msg = QString("Cet employé est lié à %1 contrat(s).\n"
-                      "Si vous le supprimez, ces contrats deviendront 'non-assignés'.\n\n"
-                      "Confirmer la suppression ?").arg(count);
-    }
-
-    if (QMessageBox::question(nullptr, "Confirmation de suppression", msg, 
-                              QMessageBox::Yes|QMessageBox::No) != QMessageBox::Yes) {
-        return;
-    }
-
-    if (count > 0) {
-        QSqlQuery updateQuery;
-        updateQuery.prepare("UPDATE CONTRAT SET CIN = NULL WHERE CIN = :cin");
-        updateQuery.bindValue(":cin", cin);
-        if (!updateQuery.exec()) {
-            QMessageBox::critical(nullptr, "Erreur", "Impossible de détacher les contrats : " + updateQuery.lastError().text());
-            return;
+    if(checkQuery.exec() && checkQuery.next()) {
+        int count = checkQuery.value(0).toInt();
+        if (count > 0) {
+            QSqlQuery updateQuery;
+            updateQuery.prepare("UPDATE CONTRAT SET CIN = NULL WHERE CIN = :cin");
+            updateQuery.bindValue(":cin", cin);
+            if (!updateQuery.exec()) {
+                erreurDetachement = "Impossible de détacher les contrats : " + updateQuery.lastError().text();
+                return false;
+            }
         }
     }
 
@@ -318,66 +95,59 @@ void Employe::onBtnSupprimerClicked()
     query.prepare("DELETE FROM EMPLOYE WHERE CIN = :cin");
     query.bindValue(":cin", cin);
 
-    if (query.exec()) {
-        QMessageBox::information(nullptr, "Succès", "Employé supprimé avec succès.");
-        // Nettoyage etc...
-
-        // Clear the form
-        ui->le_cin->clear();
-        ui->le_nom->clear();
-        ui->le_prenom->clear();
-        ui->cb_poste->setCurrentIndex(0);
-        ui->le_salaire->clear();
-        ui->de_embauche->setDate(QDate::currentDate());
-        ui->le_badge->clear();
-        ui->le_age->clear();
-        ui->cb_genre->setCurrentIndex(0);
-
-        employeModel->select();
-    } else {
-        QMessageBox::critical(nullptr, "Erreur",
-                              "Erreur lors de la suppression: " + query.lastError().text());
-    }
+    return query.exec();
 }
 
-// ==================== SEARCH ====================
-
-void Employe::onLeRechercheTextChanged(const QString &arg1)
+QSqlTableModel* Employe::afficher()
 {
-    if (arg1.isEmpty()) {
-        employeModel->setFilter("");
-    } else {
+    QSqlTableModel *employeModel = new QSqlTableModel();
+    employeModel->setTable("EMPLOYE");
+    employeModel->setEditStrategy(QSqlTableModel::OnManualSubmit);
+    employeModel->select();
+
+    employeModel->setHeaderData(0, Qt::Horizontal, QObject::tr("CIN"));
+    employeModel->setHeaderData(1, Qt::Horizontal, QObject::tr("Nom"));
+    employeModel->setHeaderData(2, Qt::Horizontal, QObject::tr("Prénom"));
+    employeModel->setHeaderData(3, Qt::Horizontal, QObject::tr("Poste"));
+    employeModel->setHeaderData(4, Qt::Horizontal, QObject::tr("Salaire (TND)"));
+    employeModel->setHeaderData(5, Qt::Horizontal, QObject::tr("Date d'embauche"));
+    employeModel->setHeaderData(6, Qt::Horizontal, QObject::tr("ID Badge"));
+    employeModel->setHeaderData(7, Qt::Horizontal, QObject::tr("Âge"));
+    employeModel->setHeaderData(8, Qt::Horizontal, QObject::tr("Genre"));
+
+    return employeModel;
+}
+
+QSqlTableModel* Employe::rechercher(QString texte)
+{
+    QSqlTableModel *employeModel = afficher();
+    if (!texte.isEmpty()) {
         QString filter = QString(
             "(TO_CHAR(CIN) LIKE '%%1%' OR UPPER(NOM) LIKE UPPER('%%1%') OR UPPER(ID_BADGE) LIKE UPPER('%%1%'))"
-        ).arg(arg1);
+        ).arg(texte);
         employeModel->setFilter(filter);
     }
     employeModel->select();
+    return employeModel;
 }
 
-// ==================== SORT ====================
-
-void Employe::onBtnTriClicked()
+QSqlTableModel* Employe::trier(QString critere)
 {
-    QString currentSort = ui->comboBox->currentText();
-
-    if (currentSort == "CIN") {
+    QSqlTableModel *employeModel = afficher();
+    if (critere == "CIN") {
         employeModel->setSort(0, Qt::AscendingOrder);
-    } else if (currentSort == "Nom") {
+    } else if (critere == "Nom") {
         employeModel->setSort(1, Qt::AscendingOrder);
-    } else if (currentSort == "ID Badge") {
+    } else if (critere == "ID Badge") {
         employeModel->setSort(6, Qt::AscendingOrder);
     }
-
     employeModel->select();
+    return employeModel;
 }
 
-// ==================== PDF EXPORT ====================
-
-void Employe::onBtnPdfClicked()
+bool Employe::exporterPDF(QString filePath, QSqlTableModel *model)
 {
-    QString filePath = QFileDialog::getSaveFileName(nullptr, "Exporter la liste", "Liste_Employes.pdf", "PDF (*.pdf)");
-    if (filePath.isEmpty()) return;
+    if (filePath.isEmpty() || !model) return false;
 
     QString html = R"(<html>
         <head>
@@ -401,21 +171,20 @@ void Employe::onBtnPdfClicked()
 
     html = html.arg(QDateTime::currentDateTime().toString("dd/MM/yyyy HH:mm"));
 
-    for (int i = 0; i < employeModel->rowCount(); ++i) {
-        // Format CIN with leading zeros
-        QVariant cinData = employeModel->data(employeModel->index(i, 0));
+    for (int i = 0; i < model->rowCount(); ++i) {
+        QVariant cinData = model->data(model->index(i, 0));
         bool ok = false;
         double cinDouble = cinData.toDouble(&ok);
         QString cin = ok ? QString::number(static_cast<qulonglong>(cinDouble)).rightJustified(8, '0') : cinData.toString();
         
-        QString nom = employeModel->data(employeModel->index(i, 1)).toString();
-        QString prenom = employeModel->data(employeModel->index(i, 2)).toString();
-        QString poste = employeModel->data(employeModel->index(i, 3)).toString();
-        QString salaire = employeModel->data(employeModel->index(i, 4)).toString();
-        QString dateEmb = employeModel->data(employeModel->index(i, 5)).toDate().toString("dd/MM/yyyy");
-        QString badge = employeModel->data(employeModel->index(i, 6)).toString();
-        QString age = employeModel->data(employeModel->index(i, 7)).toString();
-        QString genre = employeModel->data(employeModel->index(i, 8)).toString();
+        QString nom = model->data(model->index(i, 1)).toString();
+        QString prenom = model->data(model->index(i, 2)).toString();
+        QString poste = model->data(model->index(i, 3)).toString();
+        QString salaire = model->data(model->index(i, 4)).toString();
+        QString dateEmb = model->data(model->index(i, 5)).toDate().toString("dd/MM/yyyy");
+        QString badge = model->data(model->index(i, 6)).toString();
+        QString age = model->data(model->index(i, 7)).toString();
+        QString genre = model->data(model->index(i, 8)).toString();
 
         html += QString("<tr><td>%1</td><td>%2</td><td>%3</td><td>%4</td><td>%5</td><td>%6</td><td>%7</td><td>%8</td><td>%9</td></tr>")
                 .arg(cin, nom, prenom, poste, salaire, dateEmb, badge, age, genre);
@@ -431,50 +200,47 @@ void Employe::onBtnPdfClicked()
     QTextDocument doc;
     doc.setHtml(html);
     doc.print(&printer);
-
-    QMessageBox::information(nullptr, "Succès", "La liste des employés a été exportée en PDF avec succès.");
+    return true;
 }
 
-
-// ==================== STATISTIQUES ====================
-
-void Employe::setupStatsUI()
+bool Employe::validerFormulaire(const QString &cin, const QString &nom,
+                                const QString &prenom, const QString &idBadge,
+                                double salaire, QString &errorMessage)
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(ui->gb_stats);
-    mainLayout->setSpacing(20);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
+    QRegularExpression cinRegex("^[0-9]{8}$");
+    if (!cinRegex.match(cin).hasMatch()) {
+        errorMessage = "Le CIN doit contenir exactement 8 chiffres.";
+        return false;
+    }
 
-    // --- 1. ZONE CAMEMBERTS (H/F et Postes) ---
-    QHBoxLayout *pieLayout = new QHBoxLayout();
+    QRegularExpression nameRegex("^[A-Za-zÀ-ÿ\\s]+$");
+    if (nom.isEmpty() || nom.length() > 50 || !nameRegex.match(nom).hasMatch()) {
+        errorMessage = "Le nom est invalide (lettres uniquement, max 50 caractères).";
+        return false;
+    }
+    if (prenom.isEmpty() || prenom.length() > 50 || !nameRegex.match(prenom).hasMatch()) {
+        errorMessage = "Le prénom est invalide (lettres uniquement, max 50 caractères).";
+        return false;
+    }
 
-    chartViewGenre = new QChartView();
-    chartViewGenre->setRenderHint(QPainter::Antialiasing);
-    chartViewGenre->setMinimumHeight(300);
+    if (idBadge.isEmpty() || idBadge.length() > 20) {
+        errorMessage = "L'ID Badge ne peut pas être vide et doit faire max 20 caractères.";
+        return false;
+    }
 
-    chartViewPoste = new QChartView();
-    chartViewPoste->setRenderHint(QPainter::Antialiasing);
-    chartViewPoste->setMinimumHeight(300);
+    if (salaire <= 0) {
+        errorMessage = "Le salaire doit être supérieur à 0.";
+        return false;
+    }
 
-    pieLayout->addWidget(chartViewGenre);
-    pieLayout->addWidget(chartViewPoste);
-    mainLayout->addLayout(pieLayout);
-
-    // --- 2. ZONE BARRES HORIZONTALES (Salaire moyen) ---
-    chartViewSalaire = new QChartView();
-    chartViewSalaire->setRenderHint(QPainter::Antialiasing);
-    chartViewSalaire->setMinimumHeight(350);
-    mainLayout->addWidget(chartViewSalaire);
-
-    ui->gb_stats->setLayout(mainLayout);
+    return true;
 }
 
-void Employe::updateStats()
+QChart* Employe::createGenreChart()
 {
-    QSqlQuery query;
-
-    // 1. Camembert : Répartition H/F
     QChart *chartGenre = new QChart();
     QPieSeries *seriesGenre = new QPieSeries();
+    QSqlQuery query;
 
     if (query.exec("SELECT GENRE, COUNT(*) FROM EMPLOYE GROUP BY GENRE")) {
         while (query.next()) {
@@ -497,11 +263,14 @@ void Employe::updateStats()
     chartGenre->addSeries(seriesGenre);
     chartGenre->setTitle("Répartition par Genre");
     chartGenre->setAnimationOptions(QChart::SeriesAnimations);
-    chartViewGenre->setChart(chartGenre);
+    return chartGenre;
+}
 
-    // 3. Camembert : Répartition par Poste
+QChart* Employe::createPosteChart()
+{
     QChart *chartPoste = new QChart();
     QPieSeries *seriesPoste = new QPieSeries();
+    QSqlQuery query;
 
     if (query.exec("SELECT POSTE, COUNT(*) FROM EMPLOYE GROUP BY POSTE")) {
         while (query.next()) {
@@ -514,15 +283,18 @@ void Employe::updateStats()
     chartPoste->addSeries(seriesPoste);
     chartPoste->setTitle("Répartition par Poste");
     chartPoste->setAnimationOptions(QChart::SeriesAnimations);
-    chartViewPoste->setChart(chartPoste);
+    return chartPoste;
+}
 
-    // 4. Barres Horizontales : Salaire moyen par poste
+QChart* Employe::createSalaireChart()
+{
     QChart *chartSalaire = new QChart();
     QHorizontalBarSeries *seriesSalaire = new QHorizontalBarSeries();
     QBarSet *setSalaire = new QBarSet("Salaire Moyen (TND)");
     setSalaire->setBrush(QColor("#1B4332"));
 
     QStringList categories;
+    QSqlQuery query;
 
     if (query.exec("SELECT POSTE, AVG(SALAIRE) FROM EMPLOYE GROUP BY POSTE ORDER BY AVG(SALAIRE) ASC")) {
         while (query.next()) {
@@ -548,5 +320,106 @@ void Employe::updateStats()
     chartSalaire->addAxis(axisX, Qt::AlignBottom);
     seriesSalaire->attachAxis(axisX);
 
-    chartViewSalaire->setChart(chartSalaire);
+    return chartSalaire;
+}
+
+bool Employe::genererContratPDF(const QString &filePath, const QString &cin, const QString &nom, 
+                                const QString &prenom, const QString &poste, double salaire, 
+                                const QDate &dateEmb, const QString &typeContrat, 
+                                int periodeEssai, const QString &lieuTravail)
+{
+    if (filePath.isEmpty()) return false;
+
+    QString logoPath = "C:\\Users\\MSI\\Downloads\\logo.png"; //changer le chemin du logo selon votre machine
+    QString html =
+        "<html>\n"
+        "<head>\n"
+        "    <style>\n"
+        "        body { font-family: 'Times New Roman', serif; font-size: 12pt; color: #000; margin: 40px; }\n"
+        "        .logo-container { text-align: center; margin-bottom: 20px; }\n"
+        "        h1 { text-align: center; color: #1B4332; font-size: 18pt; text-transform: uppercase; text-decoration: underline; margin-bottom: 30px;}\n"
+        "        h2 { color: #333; font-size: 14pt; margin-top: 20px; }\n"
+        "        p { text-align: justify; line-height: 1.5; }\n"
+        "        .bold { font-weight: bold; }\n"
+        "        .signature-box { width: 100%; margin-top: 50px; }\n"
+        "        .signature-left { float: left; width: 45%; text-align: center; }\n"
+        "        .signature-right { float: right; width: 45%; text-align: center; }\n"
+        "        .footer { text-align: center; font-size: 9pt; color: #777; margin-top: 50px; border-top: 1px solid #ccc; padding-top: 10px; }\n"
+        "    </style>\n"
+        "</head>\n"
+        "<body>\n"
+        "    <div class=\"logo-container\">\n"
+        "        <img src=\"%11\" width=\"200\" />\n"
+        "    </div>\n"
+        "    <h1>Contrat de Travail (%1)</h1>\n"
+        "    \n"
+        "    <p>Entre les soussign&eacute;s :</p>\n"
+        "    <p><span class=\"bold\">La soci&eacute;t&eacute; EcoCycle</span>, sise &agrave; Tunis, repr&eacute;sent&eacute;e par son Directeur G&eacute;n&eacute;ral,<br>\n"
+        "    Ci-apr&egrave;s d&eacute;nomm&eacute;e <span class=\"bold\">\"L'Employeur\"</span>,</p>\n"
+        "    \n"
+        "    <p>ET</p>\n"
+        "    \n"
+        "    <p>M./Mme <span class=\"bold\">%2 %3</span>, titulaire du CIN n&deg; <span class=\"bold\">%4</span>,<br>\n"
+        "    Ci-apr&egrave;s d&eacute;nomm&eacute;(e) <span class=\"bold\">\"L'Employ&eacute;(e)\"</span>.</p>\n"
+        "    \n"
+        "    <p>Il a &eacute;t&eacute; convenu et arr&ecirc;t&eacute; ce qui suit :</p>\n"
+        "\n"
+        "    <h2>Article 1 : Objet et Poste</h2>\n"
+        "    <p>L'Employeur engage l'Employ&eacute;(e) dans le cadre d'un contrat de type <span class=\"bold\">%1</span>. L'Employ&eacute;(e) exercera les fonctions de <span class=\"bold\">%5</span>.</p>\n"
+        "\n"
+        "    <h2>Article 2 : Date d'effet et P&eacute;riode d'essai</h2>\n"
+        "    <p>Le pr&eacute;sent contrat prend effet &agrave; compter du <span class=\"bold\">%6</span>. Il est assorti d'une p&eacute;riode d'essai de <span class=\"bold\">%7 mois</span>, durant laquelle chacune des parties pourra rompre le contrat sans pr&eacute;avis ni indemnit&eacute;.</p>\n"
+        "\n"
+        "    <h2>Article 3 : R&eacute;mun&eacute;ration</h2>\n"
+        "    <p>En contrepartie de ses services, l'Employ&eacute;(e) percevra un salaire mensuel brut de <span class=\"bold\">%8 TND</span>. Ce salaire sera vers&eacute; &agrave; la fin de chaque mois par virement bancaire.</p>\n"
+        "\n"
+        "    <h2>Article 4 : Lieu de travail</h2>\n"
+        "    <p>Le lieu de travail est fix&eacute; &agrave; : <span class=\"bold\">%9</span>. L'Employeur se r&eacute;serve le droit de modifier ce lieu en fonction des n&eacute;cessit&eacute;s du service.</p>\n"
+        "\n"
+        "    <h2>Article 5 : Confidentialit&eacute;</h2>\n"
+        "    <p>L'Employ&eacute;(e) s'engage &agrave; conserver une discr&eacute;tion absolue sur l'ensemble des informations et documents relatifs &agrave; EcoCycle auxquels il/elle aura acc&egrave;s dans l'exercice de ses fonctions.</p>\n"
+        "\n"
+        "    <p style=\"margin-top: 40px; text-align: right;\">Fait &agrave; Tunis, le %10, en deux exemplaires originaux.</p>\n"
+        "\n"
+        "    <div class=\"signature-box\">\n"
+        "        <div class=\"signature-left\">\n"
+        "            <p class=\"bold\">L'Employ&eacute;(e)</p>\n"
+        "            <p style=\"font-size: 10pt; font-style: italic;\">(Lu et approuv&eacute;)</p>\n"
+        "        </div>\n"
+        "        <div class=\"signature-right\">\n"
+        "            <p class=\"bold\">Pour EcoCycle</p>\n"
+        "            <p style=\"font-size: 10pt; font-style: italic;\">(Le Directeur / La Direction RH)</p>\n"
+        "        </div>\n"
+        "    </div>\n"
+        "\n"
+        "    <div style=\"clear: both;\"></div>\n"
+        "\n"
+        "    <div class=\"footer\">\n"
+        "        EcoCycle - Entreprise Innovante de Recyclage - SIRET : 123456789 - Contact : rh@ecocycle.tn\n"
+        "    </div>\n"
+        "</body>\n"
+        "</html>";
+
+    // Remplacement des %1 à %11
+    // Astuce Qt : '.arg()' ne peut prendre que 9 paramètres maximum à la fois.
+    // On doit donc enchaîner les appels '.arg()' pour les paramètres 10 et 11 !
+    html = html.arg(typeContrat, nom.toUpper(), prenom, cin, poste, 
+                    dateEmb.toString("dd/MM/yyyy"), QString::number(periodeEssai), 
+                    QString::number(salaire, 'f', 2), lieuTravail)
+               .arg(QDate::currentDate().toString("dd/MM/yyyy"), logoPath);
+
+    // Impression en PDF
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setOutputFileName(filePath);
+    printer.setPageSize(QPageSize(QPageSize::A4));
+    
+    // Ajout de marges pour un rendu "Document Officiel"
+    printer.setPageMargins(QMarginsF(15, 15, 15, 15), QPageLayout::Millimeter);
+
+    QTextDocument doc;
+    doc.setHtml(html);
+    doc.print(&printer);
+
+    return true;
 }

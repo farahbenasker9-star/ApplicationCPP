@@ -54,13 +54,14 @@ public:
     bool ajouter();
     QSqlQueryModel * afficher();
     bool supprimer(int id);
-    bool modifier();
+    bool modifier(int oldId);
     bool existe(int id);
     QSqlQueryModel* trier(QString critere);
-    QSqlQueryModel* rechercher(QString val);
+    QSqlQueryModel* rechercher(QString critere, QString val);
     
     // Pour remplir le formulaire lors de la modification
     static Poubelle getPoubelle(int id);
+    void exporterPDF(int id);
 
     // Récupérer la dernière erreur
     QString getLastError() { return lastError; }

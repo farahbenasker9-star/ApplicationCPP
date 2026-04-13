@@ -1,83 +1,78 @@
 #ifndef EQUIPEMENT_H
 #define EQUIPEMENT_H
 
-#include <QObject>
-#include <QWidget>
-#include <QLabel>
-#include <QComboBox>
-#include <QDateTimeEdit>
-#include <QPlainTextEdit>
-#include <QTableView>
-#include <QLineEdit>
-#include <QSqlQuery>
-#include <QSqlQueryModel>
-#include <QSqlError>
-#include <QMessageBox>
+#include <QString>
 #include <QDate>
 #include <QDateTime>
+#include <QSqlQuery>
+#include <QSqlError>
 #include <QDebug>
+#include <QSqlQueryModel>
 
-// Forward declarations
-namespace Ui { class MainWindow; }
-
-class Equipement : public QObject
+// ─── Classe modèle / DAO ─────────────────────────────────────────────────────
+class Equipement
 {
-    Q_OBJECT
-
 public:
-    // ─── Constructor / Destructor ──────────────────────────────────────────────
-    explicit Equipement(Ui::MainWindow *ui, QWidget *parent = nullptr);
-    ~Equipement();
+    // ─── Constructeur par défaut ──────────────────────────────────────────────
+    Equipement();
 
-    // ─── Database CRUD ─────────────────────────────────────────────────────────
-    bool            ajouter();
-    bool            modifier();
-    bool            supprimer();
-    QSqlQueryModel* afficher();
-    void            rafraichirTable();
+    // ─── Constructeur complet (EQUIPMENT_ID est auto-incrémenté) ─────────────
+    Equipement(const QString &cin,
+               const QString &equipment_type,
+               const QString &fabricant,
+               const QString &statut,
+               const QDateTime &date_der_maint,
+               const QDateTime &date_suiv_maint,
+               const QString &notes);
 
-    // ─── UI Helpers ────────────────────────────────────────────────────────────
-    void chargerCIN();          // Populate Eq_CIN combo from EMPLOYE table
-    void clearForm();           // Reset all form fields
+    // ─── Accesseurs ──────────────────────────────────────────────────────────
+    int         getEquipmentId()    const { return equipment_id; }
+    QString     getCin()            const { return cin; }
+    QString     getEquipmentType()  const { return equipment_type; }
+    QString     getFabricant()      const { return fabricant; }
+    QString     getStatut()         const { return statut; }
+    QDateTime   getDateDerMaint()   const { return date_der_maint; }
+    QDateTime   getDateSuivMaint()  const { return date_suiv_maint; }
+    QString     getNotes()          const { return notes; }
 
-public slots:
-    // Triggered by UI buttons (connected in constructor)
-    void onAjouter();
-    void onModifier();
-    void onSupprimer();
-    void onRowSelected(const QModelIndex &index);
-    void onSearch();
-    void onSort();
-    void onCINChanged(int index);     // Auto-set statut hint when CIN changes
-    void onStatutChanged(int index);  // Re-validate on statut change
+    // ─── Mutateurs ───────────────────────────────────────────────────────────
+    void setEquipmentId(int v)               { equipment_id = v; }
+    void setCin(const QString &v)            { cin = v; }
+    void setEquipmentType(const QString &v)  { equipment_type = v; }
+    void setFabricant(const QString &v)      { fabricant = v; }
+    void setStatut(const QString &v)         { statut = v; }
+    void setDateDerMaint(const QDateTime &v) { date_der_maint = v; }
+    void setDateSuivMaint(const QDateTime &v){ date_suiv_maint = v; }
+    void setNotes(const QString &v)          { notes = v; }
+
+    // ─── CRUD ─────────────────────────────────────────────────────────────────
+    bool             ajouter();
+    bool             modifier(int old_id);
+    bool             supprimer(int id);
+    QSqlQueryModel * afficher()                         const;
+    QSqlQueryModel * rechercher(const QString &texte)   const;
+
+    // ─── Export PDF ───────────────────────────────────────────────────────────
+    bool exporterPdf(const QString &filePath, QSqlQueryModel *model = nullptr) const;
+    QString getLastError() const;
+
+    // ─── Méthodes de validation statiques ────────────────────────────────────
+    static bool validerType(const QString &equipment_type);
+    static bool validerFabricant(const QString &fabricant);
+    static bool validerStatut(const QString &statut);
+    static bool validerDateSuivMaint(const QDateTime &date_suiv_maint);
+    static bool validerCoherenceCinStatut(const QString &cin, const QString &statut);
 
 private:
-    // ─── Validation ────────────────────────────────────────────────────────────
-    bool validerFormulaire();                    // Returns true if all valid
-    void setFieldError(QWidget *field,
-                       QLabel  *errorLabel,
-                       bool     hasError,
-                       const QString &msg = "✕"); // Apply/remove red border + X
-
-    void resetValidationStyles();                // Clear all error styles
-
-    // ─── Members ───────────────────────────────────────────────────────────────
-    Ui::MainWindow   *ui;
-    QWidget          *parentWidget;
-    QSqlQueryModel   *model;
-    int               selectedEquipmentId;       // ID of the row currently selected
-    bool    sortAscending;   // tracks current sort direction
-    QString sortColumn;
-
-    // Error indicator labels (created dynamically inside infoScrollContent)
-    QLabel *errCIN;
-    QLabel *errType;
-    QLabel *errFab;
-    QLabel *errStatut;
-    QLabel *errNextMaint;
-
-    // Helper to get the scroll content widget (parent of form widgets)
-    QWidget* formContainer();
+    int       equipment_id;
+    QString   cin;
+    QString   equipment_type;
+    QString   fabricant;
+    QString   statut;
+    QDateTime date_der_maint;
+    QDateTime date_suiv_maint;
+    QString   notes;
+    QString   last_error;
 };
 
 #endif // EQUIPEMENT_H

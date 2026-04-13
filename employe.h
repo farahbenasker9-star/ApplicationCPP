@@ -1,67 +1,55 @@
 #ifndef EMPLOYE_H
 #define EMPLOYE_H
 
-#include <QObject>
+#include <QString>
+#include <QDate>
 #include <QSqlTableModel>
-#include <QModelIndex>
-#include <QLabel>
+#include <QtCharts/QChart>
 
-#include <QtCharts/QChartView>
-#include <QtCharts/QPieSeries>
-#include <QtCharts/QPieSlice>
-#include <QtCharts/QBarSeries>
-#include <QtCharts/QBarSet>
-#include <QtCharts/QHorizontalBarSeries>
-#include <QtCharts/QBarCategoryAxis>
-#include <QtCharts/QValueAxis>
-
-// Forward-declare the generated UI class to avoid tight coupling in header
-namespace Ui { class MainWindow; }
-
-class Employe : public QObject
+class Employe
 {
-    Q_OBJECT
-
 public:
-    // Takes a pointer to the MainWindow's UI so it can interact with the widgets
-    explicit Employe(Ui::MainWindow *ui, QObject *parent = nullptr);
+    Employe();
+    Employe(QString cin, QString nom, QString prenom, QString poste, double salaire, QDate dateEmb, QString idBadge, int age, QString genre);
 
-    // Initialiser et mettre à jour les statistiques
-    void setupStatsUI();
-    void updateStats();
+    // CRUD
+    bool ajouter(QString cin, QString nom, QString prenom, QString poste, double salaire, QDate dateEmb, QString idBadge, int age, QString genre);
+    bool modifier(QString cin, QString nom, QString prenom, QString poste, double salaire, QDate dateEmb, QString idBadge, int age, QString genre);
+    bool supprimer(QString cin, QString &erreurDetachement);
 
-private slots:
-    // Called when a row in the employee table is clicked (populates the form)
-    void onTabEmployesClicked(const QModelIndex &index);
+    // Display / Search / Sort
+    QSqlTableModel* afficher();
+    QSqlTableModel* rechercher(QString texte);
+    QSqlTableModel* trier(QString critere);
 
-    // CRUD slots
-    void onBtnAjouterClicked();
-    void onBtnModifierClicked();
-    void onBtnSupprimerClicked();
+    // Export
+    bool exporterPDF(QString filePath, QSqlTableModel *model);
+    
+    //Génération du contrat individuel
+    bool genererContratPDF(const QString &filePath, const QString &cin, const QString &nom, 
+                           const QString &prenom, const QString &poste, double salaire, 
+                           const QDate &dateEmb, const QString &typeContrat, 
+                           int periodeEssai, const QString &lieuTravail);
+    // Validation
+    static bool validerFormulaire(const QString &cin, const QString &nom,
+                                  const QString &prenom, const QString &idBadge,
+                                  double salaire, QString &errorMessage);
 
-    // Search & Sort slots
-    void onLeRechercheTextChanged(const QString &arg1);
-    void onBtnTriClicked();
-
-    // PDF Export
-    void onBtnPdfClicked();
+    // Statistiques
+    QChart* createGenreChart();
+    QChart* createPosteChart();
+    QChart* createSalaireChart();
 
 private:
-    Ui::MainWindow *ui;
-    QSqlTableModel *employeModel;
-
-    // Loads data from DB and binds it to the table view
-    void afficherEmployes();
-
-    // Shared validation logic used by Add and Edit
-    bool validerFormulaire(const QString &cin, const QString &nom,
-                           const QString &prenom, const QString &idBadge,
-                           double salaire);
-
-    // Composants de la page statistiques
-    QChartView *chartViewGenre;
-    QChartView *chartViewPoste;
-    QChartView *chartViewSalaire;
+    QString m_cin;
+    QString m_nom;
+    QString m_prenom;
+    QString m_poste;
+    double m_salaire;
+    QDate m_dateEmb;
+    QString m_idBadge;
+    int m_age;
+    QString m_genre;
 };
 
 #endif // EMPLOYE_H

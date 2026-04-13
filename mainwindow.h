@@ -17,6 +17,7 @@
 #include <QDebug>
 #include <QModelIndex>
 #include <QEvent>
+#include <QLabel>
 
 #include <QtCharts/QChartView>
 
@@ -36,7 +37,7 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
-    // Navigation
+    // ─── Navigation ──────────────────────────────────────────────────────────
     void on_btn_nav_employes_clicked();
     void on_btn_nav_client_clicked();
     void on_btn_nav_contrat_clicked();
@@ -51,7 +52,7 @@ private slots:
     void on_btn_dash_equipement_clicked();
     void on_btn_dash_stock_clicked();
 
-    // CRUD Poubelle
+    // ─── CRUD Poubelle ────────────────────────────────────────────────────────
     void on_btn_ajouter_poubelle_clicked();
     void on_btn_modifier_poubelle_clicked();
     void on_btn_supprimer_poubelle_clicked();
@@ -59,8 +60,9 @@ private slots:
     void on_cb_etat_poubelle_currentIndexChanged(int index);
     void on_btn_tri_poubelle_clicked();
     void on_le_recherche_poubelle_textChanged(const QString &arg1);
+    void on_btn_pdf_poubelle_clicked();
 
-    // === MODULE PRODUIT ===
+    // ─── Module Produit ───────────────────────────────────────────────────────
     void on_btn_ajouter_produit_clicked();
     void on_btn_supprimer_produit_clicked();
     void on_btn_modifier_produit_clicked();
@@ -68,7 +70,7 @@ private slots:
     void on_tab_produit_clicked(const QModelIndex &index);
     void viderFormulaire();
 
-    // === MODULE CONTRAT ===
+    // ─── Module Contrat ───────────────────────────────────────────────────────
     void contrat_onAjouterClicked();
     void contrat_onModifierClicked();
     void contrat_onSupprimerClicked();
@@ -82,27 +84,65 @@ private slots:
     void contrat_validateFloats();
     void contrat_validateDescription();
 
+    // ─── Module Equipement ────────────────────────────────────────────────────
+    void equipement_onAjouterClicked();
+    void equipement_onModifierClicked();
+    void equipement_onSupprimerClicked();
+    void equipement_onExporterClicked();
+    void equipement_onTabClicked(const QModelIndex &index);
+    void equipement_onRechercheTextChanged(const QString &arg1);
+    void equipement_onTriClicked();
+    void equipement_onCINChanged(int index);
+    void equipement_onStatutChanged(int index);
+    void equipement_onNouveauteChanged(int index);
+    void equipement_validateType();
+    void equipement_validateFabricant();
+    void equipement_validateStatut();
+    void equipement_validateDateSuivMaint();
+
+    // ─── Module Employe ───────────────────────────────────────────────────────
+    void employe_onAjouterClicked();
+    void employe_onModifierClicked();
+    void employe_onSupprimerClicked();
+    void employe_onTabClicked(const QModelIndex &index);
+    void employe_onRechercheTextChanged(const QString &arg1);
+    void employe_onTriClicked();
+    void employe_onPdfClicked();
+    void employe_onRefreshClicked();
+    void employe_onGenererContratClicked();
+
+    // ─── Module Client ───────────────────────────────────────────────────────
+    void onBtnAjouterClicked();
+    void onBtnModifierClicked();
+    void onBtnSupprimerClicked();
+    void onTableClicked(const QModelIndex &index);
+    void onRechercheTextChanged(const QString &text);
+
 private:
     Ui::MainWindow *ui;
     Poubelle tmp_poubelle;
+    int poubelle_currentSelectedId = -1;
+    Employe tmp_employe;
     QSqlQueryModel *model;
+    QString currentFilter;
+    int selectedClientId = -1;
 
     void navigateToPage(int pageIndex);
     void clearFormPoubelle();
     bool validerFormulairePoubelle(bool isUpdate);
+    void rafraichirAffichage();
+    bool verifierSaisie();
+    bool reaffecterIdClientDansRelations(int oldId, int newId);
 
+    // ─── Gestionnaires de pages ───────────────────────────────────────────────
+    Client  *client;
 
-    // Gestionnaires de pages (même pattern partout)
-    Employe    *employe;
-    Client     *client;
-    Equipement *equipement;
-
-    // Produit
+    // ─── Module Produit ───────────────────────────────────────────────────────
     bool controleSaisieProduit();
     void chargerIdsClients();
     int id_a_modifier = -1;
 
-    // === CONTRAT ===
+    // ─── Module Contrat ───────────────────────────────────────────────────────
     int contrat_currentSelectedId = -1;
     QChartView *chartViewContratType    = nullptr;
     QChartView *chartViewContratTypePie = nullptr;
@@ -114,6 +154,42 @@ private:
     void contrat_setWidgetStyle(QWidget *widget, bool isValid);
     void contrat_resetValidationStyles();
     bool contrat_checkDates();
+
+    // ─── Module Equipement ────────────────────────────────────────────────────
+    int     equipement_currentSelectedId = -1;
+    bool    equipement_sortAscending     = true;
+    QString equipement_sortColumn        = "EQ.EQUIPMENT_ID";
+
+    // ✕ error indicator labels (created once in constructor, parented to infoScrollContent)
+    QLabel *eq_errCIN        = nullptr;
+    QLabel *eq_errType       = nullptr;
+    QLabel *eq_errFab        = nullptr;
+    QLabel *eq_errStatut     = nullptr;
+    QLabel *eq_errNouveaute  = nullptr;
+    QLabel *eq_errNextMaint  = nullptr;
+
+    void equipement_chargerCIN();
+    void equipement_clearForm();
+    void equipement_rafraichirTable();
+    void equipement_setWidgetStyle(QWidget *widget, QLabel *errLabel, bool isValid);
+    void equipement_clearWidgetStyle(QWidget *widget, QLabel *errLabel);
+    void equipement_resetValidationStyles();
+    bool equipement_validerFormulaire();
+    void equipement_setupModelHeaders(QSqlQueryModel *m);
+    QChartView *chartViewEquipType   = nullptr;
+    QChartView *chartViewEquipStatut = nullptr;
+
+    void equipement_setupStatsUI();
+    void equipement_refreshStats();
+
+    // ─── Module Employe ───────────────────────────────────────────────────────
+    void employe_setupStatsUI();
+    void employe_refreshStats();
+    void employe_clearForm();
+
+    QChartView *employe_chartViewGenre   = nullptr;
+    QChartView *employe_chartViewPoste   = nullptr;
+    QChartView *employe_chartViewSalaire = nullptr;
 };
 
 #endif // MAINWINDOW_H
