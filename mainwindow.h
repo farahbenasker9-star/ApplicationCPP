@@ -21,6 +21,15 @@
 
 #include <QtCharts/QChartView>
 
+
+#include <QString>
+#include <QModelIndex>
+#include <QDate>
+
+#include <QTextBrowser>
+#include <QString>
+
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -69,6 +78,28 @@ private slots:
     void on_cb_statut_currentIndexChanged(int index);
     void on_tab_produit_clicked(const QModelIndex &index);
     void viderFormulaire();
+
+    void on_le_recherche_3_textChanged(const QString &arg1);
+
+    void on_btn_trier_2_clicked();
+
+    void on_tabWidget_Stock_currentChanged(int index);
+
+    void on_btn_pdf_produit_clicked();
+    void refreshHistorique();
+    void renderHistorique(QString typeFiltre, QTextBrowser* targetFeed, QString searchKeyword);
+
+
+    void on_le_search_ajout_textChanged(const QString &arg1);
+
+    void on_le_search_modif_textChanged(const QString &arg1);
+
+    void on_le_search_suppr_textChanged(const QString &arg1);
+
+    void on_le_search_resv_textChanged(const QString &arg1);
+
+    void on_le_search_vente_textChanged(const QString &arg1);
+
 
     // ─── Module Contrat ───────────────────────────────────────────────────────
     void contrat_onAjouterClicked();
@@ -138,9 +169,13 @@ private:
     Client  *client;
 
     // ─── Module Produit ───────────────────────────────────────────────────────
-    bool controleSaisieProduit();
     void chargerIdsClients();
     int id_a_modifier = -1;
+    bool controleSaisieProduit(bool isModification = false);
+    void afficherStatistiques();
+    QString statut_a_modifier; // Pour stocker le statut avant la modification
+    void calculerValorisation();
+
 
     // ─── Module Contrat ───────────────────────────────────────────────────────
     int contrat_currentSelectedId = -1;

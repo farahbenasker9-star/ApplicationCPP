@@ -33,6 +33,15 @@
 #include <QtCharts/QValueAxis>
 #include <QStyledItemDelegate>
 
+#include <QProgressBar>
+#include <QHBoxLayout>
+
+#include <QtCharts/QChartView>
+#include <QGraphicsLayout>
+
+#include <QDate>
+#include <QSqlError>
+
 // ==================== CUSTOM DELEGATE FOR CIN ====================
 class CinDelegate : public QStyledItemDelegate
 {
@@ -342,6 +351,9 @@ void MainWindow::navigateToPage(int pageIndex)
         Produit P;
         ui->tab_produit->setModel(P.afficher());
         chargerIdsClients();
+        afficherStatistiques();
+        refreshHistorique();
+        calculerValorisation();
     }
     if (pageIndex == 7) {
         ui->tab_poubelle->setModel(tmp_poubelle.afficher());
@@ -608,17 +620,17 @@ void MainWindow::on_btn_pdf_poubelle_clicked()
 // =========================================================
 
 void MainWindow::chargerIdsClients() {
-    ui->cb_id_client->clear();
-    ui->cb_id_client->addItem("");
+    ui->cb_id_client->clear(); // On vide la liste actuelle
+    ui->cb_id_client->addItem(""); // Optionnel : un champ vide par défaut
 
     QSqlQuery query("SELECT ID_CLIENT FROM CLIENT ORDER BY ID_CLIENT ASC");
     while (query.next()) {
         ui->cb_id_client->addItem(query.value(0).toString());
     }
 }
-
 void MainWindow::on_btn_ajouter_produit_clicked() {
-    if (!controleSaisieProduit()) return;
+    if (!controleSaisieProduit()) return; // On s'arrête si c'est faux
+    // Récupération des données
     int id = ui->le_id->text().toInt();
     int id_c = ui->cb_id_client->currentText().toInt();
     QString type = ui->cb_type_2->currentText();
@@ -631,19 +643,28 @@ void MainWindow::on_btn_ajouter_produit_clicked() {
     Produit P(id, id_c, type, poids, dc, dv, statut, prix);
 
     if(P.ajouter()) {
+        QString nomClient = ui->cb_id_client->currentText();
+        QString details = "Produit ajouté au stock.";
+        if(!nomClient.isEmpty()) details += " Lié au client : " + nomClient;
+
+        P.enregistrerAction(id, "AJOUT", type, "Entrée en stock initial.");
+
         ui->tab_produit->setModel(P.afficher());
+        afficherStatistiques();
+        refreshHistorique(); // On force le rafraîchissement
         QMessageBox::information(this, "Succès", "Produit ajouté !");
         viderFormulaire();
     } else {
         QMessageBox::critical(this, "Erreur", "Ajout échoué.");
     }
 }
-
 void MainWindow::on_btn_supprimer_produit_clicked() {
-    int id = ui->le_id->text().toInt();
+    int id = ui->le_id->text().toInt(); // On récupère l'ID à supprimer
     Produit P;
     if(P.supprimer(id)) {
+        P.enregistrerAction(id, "SUPPRESSION", ui->cb_type_2->currentText(), "Produit définitivement retiré du stock.");
         ui->tab_produit->setModel(P.afficher());
+        afficherStatistiques();
         QMessageBox::information(this, "Succès", "Produit supprimé !");
         viderFormulaire();
     }
@@ -655,7 +676,7 @@ void MainWindow::on_btn_modifier_produit_clicked() {
         return;
     }
 
-    if (!controleSaisieProduit()) return;
+    if (!controleSaisieProduit(true)) return;
 
     int id_c = 0;
     if (!ui->cb_id_client->currentText().isEmpty()) {
@@ -671,19 +692,50 @@ void MainWindow::on_btn_modifier_produit_clicked() {
               ui->cb_statut->currentText(),
               ui->sb_prix->value());
 
+    int id_nouveau = ui->le_id->text().toInt();
+
     if(P.modifier(id_a_modifier)) {
+        QString statut_actuel = ui->cb_statut->currentText().trimmed();
+        // On nettoie aussi l'ancien statut au cas où
+        QString ancien_statut = this->statut_a_modifier.trimmed();
+
+        QString typeLog = "MODIFICATION";
+        QString details = QString("Mise à jour technique (Prix/Poids/Type) du produit ID %1.").arg(id_a_modifier);
+
+        // 1. DÉTECTION VENTE (Seulement si le statut CHANGE vers Vendu)
+        if (statut_actuel == "Vendu" && ancien_statut != "Vendu") {
+            typeLog = "VENTE";
+            details = QString("💰 VENTE EFFECTUÉE : Produit vendu au client %1").arg(ui->cb_id_client->currentText());
+        }
+        // 2. DÉTECTION RÉSERVATION (Seulement si le statut CHANGE vers Réservé)
+        else if (statut_actuel == "Réservé" && ancien_statut != "Réservé") {
+            typeLog = "RESERVATION";
+            details = QString("⏰ RÉSERVATION : Produit bloqué pour le client %1").arg(ui->cb_id_client->currentText());
+        }
+        // 3. TOUT LE RESTE (Si le statut est déjà Vendu ou déjà Réservé et qu'on change le prix)
+        // Le typeLog restera "MODIFICATION" et ira donc dans l'onglet Modifs.
+
+        // Enregistrement
+        P.enregistrerAction(id_nouveau, typeLog, ui->cb_type_2->currentText(), details);
+
+        // --- MISE À JOUR UI ---
         ui->tab_produit->setModel(P.afficher());
         QMessageBox::information(this, "Succès", "Produit mis à jour !");
-        id_a_modifier = ui->le_id->text().toInt();
+        afficherStatistiques();
+        refreshHistorique();
+        calculerValorisation();
+
+        // 4. TRÈS IMPORTANT : Mettre à jour les références pour la prochaine fois
+        id_a_modifier = id_nouveau;
+        this->statut_a_modifier = statut_actuel;
+
         viderFormulaire();
     } else {
-        QMessageBox::critical(this, "Erreur", "La modification a échoué. Vérifiez que le nouvel ID n'est pas déjà utilisé par un autre produit.");
+        QMessageBox::critical(this, "Erreur", "Modification échouée (ID déjà utilisé ?)");
     }
 }
-
 void MainWindow::on_cb_statut_currentIndexChanged(int index)
 {
-    Q_UNUSED(index)
     QString statut = ui->cb_statut->currentText();
 
     if (statut == "Vendu") {
@@ -695,10 +747,12 @@ void MainWindow::on_cb_statut_currentIndexChanged(int index)
         ui->cb_id_client->setEnabled(true);
         ui->de_date_v->setEnabled(false);
     }
-    else {
+    else { // Cas "Disponible"
         ui->cb_id_client->setEnabled(false);
         ui->de_date_v->setEnabled(false);
-        ui->cb_id_client->setCurrentIndex(-1);
+
+        // IMPORTANT : Ne pas faire .clear() sur une ComboBox sinon elle se vide !
+        ui->cb_id_client->setCurrentIndex(-1); // Déselectionne l'élément sans vider la liste
     }
 }
 
@@ -706,19 +760,22 @@ void MainWindow::on_tab_produit_clicked(const QModelIndex &index)
 {
     int row = index.row();
     auto model = ui->tab_produit->model();
+    // ON MÉMORISE L'ID ACTUEL AVANT TOUTE MODIFICATION
     this->id_a_modifier = model->index(row, 0).data().toInt();
+    this->statut_a_modifier = model->index(row, 6).data().toString().trimmed();
 
     QString statut_db = model->index(row, 6).data().toString().trimmed();
     ui->cb_statut->setCurrentText(statut_db);
 
     on_cb_statut_currentIndexChanged(ui->cb_statut->currentIndex());
 
+    // Pour la ComboBox client : on cherche l'index correspondant à l'ID du tableau
     QString id_client_db = model->index(row, 1).data().toString().trimmed();
     int idx_client = ui->cb_id_client->findText(id_client_db);
     if (idx_client != -1) {
         ui->cb_id_client->setCurrentIndex(idx_client);
     } else {
-        ui->cb_id_client->setCurrentIndex(0);
+        ui->cb_id_client->setCurrentIndex(0); // Vide si non trouvé
     }
 
     ui->le_id->setText(model->index(row, 0).data().toString());
@@ -728,38 +785,46 @@ void MainWindow::on_tab_produit_clicked(const QModelIndex &index)
     ui->de_date_v->setDate(model->index(row, 5).data().toDate());
     ui->sb_prix->setValue(model->index(row, 7).data().toDouble());
 }
-
-bool MainWindow::controleSaisieProduit() {
+bool MainWindow::controleSaisieProduit(bool isModification) {
     QString id_p = ui->le_id->text();
     double prix = ui->sb_prix->value();
     double poids = ui->sb_poids->value();
     QString statut = ui->cb_statut->currentText();
     QString id_c = ui->cb_id_client->currentText();
 
+    // 1. Vérification de l'ID (toujours nécessaire)
     if (id_p.length() != 8) {
         QMessageBox::warning(this, "Erreur de saisie", "L'ID Produit doit contenir exactement 8 chiffres.");
         return false;
     }
+
+    // 2. Vérification du poids et du prix (toujours nécessaire)
     if (poids <= 0 || prix <= 0) {
         QMessageBox::warning(this, "Erreur de saisie", "Le poids et le prix doivent être supérieurs à 0.");
         return false;
     }
 
-    QDate dateCreation = ui->de_date_c->date();
-    QDate aujourdhui = QDate::currentDate();
-    QDate limitePassee = aujourdhui.addMonths(-1);
+    // ==================== CONTROLE DATE (UNIQUEMENT POUR L'AJOUT) ====================
+    if (!isModification) { // On n'entre ici que si on AJOUTE un nouveau produit
+        QDate dateCreation = ui->de_date_c->date();
+        QDate aujourdhui = QDate::currentDate();
+        QDate limitePassee = aujourdhui.addMonths(-1);
 
-    if (dateCreation < limitePassee) {
-        QMessageBox::warning(this, "Erreur de date",
-                             "La date de création est trop ancienne. Elle doit être comprise entre le "
-                                 + limitePassee.toString("dd/MM/yyyy") + " et aujourd'hui.");
-        return false;
+        if (dateCreation < limitePassee) {
+            QMessageBox::warning(this, "Erreur de date",
+                                 "La date de création est trop ancienne pour un nouveau produit.");
+            return false;
+        }
+
+        if (dateCreation > aujourdhui) {
+            QMessageBox::warning(this, "Erreur de date",
+                                 "La date de création ne peut pas être une date future.");
+            return false;
+        }
     }
-    if (dateCreation > aujourdhui) {
-        QMessageBox::warning(this, "Erreur de date",
-                             "La date de création ne peut pas être une date future.");
-        return false;
-    }
+    // =================================================================================
+
+    // 3. Vérification de l'ID Client
     if (statut != "Disponible" && id_c.isEmpty()) {
         QMessageBox::warning(this, "Erreur de saisie", "Un ID Client est obligatoire pour un produit Réservé ou Vendu.");
         return false;
@@ -767,7 +832,6 @@ bool MainWindow::controleSaisieProduit() {
 
     return true;
 }
-
 void MainWindow::viderFormulaire() {
     ui->le_id->clear();
     ui->sb_poids->setValue(0.0);
@@ -775,10 +839,432 @@ void MainWindow::viderFormulaire() {
     ui->de_date_c->setDate(QDate::currentDate());
     ui->de_date_v->setDate(QDate::currentDate());
     ui->cb_type_2->setCurrentIndex(0);
+
+    // Remettre le statut à "Disponible"
     ui->cb_statut->setCurrentText("Disponible");
+
+    // Forcer manuellement l'appel de la fonction qui bloque les champs
     on_cb_statut_currentIndexChanged(ui->cb_statut->currentIndex());
+
+    // Réinitialiser l'ID de modification
     this->id_a_modifier = -1;
 }
+void MainWindow::on_le_recherche_3_textChanged(const QString &arg1)
+{
+    Produit P;
+    // Si le champ est vide, on affiche tout, sinon on filtre
+    if (arg1.isEmpty()) {
+        ui->tab_produit->setModel(P.afficher());
+    } else {
+        ui->tab_produit->setModel(P.rechercherSimple(arg1));
+    }
+}
+void MainWindow::on_btn_trier_2_clicked() // Remplace par le nom exact de ton bouton
+{
+    // On récupère le critère choisi dans la ComboBox de tri
+    // Vérifie le nom de ta combo (ex: cb_tri ou cb_trier_par)
+    QString critere = ui->cb_trier->currentText();
+
+    Produit P;
+    // On met à jour le tableau avec le résultat trié
+    ui->tab_produit->setModel(P.trier(critere));
+}
+
+void MainWindow::afficherStatistiques() {
+    Produit P;
+
+    // 1. Initialisation du Layout
+    if (ui->container_stats->layout() == nullptr) {
+        QVBoxLayout *mainLayout = new QVBoxLayout(ui->container_stats);
+        mainLayout->setContentsMargins(5, 5, 5, 5);
+        mainLayout->setSpacing(10);
+        ui->container_stats->setLayout(mainLayout);
+    }
+
+    QLayoutItem *child;
+    while ((child = ui->container_stats->layout()->takeAt(0)) != nullptr) {
+        if(child->widget()) delete child->widget();
+        delete child;
+    }
+
+    // =========================================================
+    // SECTION 1 : HISTOGRAMME
+    // =========================================================
+    QMap<QString, double> statsPoids = P.statistiquePoidsParType();
+    QBarSeries *barSeries = new QBarSeries();
+    double maxPoids = 0;
+    for (auto it = statsPoids.begin(); it != statsPoids.end(); ++it) {
+        QBarSet *set = new QBarSet(it.key());
+        *set << it.value();
+        barSeries->append(set);
+        if (it.value() > maxPoids) maxPoids = it.value();
+    }
+
+    QChart *barChart = new QChart();
+    barChart->addSeries(barSeries);
+    barChart->setTitle("Poids Total Recyclé (Kg)");
+    barChart->setAnimationOptions(QChart::SeriesAnimations);
+    barChart->setMargins(QMargins(0, 0, 0, 0));
+    barChart->setBackgroundRoundness(0);
+    barChart->legend()->setAlignment(Qt::AlignRight);
+    barChart->legend()->setMarkerShape(QLegend::MarkerShapeCircle);
+
+    QFont fontTitle = barChart->titleFont();
+    fontTitle.setPointSize(10);
+    fontTitle.setBold(true);
+    barChart->setTitleFont(fontTitle);
+
+    QBarCategoryAxis *axisX = new QBarCategoryAxis();
+    axisX->append("");
+    barChart->addAxis(axisX, Qt::AlignBottom);
+    barSeries->attachAxis(axisX);
+
+    QValueAxis *axisY = new QValueAxis();
+    axisY->setRange(0, maxPoids + (maxPoids * 0.2));
+    barChart->addAxis(axisY, Qt::AlignLeft);
+    barSeries->attachAxis(axisY);
+
+    QChartView *barChartView = new QChartView(barChart);
+    barChartView->setRenderHint(QPainter::Antialiasing);
+    barChartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    // =========================================================
+    // SECTION 2 : DIAGRAMME EN ANNEAU (Modifiée pour visibilité)
+    // =========================================================
+    QMap<QString, int> statsNb = P.statistiqueParType();
+    QPieSeries *pieSeries = new QPieSeries();
+
+    pieSeries->setHoleSize(0.35);
+    // --- CHANGEMENT ICI : Taille réduite pour laisser de la place aux labels ---
+    pieSeries->setPieSize(0.5);
+
+    for (auto it = statsNb.begin(); it != statsNb.end(); ++it) {
+        QString label = it.key() + " (" + QString::number(it.value()) + ")";
+        QPieSlice *slice = pieSeries->append(label, it.value());
+        slice->setLabelVisible(true);
+
+        QFont fontSlice = slice->labelFont();
+        fontSlice.setPointSize(8);
+        slice->setLabelFont(fontSlice);
+    }
+
+    QChart *pieChart = new QChart();
+    pieChart->addSeries(pieSeries);
+    pieChart->setTitle("Répartition du Stock (Articles)");
+    pieChart->setAnimationOptions(QChart::SeriesAnimations);
+
+    // --- CHANGEMENT ICI : Marges ajoutées pour que le texte ne sorte pas du cadre ---
+    pieChart->setMargins(QMargins(30, 0, 30, 0));
+    pieChart->setBackgroundRoundness(0);
+    pieChart->setTitleFont(fontTitle);
+    pieChart->legend()->hide();
+
+    QChartView *pieChartView = new QChartView(pieChart);
+    pieChartView->setRenderHint(QPainter::Antialiasing);
+    pieChartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    // Ajout au layout
+    QVBoxLayout *vLayout = qobject_cast<QVBoxLayout*>(ui->container_stats->layout());
+    vLayout->addWidget(barChartView, 1);
+    vLayout->addWidget(pieChartView, 1);
+}
+
+void MainWindow::on_tabWidget_Stock_currentChanged(int index)
+{
+    if (index == 0)
+    {
+        afficherStatistiques();
+
+    }
+    else if (index == 1) { // Onglet Historique (Vérifiez l'index de votre onglet)
+        refreshHistorique();
+    }
+    else if (index == 2) { // Index 2 correspond à votre onglet tab_finance
+        calculerValorisation();
+    }
+}
+
+
+void MainWindow::on_btn_pdf_produit_clicked()
+{
+    // 1. Demander à l'utilisateur où sauvegarder le fichier
+    QString fileName = QFileDialog::getSaveFileName(this, "Exporter en PDF", "", "Fichiers PDF (*.pdf)");
+    if (fileName.isEmpty()) {
+        return; // L'utilisateur a annulé
+    }
+
+    // 2. Récupérer le modèle du tableau
+    QAbstractItemModel *model = ui->tab_produit->model();
+    if (!model) {
+        QMessageBox::warning(this, "Erreur", "Aucune donnée à exporter.");
+        return;
+    }
+
+    // 3. Préparer le document HTML (Design du PDF)
+    QString html =
+        "<html>"
+        "<head>"
+        "<style>"
+        "  table { border-collapse: collapse; font-family: Arial; }"
+        "  th { background-color: #2E7D32; color: white; padding: 10px; text-align: left; border: 1px solid #ddd; }"
+        "  td { padding: 8px; border: 1px solid #ddd; }"
+        "  h1 { color: #2E7D32; text-align: center; font-size: 24px; }"
+        "  .date { text-align: right; font-style: italic; color: #555; }"
+        "</style>"
+        "</head>"
+        "<body>"
+        "<h1>Rapport d'Inventaire - EcoCycle</h1>"
+        "<p class='date'>Généré le : " + QDate::currentDate().toString("dd/MM/yyyy") + "</p>"
+                                                        // C'EST CETTE LIGNE QUI FORCE LA LARGEUR MAXIMALE :
+                                                        "<table width=\"100%\">"
+                                                        "<thead><tr>";
+
+    // 4. Ajouter les en-têtes des colonnes (Noms personnalisés et propres)
+    QStringList jolisTitres = {"ID Produit", "ID Client", "Type", "Poids (Kg)", "Date Création", "Date Vente", "Statut", "Prix (TND)"};
+    int columnCount = model->columnCount();
+
+    // On s'assure de ne pas dépasser le nombre de colonnes de la BDD
+    for (int col = 0; col < columnCount; ++col) {
+        if (col < jolisTitres.size()) {
+            html += "<th>" + jolisTitres[col] + "</th>";
+        } else {
+            html += "<th>" + model->headerData(col, Qt::Horizontal).toString() + "</th>";
+        }
+    }
+    html += "</tr></thead><tbody>";
+
+    // 5. Ajouter les données des lignes (Avec formatage des dates)
+    int rowCount = model->rowCount();
+    for (int row = 0; row < rowCount; ++row) {
+        html += "<tr>";
+        for (int col = 0; col < columnCount; ++col) {
+
+            // On récupère la donnée sous sa forme brute (QVariant)
+            QVariant valeur = model->data(model->index(row, col));
+            QString data = valeur.toString();
+
+            // Si c'est la colonne 4 (Création) ou 5 (Vente) ET que la case n'est pas vide
+            if ((col == 4 || col == 5) && !data.isEmpty()) {
+                // On la transforme en jolie date : JJ/MM/AAAA
+                data = valeur.toDateTime().toString("dd/MM/yyyy");
+            }
+
+            // (Optionnel) Si la donnée est "0" dans le client d'un produit dispo, on n'affiche rien
+            if (col == 1 && data == "0") data = "";
+
+            html += "<td>" + data + "</td>";
+        }
+        html += "</tr>";
+    }
+    // 6. Générer le PDF
+    QPrinter printer(QPrinter::PrinterResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setOutputFileName(fileName);
+    printer.setPageSize(QPageSize(QPageSize::A4)); // Format A4
+    printer.setPageOrientation(QPageLayout::Landscape); // Paysage pour avoir de la place
+
+    QTextDocument document;
+    document.setHtml(html);
+    document.print(&printer);
+
+    QMessageBox::information(this, "Succès", "Le fichier PDF a été généré avec succès !");
+
+}
+
+void MainWindow::renderHistorique(QString typeFiltre, QTextBrowser* targetFeed, QString searchKeyword) {
+    QFile file("historique_ecocycle.csv");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        targetFeed->setHtml("<p style='color:#666; font-size:12px;'>Aucun historique disponible.</p>");
+        return;
+    }
+
+    QTextStream in(&file);
+    QStringList allLines;
+    while (!in.atEnd()) { allLines.append(in.readLine()); }
+    file.close();
+
+    QString html =
+        "<html><head><style>"
+        "  body { font-family: 'Segoe UI', Arial; margin: 0; padding: 0; }"
+        "  table { width: 100%; border-collapse: collapse; }"
+        "  th { background-color: #f8f9fa; color: #333; font-size: 11px; text-transform: uppercase; "
+        "       padding: 10px; border-bottom: 2px solid #2e7d32; text-align: left; }"
+        "  td { padding: 10px; border-bottom: 1px solid #eee; font-size: 12px; color: #444; }"
+        "  .id-cell { font-family: 'Courier New'; font-weight: bold; color: #2e7d32; width: 80px; }"
+        "  .type-label { color: #e67e22; font-weight: bold; }" // Couleur orange pour le type
+        "  .date-cell { color: #888; width: 110px; font-size: 11px; }"
+        "</style></head><body>"
+        "<table>"
+        "<thead><tr>"
+        "  <th class='date-cell'>Date / Heure</th>"
+        "  <th class='id-cell'>ID Produit</th>"
+        "  <th>Détails de l'opération</th>"
+        "</tr></thead><tbody>";
+
+    int rows = 0;
+    for (int i = allLines.size() - 1; i >= 0; --i) {
+        QStringList fields = allLines[i].split(";");
+        if (fields.size() < 5) continue; // On attend maintenant 5 champs
+
+        QString date = fields[0];
+        QString typeAction = fields[1];
+        QString id_p = fields[2];
+        QString typeProduit = fields[3]; // Le type (Verre, Plastique...)
+        QString details = fields[4];
+
+        if (typeAction != typeFiltre) continue;
+
+        // ON AJOUTE LA RECHERCHE SUR LE TYPE ICI :
+        if (!searchKeyword.isEmpty() &&
+            !details.contains(searchKeyword, Qt::CaseInsensitive) &&
+            !id_p.contains(searchKeyword) &&
+            !typeProduit.contains(searchKeyword, Qt::CaseInsensitive)) // <--- AJOUTEZ CETTE LIGNE
+        {
+            continue;
+        }
+
+        rows++;
+        html += QString(
+                    "<tr>"
+                    "  <td class='date-cell'>%1</td>"
+                    "  <td class='id-cell'>%2</td>"
+                    "  <td><span class='type-label'>[%3]</span> %4</td>"
+                    "</tr>"
+                    ).arg(date, id_p, typeProduit, details);
+    }
+
+    if(rows == 0) html += "<tr><td colspan='3' style='text-align:center; padding:20px; color:#999;'>Aucune donnée.</td></tr>";
+
+    html += "</tbody></table></body></html>";
+    targetFeed->setHtml(html);
+}
+void MainWindow::refreshHistorique() {
+    // Cette fonction met à jour les 5 TextBrowsers en lisant le fichier CSV
+    // Assurez-vous que les noms ui->feed_... et ui->le_search_... sont corrects
+    renderHistorique("AJOUT", ui->feed_ajout, ui->le_search_ajout->text());
+    renderHistorique("MODIFICATION", ui->feed_modif, ui->le_search_modif->text());
+    renderHistorique("SUPPRESSION", ui->feed_suppr, ui->le_search_suppr->text());
+    renderHistorique("RESERVATION", ui->feed_resv, ui->le_search_resv->text());
+    renderHistorique("VENTE", ui->feed_vente, ui->le_search_vente->text());
+}
+
+// 1. Recherche dans les AJOUTS
+void MainWindow::on_le_search_ajout_textChanged(const QString &arg1) {
+    renderHistorique("AJOUT", ui->feed_ajout, arg1);
+}
+
+// 2. Recherche dans les MODIFICATIONS
+void MainWindow::on_le_search_modif_textChanged(const QString &arg1) {
+    renderHistorique("MODIFICATION", ui->feed_modif, arg1);
+}
+
+// 3. Recherche dans les SUPPRESSIONS
+void MainWindow::on_le_search_suppr_textChanged(const QString &arg1) {
+    renderHistorique("SUPPRESSION", ui->feed_suppr, arg1);
+}
+
+// 4. Recherche dans les RÉSERVATIONS
+void MainWindow::on_le_search_resv_textChanged(const QString &arg1) {
+    renderHistorique("RESERVATION", ui->feed_resv, arg1);
+}
+
+// 5. Recherche dans les VENTES
+void MainWindow::on_le_search_vente_textChanged(const QString &arg1) {
+    renderHistorique("VENTE", ui->feed_vente, arg1);
+}
+
+void MainWindow::calculerValorisation() {
+    QSqlQuery query("SELECT TYPE_PRODUIT, POIDS_KG, PRIX_VENTE_ESTIME, STATUT, DATE_DE_CREATION, ID_PRODUIT FROM PRODUIT");
+
+    double totalDispo = 0;
+    double totalCA = 0;
+    struct StatMatiere { double poids = 0; double valeur = 0; int nbLots = 0; };
+    QMap<QString, StatMatiere> stats;
+    QStringList alertes;
+    QDate aujourdhui = QDate::currentDate();
+
+    while (query.next()) {
+        QString type = query.value(0).toString();
+        double poids = query.value(1).toDouble();
+        double prix = query.value(2).toDouble();
+        QString statut = query.value(3).toString();
+        QDate dateC = query.value(4).toDate();
+        QString id_p = query.value(5).toString();
+
+        stats[type].poids += poids;
+        stats[type].valeur += (poids * prix);
+        stats[type].nbLots++;
+
+        if (statut == "Disponible") totalDispo += (poids * prix);
+        else if (statut == "Vendu") totalCA += (poids * prix);
+
+        int jours = dateC.daysTo(aujourdhui);
+        if (statut == "Disponible" && jours > 60) {
+            double valeurRisque = poids * prix;
+            QString msg = QString("<b>ID: %1</b> [%2] - Critique : %3 jours (Risque: %4 DT)")
+                              .arg(id_p, type, QString::number(jours), QString::number(valeurRisque, 'f', 2));
+            alertes << msg;
+        }
+    }
+
+    // --- 1. MISE À JOUR DES KPI ---
+    ui->lbl_val_dispo->setText(QString::number(totalDispo, 'f', 2) + " DT");
+    ui->lbl_val_ca->setText(QString::number(totalCA, 'f', 2) + " DT");
+
+    // --- 2. CONFIGURATION DU TABLEAU ---
+    ui->table_finance->setRowCount(0);
+    ui->table_finance->setAlternatingRowColors(true); // Active les lignes grises/blanches
+    ui->table_finance->verticalHeader()->setVisible(false); // Cache les numéros à gauche
+
+    for (auto it = stats.begin(); it != stats.end(); ++it) {
+        int r = ui->table_finance->rowCount();
+        ui->table_finance->insertRow(r);
+
+        double ratio = (it.value().poids > 0) ? (it.value().valeur / it.value().poids) : 0;
+
+        // Création des items
+        QTableWidgetItem *itemType = new QTableWidgetItem(it.key().toUpper());
+        QTableWidgetItem *itemLots = new QTableWidgetItem(QString::number(it.value().nbLots));
+        QTableWidgetItem *itemMasse = new QTableWidgetItem(QString::number(it.value().poids, 'f', 1) + " Kg");
+        QTableWidgetItem *itemValeur = new QTableWidgetItem(QString::number(it.value().valeur, 'f', 2) + " DT");
+        QTableWidgetItem *itemRatio = new QTableWidgetItem(QString::number(ratio, 'f', 2) + " DT/Kg");
+
+        // Alignement au centre pour la propreté
+        itemLots->setTextAlignment(Qt::AlignCenter);
+        itemMasse->setTextAlignment(Qt::AlignCenter);
+        itemValeur->setTextAlignment(Qt::AlignCenter);
+        itemRatio->setTextAlignment(Qt::AlignCenter);
+
+        // Appliquer les items
+        ui->table_finance->setItem(r, 0, itemType);
+        ui->table_finance->setItem(r, 1, itemLots);
+        ui->table_finance->setItem(r, 2, itemMasse);
+        ui->table_finance->setItem(r, 3, itemValeur);
+        ui->table_finance->setItem(r, 4, itemRatio);
+    }
+
+    // Forcer les colonnes à prendre TOUTE la place sans couper le texte
+    ui->table_finance->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    // --- 3. MISE À JOUR DES ALERTES ---
+    ui->list_alertes->clear();
+    if (alertes.isEmpty()) {
+        ui->frame_alertes->hide();
+    } else {
+        ui->frame_alertes->show();
+        for (const QString& a : alertes) {
+            QListWidgetItem *item = new QListWidgetItem();
+            // On utilise setData pour que le HTML soit interprété
+            QLabel *label = new QLabel("• " + a);
+            label->setStyleSheet("color: #c0392b; font-size: 11px; font-family: 'Segoe UI';");
+
+            item->setSizeHint(label->sizeHint());
+            ui->list_alertes->addItem(item);
+            ui->list_alertes->setItemWidget(item, label);
+        }
+    }
+}
+
 
 // =========================================================
 // ===                  MODULE CONTRAT                   ===
