@@ -138,9 +138,20 @@ void Client::onBtnAjouterClicked() {
     query.bindValue(":adr", ui->le_adresse_client->text());
 
     if(query.exec()) {
-        QMessageBox::information(nullptr, "Succès", "Client ajouté avec succès !");
+        // Nettoyer le formulaire AVANT les rafraîchissements pour éviter des conflits de focus/évenements
+        ui->le_id_client->clear();
+        ui->le_nom_client->clear();
+        ui->le_tel_client->clear();
+        ui->le_adresse_client->clear();
+        ui->le_responsable_client->clear();
+        ui->dsb_codepostal_client->setValue(0);
+
+        // Rafraîchir sans bloquer l'UI trop longtemps
         rafraichirAffichage();
         rafraichirStats();
+        rafraichirRendement();
+        
+        QMessageBox::information(ui->tab_clients->window(), "Succès", "Client ajouté avec succès !");
     } else {
         QMessageBox::critical(nullptr, "Erreur de base de données",
                               "Erreur lors de l'ajout :\n" + query.lastError().text());
@@ -194,10 +205,12 @@ void Client::onBtnModifierClicked() {
     }
 
     selectedClientId = newId;
-    QMessageBox::information(nullptr, "Succès", "Client modifié avec succès.");
+    ui->tab_clients->blockSignals(true);
     rafraichirAffichage();
     rafraichirStats();
     rafraichirRendement();
+    ui->tab_clients->blockSignals(false);
+    QMessageBox::information(ui->tab_clients, "Succès", "Client modifié avec succès.");
 }
 
 void Client::onBtnSupprimerClicked() {
@@ -241,10 +254,12 @@ void Client::onBtnSupprimerClicked() {
     query.prepare("DELETE FROM CLIENT WHERE ID_CLIENT = :id");
     query.bindValue(":id", id);
     if(query.exec()) {
+        ui->tab_clients->blockSignals(true);
         rafraichirAffichage();
         rafraichirStats();
         rafraichirRendement();
-        QMessageBox::information(nullptr, "Succès", "Client supprimé avec succès.");
+        ui->tab_clients->blockSignals(false);
+        QMessageBox::information(ui->tab_clients, "Succès", "Client supprimé avec succès.");
     } else {
          QMessageBox::critical(nullptr, "Erreur de base de données",
                               "Erreur lors de la suppression :\n" + query.lastError().text());
@@ -396,6 +411,7 @@ void Client::rafraichirRendement() {
     ui->tab_clients_4->setColumnHidden(2, true);
 
     // Vérification des points pour réinitialisation
+    /* 
     for (int i = 0; i < rendementModel->rowCount(); ++i) {
         int clientId = rendementModel->data(rendementModel->index(i, 1)).toInt();
         QString phone = rendementModel->data(rendementModel->index(i, 2)).toString();
@@ -405,6 +421,7 @@ void Client::rafraichirRendement() {
             checkAndResetFidelite(clientId, score, phone);
         }
     }
+    */
 
     if (rendementModel->lastError().isValid()) {
         qDebug() << "Erreur rendement Client:" << rendementModel->lastError().text();
