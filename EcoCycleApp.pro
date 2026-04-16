@@ -12,6 +12,7 @@ SOURCES += \
     mainwindow.cpp \
     connection.cpp \
     employe.cpp \
+    mapwidget.cpp \
     poubelle.cpp \
     contrat.cpp \
     produit.cpp \
@@ -25,6 +26,7 @@ HEADERS += \
     mainwindow.h \
     connection.h \
     employe.h \
+    mapwidget.h \
     poubelle.h \
     contrat.h \
     produit.h \

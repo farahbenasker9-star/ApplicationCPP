@@ -8,6 +8,7 @@
 #include "contrat.h"
 #include "produit.h"
 #include "equipement.h"
+#include "mapwidget.h"
 
 #include <QSqlQueryModel>
 #include <QSqlDatabase>
@@ -18,16 +19,10 @@
 #include <QModelIndex>
 #include <QEvent>
 #include <QLabel>
-
-#include <QtCharts/QChartView>
-
-
 #include <QString>
-#include <QModelIndex>
 #include <QDate>
-
 #include <QTextBrowser>
-#include <QString>
+#include <QtCharts/QChartView>
 
 
 QT_BEGIN_NAMESPACE
@@ -225,6 +220,15 @@ private:
     QChartView *employe_chartViewGenre   = nullptr;
     QChartView *employe_chartViewPoste   = nullptr;
     QChartView *employe_chartViewSalaire = nullptr;
+    // ─── Module Poubelle Stats ────────────────────────────────────────────────
+    void poubelle_setupStatsUI();
+    void poubelle_refreshStats();
+    void poubelle_setupMap();
+    void poubelle_refreshMap();
+    void poubelle_setupPredictionAI();
+    void poubelle_refreshPredictionAI();
+    QChartView *poubelle_chartViewRemplissage = nullptr;
+    MapWidget *poubelle_mapView = nullptr;
 };
 
 #endif // MAINWINDOW_H

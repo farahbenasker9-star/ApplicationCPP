@@ -374,7 +374,7 @@ QWidget#centralwidget {
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>4</number>
+       <number>7</number>
       </property>
       <widget class="QWidget" name="page_dashboard">
        <widget class="QLabel" name="label_logo_dash">
@@ -5191,7 +5191,7 @@ QTabBar::tab:hover {
         <property name="geometry">
          <rect>
           <x>360</x>
-          <y>120</y>
+          <y>110</y>
           <width>631</width>
           <height>42</height>
          </rect>
@@ -5338,7 +5338,7 @@ QTabBar::tab:hover {
           <x>360</x>
           <y>60</y>
           <width>631</width>
-          <height>54</height>
+          <height>57</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_7_client_2">
@@ -5457,7 +5457,7 @@ background-color: rgb(67, 160, 71);</string>
      <x>0</x>
      <y>0</y>
      <width>1587</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

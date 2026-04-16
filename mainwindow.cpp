@@ -1,5 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QStandardItemModel>
+#include <QStandardItem>
+#include <QSqlQueryModel>
+#include <QSqlQuery>
 #include <QDebug>
 #include <QMessageBox>
 #include <QRegularExpression>
@@ -41,6 +45,7 @@
 
 #include <QDate>
 #include <QSqlError>
+#include <QScrollBar>
 
 // ==================== CUSTOM DELEGATE FOR CIN ====================
 class CinDelegate : public QStyledItemDelegate
@@ -317,6 +322,20 @@ void MainWindow::on_btn_nav_contrat_clicked()    { navigateToPage(2); }
 void MainWindow::on_btn_nav_poubelle_clicked()   {
     ui->stackedWidget->setCurrentIndex(7);
     ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+    
+    // Setup une seule fois au premier clic
+    static bool initialized = false;
+    if (!initialized) {
+        poubelle_setupMap();
+        poubelle_setupStatsUI();
+        poubelle_setupPredictionAI();
+        initialized = true;
+    }
+    
+    // Rafraichir les donnees a chaque clic
+    poubelle_refreshMap();
+    poubelle_refreshStats();
+    poubelle_refreshPredictionAI();
     clearFormPoubelle();
 }
 void MainWindow::on_btn_nav_equipements_clicked(){ ui->stackedWidget->setCurrentIndex(3); }
@@ -325,6 +344,20 @@ void MainWindow::on_btn_nav_stock_clicked()      { ui->stackedWidget->setCurrent
 void MainWindow::on_btn_dash_poubelle_clicked()  {
     ui->stackedWidget->setCurrentIndex(7);
     ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+    
+    // Setup une seule fois au premier clic
+    static bool initialized = false;
+    if (!initialized) {
+        poubelle_setupMap();
+        poubelle_setupStatsUI();
+        poubelle_setupPredictionAI();
+        initialized = true;
+    }
+    
+    // Rafraichir les donnees a chaque clic
+    poubelle_refreshMap();
+    poubelle_refreshStats();
+    poubelle_refreshPredictionAI();
     clearFormPoubelle();
 }
 void MainWindow::on_btn_dash_employe_clicked()   { ui->stackedWidget->setCurrentIndex(6); }
@@ -386,6 +419,9 @@ void MainWindow::on_btn_ajouter_poubelle_clicked()
     if(p.ajouter()) {
         QMessageBox::information(this, "Succès", "Poubelle ajoutée avec succès");
         ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+        poubelle_refreshStats();
+        poubelle_refreshMap();
+        poubelle_refreshPredictionAI();
         clearFormPoubelle();
     } else {
         QMessageBox::critical(this, "Erreur", "Échec de l'ajout.\nDétail : " + p.getLastError());
@@ -405,6 +441,9 @@ void MainWindow::on_btn_supprimer_poubelle_clicked()
     if(tmp_poubelle.supprimer(id)) {
         QMessageBox::information(this, "Succès", "Poubelle supprimée");
         ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+        poubelle_refreshStats();
+        poubelle_refreshMap();
+        poubelle_refreshPredictionAI();
         clearFormPoubelle();
     } else {
         QMessageBox::critical(this, "Erreur", "Échec de la suppression");
@@ -442,6 +481,9 @@ void MainWindow::on_btn_modifier_poubelle_clicked()
     if(p.modifier(poubelle_currentSelectedId)) {
         QMessageBox::information(this, "Succès", "Poubelle modifiée");
         ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+        poubelle_refreshStats();
+        poubelle_refreshMap();
+        poubelle_refreshPredictionAI();
         clearFormPoubelle();
     } else {
         QMessageBox::critical(this, "Erreur", "Échec de la modification.\nDétail : " + p.getLastError());
@@ -565,7 +607,7 @@ bool MainWindow::validerFormulairePoubelle(bool isUpdate)
             return false;
         }
     }
-    
+
     if (estInstallee) {
         if (ui->sb_capacite->value() <= 0) {
             QMessageBox::warning(this, "Erreur", "La capacite doit etre strictement superieure a 0 pour une poubelle installee.");
@@ -583,7 +625,7 @@ void MainWindow::on_btn_tri_poubelle_clicked()
 {
     QString critere = ui->cb_tri_poubelle->currentText().trimmed();
     QString tri;
-    
+
     if (critere == "Niveau de remplissage") tri = "NIVEAU_REMPLISSAGE DESC";
     else if (critere == "Etat batterie") tri = "ETAT_BATTERIE";
     else if (critere == "Adresse") tri = "ADRESSE";
@@ -606,16 +648,388 @@ void MainWindow::on_le_recherche_poubelle_textChanged(const QString &arg1)
 
 void MainWindow::on_btn_pdf_poubelle_clicked()
 {
-    int row = ui->tab_poubelle->currentIndex().row();
-    if (row == -1) {
-        QMessageBox::warning(this, "Sélection", "Veuillez sélectionner une poubelle dans le tableau pour générer le PDF.");
-        return;
-    }
-    int id = ui->tab_poubelle->model()->data(ui->tab_poubelle->model()->index(row, 0)).toInt();
-    tmp_poubelle.exporterPDF(id);
+    tmp_poubelle.exporterTableauPDF();
 }
 
-// =========================================================
+// ───────────────────────────────────────────────────────────────────────────
+// ─── MODULE POUBELLE - CARTE GÉOGRAPHIQUE ─────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────
+
+void MainWindow::poubelle_setupMap()
+{
+    // Créer le MapWidget pour la carte
+    if (!poubelle_mapView) {
+        poubelle_mapView = new MapWidget();
+
+        // Remplacer l'onglet "Carte géolocalisation" avec la carte
+        QTabWidget *tabWidget = ui->tabWidget_right_2;
+
+        for (int i = 0; i < tabWidget->count(); i++) {
+            if (tabWidget->tabText(i) == "Carte géolocalisation") {
+                QWidget *cartePage = tabWidget->widget(i);
+
+                // Nettoyer le layout existant
+                QLayout *oldLayout = cartePage->layout();
+                if (oldLayout) {
+                    QLayoutItem *item;
+                    while ((item = oldLayout->takeAt(0))) {
+                        delete item->widget();
+                        delete item;
+                    }
+                    delete oldLayout;
+                }
+
+                // Créer un nouveau layout et ajouter la carte
+                QVBoxLayout *layout = new QVBoxLayout(cartePage);
+                layout->setContentsMargins(0, 0, 0, 0);
+                layout->setSpacing(0);
+                layout->addWidget(poubelle_mapView);
+                cartePage->setLayout(layout);
+                break;
+            }
+        }
+    }
+
+    // Charger les données de la carte initiales
+    poubelle_refreshMap();
+}
+
+void MainWindow::poubelle_refreshMap()
+{
+    if (!poubelle_mapView) {
+        qWarning() << "Erreur: poubelle_mapView est NULL!";
+        return;
+    }
+
+    qDebug() << "Chargement de la carte...";
+
+    // Map des 24 villes principales de Tunisie
+    QMap<QString, QPair<double, double>> cityCoordinates;
+
+    // Tunis
+    cityCoordinates["tunis"] = {36.7963, 10.1815};
+    cityCoordinates["tunisie"] = {36.7963, 10.1815};
+
+    // Bizerte
+    cityCoordinates["bizerte"] = {37.2744, 9.8739};
+    cityCoordinates["bizert"] = {37.2744, 9.8739};
+
+    // La Marsa
+    cityCoordinates["la marsa"] = {36.8624, 10.3173};
+    cityCoordinates["marsa"] = {36.8624, 10.3173};
+
+    // L'Ariana
+    cityCoordinates["ariana"] = {36.8629, 10.1844};
+    cityCoordinates["l'ariana"] = {36.8629, 10.1844};
+
+    // Sfax
+    cityCoordinates["sfax"] = {34.7406, 10.7608};
+
+    // Sousse
+    cityCoordinates["sousse"] = {35.8289, 10.6408};
+    cityCoordinates["souse"] = {35.8289, 10.6408};
+
+    // Kairouan
+    cityCoordinates["kairouan"] = {35.6713, 9.9170};
+    cityCoordinates["kairowan"] = {35.6713, 9.9170};
+    cityCoordinates["qairouan"] = {35.6713, 9.9170};
+
+    // Gafsa
+    cityCoordinates["gafsa"] = {34.4255, 8.7845};
+    cityCoordinates["gafessa"] = {34.4255, 8.7845};
+
+    // Gabès
+    cityCoordinates["gabès"] = {33.8869, 10.0982};
+    cityCoordinates["gabes"] = {33.8869, 10.0982};
+
+    // Tozeur
+    cityCoordinates["tozeur"] = {33.9227, 8.1353};
+    cityCoordinates["touzeur"] = {33.9227, 8.1353};
+
+    // Tataouine
+    cityCoordinates["tataouine"] = {32.9297, 10.4518};
+    cityCoordinates["tatewin"] = {32.9297, 10.4518};
+
+    // Médenine
+    cityCoordinates["médenine"] = {33.3637, 10.7556};
+    cityCoordinates["medenine"] = {33.3637, 10.7556};
+    cityCoordinates["medinine"] = {33.3637, 10.7556};
+
+    // Djerba
+    cityCoordinates["djerba"] = {33.8050, 10.9515};
+    cityCoordinates["jerba"] = {33.8050, 10.9515};
+    cityCoordinates["djerbra"] = {33.8050, 10.9515};
+    cityCoordinates["kélibia"] = {36.7914, 11.2944};
+    cityCoordinates["kelibia"] = {36.7914, 11.2944};
+
+    // Beja
+    cityCoordinates["béja"] = {36.7256, 9.1818};
+    cityCoordinates["beja"] = {36.7256, 9.1818};
+
+    // El Kef
+    cityCoordinates["el kef"] = {36.1806, 8.7097};
+    cityCoordinates["kef"] = {36.1806, 8.7097};
+
+    // Kasserine
+    cityCoordinates["kasserine"] = {35.1675, 8.8343};
+    cityCoordinates["qasserine"] = {35.1675, 8.8343};
+
+    // Sidi Bouzid
+    cityCoordinates["sidi bouzid"] = {35.0361, 9.4875};
+    cityCoordinates["sidi bou zid"] = {35.0361, 9.4875};
+
+    // Mahdia
+    cityCoordinates["mahdia"] = {35.5047, 11.0625};
+    cityCoordinates["mahdie"] = {35.5047, 11.0625};
+
+    // Monastir
+    cityCoordinates["monastir"] = {35.7686, 10.8167};
+    cityCoordinates["monastère"] = {35.7686, 10.8167};
+
+    // Hammamet
+    cityCoordinates["hammamet"] = {36.4009, 10.6156};
+    cityCoordinates["hamamet"] = {36.4009, 10.6156};
+
+    // Nabeul
+    cityCoordinates["nabeul"] = {36.4556, 10.7363};
+    cityCoordinates["nabul"] = {36.4556, 10.7363};
+
+    // Siliana
+    cityCoordinates["siliana"] = {36.0169, 9.3796};
+    cityCoordinates["silianna"] = {36.0169, 9.3796};
+
+    // Jendouba
+    cityCoordinates["jendouba"] = {36.5018, 8.7760};
+    cityCoordinates["jendouba"] = {36.5018, 8.7760};
+
+    // Douz
+    cityCoordinates["douz"] = {33.4623, 9.0253};
+    cityCoordinates["duz"] = {33.4623, 9.0253};
+
+    // Récupérer les poubelles de la base de données
+    QSqlQuery query;
+    query.prepare("SELECT ID_POUBELLE, TYPE_DECHET, ADRESSE, CAPACITE_MAX, ETAT_DEPLOYEMENT, "
+                  "NIVEAU_REMPLISSAGE, ETAT_BATTERIE, LATITUDE, LONGITUDE, STATUT_CAPTEUR FROM POUBELLE_INTELLIGENTE");
+
+    QVector<GeoPoubelle> poubellesList;
+
+    if (query.exec()) {
+        int count = 0;
+        while (query.next()) {
+            count++;
+            GeoPoubelle p;
+            p.id = query.value(0).toInt();
+            p.type = query.value(1).toString();
+            p.adresse = query.value(2).toString();
+            p.capacite = query.value(3).toInt();
+            p.etat = query.value(4).toString();
+            p.remplissage = query.value(5).toInt();
+            p.batterie = query.value(6).toInt();
+            p.statut_capteur = query.value(9).toString();
+
+            // Récupérer les coordonnées GPS de la base de données
+            bool hasLat = query.value(7).isNull() ? false : true;
+            bool hasLng = query.value(8).isNull() ? false : true;
+
+            if (hasLat && hasLng) {
+                // Coordonnées trouvées dans la base
+                p.lat = query.value(7).toDouble();
+                p.lng = query.value(8).toDouble();
+            } else {
+                // Utiliser les coordonnées des villes depuis le code
+                bool found = false;
+
+                // Convertir l'adresse en minuscules et nettoyer les accents
+                QString addressLower = p.adresse.toLower();
+                addressLower.replace("é", "e").replace("è", "e").replace("ê", "e");
+                addressLower.replace("à", "a").replace("â", "a");
+                addressLower.replace("ç", "c").replace("î", "i").replace("ô", "o");
+                addressLower.replace("û", "u").replace("ù", "u");
+
+                    // Chercher chaque ville dans l'adresse
+                    for (auto it = cityCoordinates.begin(); it != cityCoordinates.end(); ++it) {
+                        // Chercher le nom de la ville comme mot complet
+                        if (addressLower.contains(it.key())) {
+                            p.lat = it.value().first;
+                            p.lng = it.value().second;
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    // Si pas de correspondance, centrer sur Tunis
+                    if (!found) {
+                        p.lat = 36.7963;
+                        p.lng = 10.1815;
+                    }
+            }
+
+            poubellesList.append(p);
+        }
+        qDebug() << "Poubelles chargees:" << count;
+    } else {
+        qWarning() << "Erreur requete map:" << query.lastError().text();
+    }
+
+    // Passer les donnees au MapWidget
+    qDebug() << "Envoi de" << poubellesList.size() << "poubelles au MapWidget";
+    poubelle_mapView->setPoubelles(poubellesList);
+}
+
+void MainWindow::poubelle_setupStatsUI()
+{
+    if (ui->gb_stats_3->layout()) {
+        delete ui->gb_stats_3->layout();
+    }
+    QVBoxLayout *layout = new QVBoxLayout(ui->gb_stats_3);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+    
+    poubelle_chartViewRemplissage = new QChartView(ui->gb_stats_3);
+    poubelle_chartViewRemplissage->setRenderHint(QPainter::Antialiasing);
+    poubelle_chartViewRemplissage->setMinimumHeight(300);
+    
+    layout->addWidget(poubelle_chartViewRemplissage);
+    ui->gb_stats_3->setLayout(layout);
+}
+
+void MainWindow::poubelle_refreshStats()
+{
+    if (!poubelle_chartViewRemplissage) {
+        poubelle_setupStatsUI();
+    }
+
+    QChart *newChart = Poubelle::createRemplissageParAdresseChart();
+    if (!newChart) return;
+
+    QChart *oldChart = poubelle_chartViewRemplissage->chart();
+    poubelle_chartViewRemplissage->setChart(newChart);
+
+    // Qt takes ownership of the previous chart when setChart is called,
+    // but manually deleting the old one ensures immediate memory cleanup.
+    if (oldChart && oldChart != newChart) delete oldChart;
+
+    poubelle_chartViewRemplissage->update(); // Force visual update
+}
+
+void MainWindow::poubelle_setupPredictionAI()
+{
+    QTableView *tabPrediction = ui->tab_poubelle_3;
+
+    // Initialiser avec un modele vide
+    QStandardItemModel *model = new QStandardItemModel();
+
+    QStringList headers;
+    headers << "ID" << "Type" << "Adresse" << "Capacite" << "Remplissage %"
+            << "Installation" << "Batterie %" << "Date Prediction";
+
+    model->setHorizontalHeaderLabels(headers);
+    tabPrediction->setModel(model);
+
+    // Charger les donnees
+    poubelle_refreshPredictionAI();
+}
+
+void MainWindow::poubelle_refreshPredictionAI()
+{
+    QTableView *tabPrediction = ui->tab_poubelle_3;
+
+    // Créer un modele standard
+    QStandardItemModel *model = new QStandardItemModel();
+    
+    // Colonnes
+    QStringList headers;
+    headers << "ID" << "Type" << "Adresse" << "Capacite" << "Remplissage %"
+            << "Installation" << "Batterie %" << "Date Prediction";
+
+    model->setHorizontalHeaderLabels(headers);
+    tabPrediction->setModel(model);
+
+    // Recuperer les donnees
+    QSqlQuery query("SELECT ID_POUBELLE, TYPE_DECHET, ADRESSE, CAPACITE_MAX, "
+                    "NIVEAU_REMPLISSAGE, DATE_INSTALLATION, ETAT_BATTERIE, STATUT_CAPTEUR, "
+                    "ETAT_DEPLOYEMENT "
+                    "FROM POUBELLE_INTELLIGENTE "
+                    "WHERE ETAT_DEPLOYEMENT != 'EN_STOCK' "
+                    "ORDER BY ID_POUBELLE",
+                    QSqlDatabase::database());
+
+    int row = 0;
+    while (query.next()) {
+        int id = query.value(0).toInt();
+        QString type = query.value(1).toString();
+        QString adresse = query.value(2).toString();
+        int capacity = query.value(3).toInt();
+        int currentLevel = query.value(4).toInt();
+        QDate dateInstall = query.value(5).toDate();
+        int batterie = query.value(6).toInt();
+        QString statut = query.value(8).toString();
+
+        // Calculer la date estimee de remplissage
+        QString predictedDate = "N/A";
+
+        if (capacity > 0 && dateInstall.isValid()) {
+            int daysElapsed = dateInstall.daysTo(QDate::currentDate());
+            if (daysElapsed < 1) daysElapsed = 1;
+
+            // Taux de remplissage par jour
+            double fillRatePerDay = (double)currentLevel / daysElapsed;
+
+            if (fillRatePerDay > 0) {
+                // Jours restants avant remplissage complet
+                int remainingDays = (int)((capacity - currentLevel) / fillRatePerDay);
+                QDate estimatedFull = QDate::currentDate().addDays(remainingDays);
+
+                // Formater la date
+                predictedDate = estimatedFull.toString("dd/MM/yyyy");
+
+                // Si deja pleine
+                if (currentLevel >= capacity) {
+                    predictedDate = "PLEIN";
+                } else if (remainingDays <= 7) {
+                    predictedDate += " (URGENT)";
+                } else if (remainingDays <= 30) {
+                    predictedDate += " (BIENTOT)";
+                }
+            }
+        }
+
+        // Ajouter une ligne au modele
+        model->insertRow(row);
+
+        model->setData(model->index(row, 0), QString::number(id));
+        model->setData(model->index(row, 1), type);
+        model->setData(model->index(row, 2), adresse);
+        model->setData(model->index(row, 3), QString::number(capacity));
+        model->setData(model->index(row, 4), QString::number(currentLevel) + "%");
+        model->setData(model->index(row, 5), dateInstall.toString("dd/MM/yyyy"));
+        model->setData(model->index(row, 6), QString::number(batterie) + "%");
+        model->setData(model->index(row, 7), predictedDate);
+
+        row++;
+    }
+
+    // Configurer l'affichage du tableau
+    tabPrediction->resizeColumnsToContents();
+    tabPrediction->setColumnWidth(0, 40);
+    tabPrediction->setColumnWidth(1, 60);
+    tabPrediction->setColumnWidth(2, 100);
+    tabPrediction->setColumnWidth(3, 70);
+    tabPrediction->setColumnWidth(4, 85);
+    tabPrediction->setColumnWidth(5, 95);
+    tabPrediction->setColumnWidth(6, 75);
+    tabPrediction->setColumnWidth(7, 160);
+    
+    // Activer le scrolling horizontal pour afficher tout le tableau
+    tabPrediction->horizontalHeader()->setStretchLastSection(false);
+    tabPrediction->resizeRowsToContents();
+
+    tabPrediction->setAlternatingRowColors(true);
+    tabPrediction->setSelectionBehavior(QAbstractItemView::SelectRows);
+    tabPrediction->setStyleSheet("QTableView {gridline-color: #d0d0d0;} QHeaderView::section {background-color: #4CAF50; color: white;}");
+}
+
+//  =========================================================
 // ===                  MODULE PRODUIT                   ===
 // =========================================================
 
@@ -736,6 +1150,7 @@ void MainWindow::on_btn_modifier_produit_clicked() {
 }
 void MainWindow::on_cb_statut_currentIndexChanged(int index)
 {
+    Q_UNUSED(index);
     QString statut = ui->cb_statut->currentText();
 
     if (statut == "Vendu") {
