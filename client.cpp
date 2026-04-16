@@ -125,6 +125,9 @@ bool Client::verifierSaisie() {
 void Client::onBtnAjouterClicked() {
     if(!verifierSaisie()) return;
 
+    // 1. ARRÊTER LE TIMER IMMÉDIATEMENT
+    if (refreshTimer) refreshTimer->stop();
+
     QSqlQuery query;
     query.prepare("INSERT INTO CLIENT (ID_CLIENT, NOM_CLIENT, VILLE, CODE_POSTAL, NUM_TEL, PDG, ADRESSE, POINT_DE_FIDELITE) "
                   "VALUES (:id, :nom, :ville, :cp, :tel, :pdg, :adr, 0)");
@@ -138,40 +141,60 @@ void Client::onBtnAjouterClicked() {
     query.bindValue(":adr", ui->le_adresse_client->text());
 
     if(query.exec()) {
-        // Nettoyer le formulaire AVANT les rafraîchissements pour éviter des conflits de focus/évenements
+        // 2. BLOQUER LES SIGNAUX POUR ÉVITER LES CRASHES LORS DU NETTOYAGE
+        ui->le_id_client->blockSignals(true);
+        ui->le_nom_client->blockSignals(true);
+        ui->le_tel_client->blockSignals(true);
+        ui->le_adresse_client->blockSignals(true);
+        ui->le_responsable_client->blockSignals(true);
+        ui->dsb_codepostal_client->blockSignals(true);
+
+        // 3. VIDER LES CHAMPS
         ui->le_id_client->clear();
         ui->le_nom_client->clear();
         ui->le_tel_client->clear();
         ui->le_adresse_client->clear();
         ui->le_responsable_client->clear();
-        ui->dsb_codepostal_client->setValue(0);
+        ui->dsb_codepostal_client->clear();
 
-        // Rafraîchir sans bloquer l'UI trop longtemps
+        // 4. DÉBLOQUER LES SIGNAUX
+        ui->le_id_client->blockSignals(false);
+        ui->le_nom_client->blockSignals(false);
+        ui->le_tel_client->blockSignals(false);
+        ui->le_adresse_client->blockSignals(false);
+        ui->le_responsable_client->blockSignals(false);
+        ui->dsb_codepostal_client->blockSignals(false);
+
+        // 5. RAFRAICHIR LES DONNÉES SANS TOUCHER AUX GRAPHIQUES (Source potentielle de crash)
         rafraichirAffichage();
-        rafraichirStats();
         rafraichirRendement();
         
-        QMessageBox::information(ui->tab_clients->window(), "Succès", "Client ajouté avec succès !");
+        // 6. MESSAGE DE RÉUSSITE SANS PARENT PRÉCIS (Plus stable)
+        QMessageBox::information(nullptr, "Succès", "Client ajouté avec succès !");
     } else {
-        QMessageBox::critical(nullptr, "Erreur de base de données",
-                              "Erreur lors de l'ajout :\n" + query.lastError().text());
-        qDebug() << "Erreur INSERT Client:" << query.lastError().text();
+        QMessageBox::critical(nullptr, "Erreur", "Erreur lors de l'ajout :\n" + query.lastError().text());
     }
+
+    // 7. REDÉMARRER LE TIMER
+    if (refreshTimer) refreshTimer->start(5000);
 }
 
 void Client::onBtnModifierClicked() {
     if(!verifierSaisie()) return;
 
     if (selectedClientId == -1) {
-        QMessageBox::warning(nullptr, "Sélection requise", "Veuillez sélectionner un client dans le tableau avant de modifier.");
+        QMessageBox::warning(ui->tab_clients->window(), "Sélection requise", "Veuillez sélectionner un client dans le tableau avant de modifier.");
         return;
     }
+
+    if (refreshTimer) refreshTimer->stop();
 
     int newId = ui->le_id_client->text().toInt();
     QSqlDatabase db = QSqlDatabase::database();
 
     if (!db.transaction()) {
-        QMessageBox::critical(nullptr, "Erreur", "Impossible de démarrer la transaction :\n" + db.lastError().text());
+        QMessageBox::critical(ui->tab_clients->window(), "Erreur", "Impossible de démarrer la transaction :\n" + db.lastError().text());
+        if (refreshTimer) refreshTimer->start(5000);
         return;
     }
 
@@ -189,36 +212,43 @@ void Client::onBtnModifierClicked() {
 
     if(!query.exec()) {
         db.rollback();
-        QMessageBox::critical(nullptr, "Erreur de base de données",
-                              "Erreur lors de la modification :\n" + query.lastError().text());
+        QMessageBox::critical(ui->tab_clients->window(), "Erreur", "Erreur lors de la modification :\n" + query.lastError().text());
+        if (refreshTimer) refreshTimer->start(5000);
         return;
     }
 
     if (!reaffecterIdClientDansRelations(selectedClientId, newId)) {
         db.rollback();
+        if (refreshTimer) refreshTimer->start(5000);
         return;
     }
 
     if (!db.commit()) {
-        QMessageBox::critical(nullptr, "Erreur", "Impossible de valider la transaction :\n" + db.lastError().text());
+        QMessageBox::critical(ui->tab_clients->window(), "Erreur", "Impossible de valider la transaction :\n" + db.lastError().text());
+        if (refreshTimer) refreshTimer->start(5000);
         return;
     }
 
     selectedClientId = newId;
-    ui->tab_clients->blockSignals(true);
+    
+    this->blockSignals(true);
     rafraichirAffichage();
-    rafraichirStats();
     rafraichirRendement();
-    ui->tab_clients->blockSignals(false);
-    QMessageBox::information(ui->tab_clients, "Succès", "Client modifié avec succès.");
+    this->blockSignals(false);
+
+    QMessageBox::information(ui->tab_clients->window(), "Succès", "Client modifié avec succès.");
+    
+    if (refreshTimer) refreshTimer->start(5000);
 }
 
 void Client::onBtnSupprimerClicked() {
     int row = ui->tab_clients->currentIndex().row();
     if(row < 0) {
-        QMessageBox::warning(nullptr, "Sélection", "Veuillez sélectionner un client dans le tableau.");
+        QMessageBox::warning(ui->tab_clients->window(), "Sélection", "Veuillez sélectionner un client dans le tableau.");
         return;
     }
+
+    if (refreshTimer) refreshTimer->stop();
 
     int id = model->data(model->index(row, 0)).toInt();
 
@@ -236,7 +266,8 @@ void Client::onBtnSupprimerClicked() {
                       "Confirmer la suppression ?").arg(count);
     }
 
-    if (QMessageBox::question(nullptr, "Suppression", msg, QMessageBox::Yes|QMessageBox::No) != QMessageBox::Yes) {
+    if (QMessageBox::question(ui->tab_clients->window(), "Suppression", msg, QMessageBox::Yes|QMessageBox::No) != QMessageBox::Yes) {
+        if (refreshTimer) refreshTimer->start(5000);
         return;
     }
 
@@ -245,7 +276,8 @@ void Client::onBtnSupprimerClicked() {
         updateQuery.prepare("UPDATE CONTRAT SET ID_CLIENT = NULL WHERE ID_CLIENT = :id");
         updateQuery.bindValue(":id", id);
         if (!updateQuery.exec()) {
-            QMessageBox::critical(nullptr, "Erreur", "Impossible de détacher les contrats : " + updateQuery.lastError().text());
+            QMessageBox::critical(ui->tab_clients->window(), "Erreur", "Impossible de détacher les contrats : " + updateQuery.lastError().text());
+            if (refreshTimer) refreshTimer->start(5000);
             return;
         }
     }
@@ -254,16 +286,16 @@ void Client::onBtnSupprimerClicked() {
     query.prepare("DELETE FROM CLIENT WHERE ID_CLIENT = :id");
     query.bindValue(":id", id);
     if(query.exec()) {
-        ui->tab_clients->blockSignals(true);
+        this->blockSignals(true);
         rafraichirAffichage();
-        rafraichirStats();
         rafraichirRendement();
-        ui->tab_clients->blockSignals(false);
-        QMessageBox::information(ui->tab_clients, "Succès", "Client supprimé avec succès.");
+        this->blockSignals(false);
+        QMessageBox::information(ui->tab_clients->window(), "Succès", "Client supprimé avec succès.");
     } else {
-         QMessageBox::critical(nullptr, "Erreur de base de données",
-                              "Erreur lors de la suppression :\n" + query.lastError().text());
+         QMessageBox::critical(ui->tab_clients->window(), "Erreur", "Erreur lors de la suppression :\n" + query.lastError().text());
     }
+
+    if (refreshTimer) refreshTimer->start(5000);
 }
 
 void Client::onTableClicked(const QModelIndex &index) {
@@ -291,8 +323,10 @@ void Client::onRechercheTextChanged(const QString &text) {
 }
 
 void Client::onBtnPdfClicked() {
-    QString fileName = QFileDialog::getSaveFileName(nullptr, "Exporter en PDF", "Liste_Clients.pdf", "*.pdf");
+    QString fileName = QFileDialog::getSaveFileName(ui->tab_clients->window(), "Exporter en PDF", "Liste_Clients.pdf", "*.pdf");
     if (fileName.isEmpty()) return;
+
+    if (refreshTimer) refreshTimer->stop();
 
     QPrinter printer(QPrinter::HighResolution);
     printer.setOutputFormat(QPrinter::PdfFormat);
@@ -331,7 +365,9 @@ void Client::onBtnPdfClicked() {
     doc.setHtml(html);
     doc.print(&printer);
 
-    QMessageBox::information(nullptr, "Succès", "Le fichier PDF a été généré avec succès !");
+    QMessageBox::information(ui->tab_clients->window(), "Succès", "Le fichier PDF a été généré avec succès !");
+
+    if (refreshTimer) refreshTimer->start(5000);
 }
 
 void Client::rafraichirStats() {
@@ -411,7 +447,6 @@ void Client::rafraichirRendement() {
     ui->tab_clients_4->setColumnHidden(2, true);
 
     // Vérification des points pour réinitialisation
-    /* 
     for (int i = 0; i < rendementModel->rowCount(); ++i) {
         int clientId = rendementModel->data(rendementModel->index(i, 1)).toInt();
         QString phone = rendementModel->data(rendementModel->index(i, 2)).toString();
@@ -421,7 +456,6 @@ void Client::rafraichirRendement() {
             checkAndResetFidelite(clientId, score, phone);
         }
     }
-    */
 
     if (rendementModel->lastError().isValid()) {
         qDebug() << "Erreur rendement Client:" << rendementModel->lastError().text();
@@ -467,13 +501,27 @@ void Client::checkAndResetFidelite(int clientId, int currentPoints, const QStrin
 }
 
 void Client::sendTwilioSms(const QString &to, const QString &message) {
-    QString accountSid = "AC2deff02b4734a7c819a4dca4041888dc";
-    QString authToken = "cd1ed4a0c927be4ecf679a11e37cc81f";
-    QString fromNumber = "+16624814657";
+    QString accountSid = "AC8e97d35bfe809bf22bded53c97eabf3c";
+    QString authToken = "b06afbcf22188c9f65483f703e3981b2";
+    QString fromNumber = "+16624934698";
 
-    // Formatter le numéro (Twilio exige le format international +216...)
-    QString formattedTo = to;
-    if(!formattedTo.startsWith("+")) formattedTo = "+216" + formattedTo; 
+    // Formatter le numéro proprement
+    QString formattedTo = to.trimmed();
+    // Enlever les espaces ou tirets éventuels
+    formattedTo.remove(" ");
+    formattedTo.remove("-");
+
+    // Twilio exige le format international E.164 (+216XXXXXXXX pour la Tunisie)
+    if(!formattedTo.startsWith("+")) {
+        if(formattedTo.length() == 8) {
+            formattedTo = "+216" + formattedTo;
+        } else {
+            qDebug() << "Numéro mal formé pour Twilio:" << formattedTo;
+            return;
+        }
+    }
+
+    qDebug() << "Tentative d'envoi SMS à:" << formattedTo;
 
     QUrl url("https://api.twilio.com/2010-04-01/Accounts/" + accountSid + "/Messages.json");
     QNetworkRequest request(url);
