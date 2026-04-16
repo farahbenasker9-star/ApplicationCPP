@@ -374,7 +374,7 @@ QWidget#centralwidget {
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>7</number>
+       <number>5</number>
       </property>
       <widget class="QWidget" name="page_dashboard">
        <widget class="QLabel" name="label_logo_dash">
@@ -3894,7 +3894,7 @@ QTabBar::tab:hover {
          </rect>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="tab_stats_client">
          <attribute name="title">
@@ -3938,54 +3938,6 @@ QTabBar::tab:hover {
           <property name="selectionBehavior">
            <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
           </property>
-         </widget>
-         <widget class="QTableWidget" name="tableWidget_5">
-          <property name="geometry">
-           <rect>
-            <x>120</x>
-            <y>100</y>
-            <width>401</width>
-            <height>411</height>
-           </rect>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">border-color: rgb(0, 0, 0);</string>
-          </property>
-          <column>
-           <property name="text">
-            <string>ID_client</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Nom_client</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Code postale</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Nature_du_Flux</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Points_de_fidélité</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>PDG</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string/>
-           </property>
-          </column>
          </widget>
         </widget>
        </widget>
@@ -5457,7 +5409,7 @@ background-color: rgb(67, 160, 71);</string>
      <x>0</x>
      <y>0</y>
      <width>1587</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>
