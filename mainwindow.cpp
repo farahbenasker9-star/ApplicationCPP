@@ -66,6 +66,16 @@ public:
     }
 };
 
+void contrat_applyComboBoxBlackStyle(QComboBox* combo) {
+    if (!combo) return;
+    combo->setStyleSheet(
+        "QComboBox { background-color: #2F3136; color: white; border: 1px solid #40444B; border-radius: 5px; padding: 5px; }"
+        "QComboBox::drop-down { border-left: 1px solid #40444B; }"
+        "QComboBox QAbstractItemView { background-color: #2F3136; color: white; selection-background-color: #7289DA; }"
+    );
+}
+
+
 // ─── Constructeur ────────────────────────────────────────────────────────────
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
