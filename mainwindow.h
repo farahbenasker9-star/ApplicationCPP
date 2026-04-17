@@ -6,9 +6,11 @@
 #include "client.h"
 #include "poubelle.h"
 #include "contrat.h"
+#include "contratgenerator.h"
 #include "produit.h"
 #include "equipement.h"
 #include "mapwidget.h"
+#include "chatbot.h"
 
 #include <QSqlQueryModel>
 #include <QSqlDatabase>
@@ -22,6 +24,9 @@
 #include <QString>
 #include <QDate>
 #include <QTextBrowser>
+#include <QTextEdit>
+#include <QPushButton>
+#include <QDialog>
 #include <QtCharts/QChartView>
 
 
@@ -29,6 +34,20 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
+// ─── Classe PreviewDialog pour afficher le contrat en grand ──────────────────
+class PreviewDialog : public QDialog
+{
+    Q_OBJECT
+
+public:
+    explicit PreviewDialog(QWidget *parent = nullptr);
+    void setContentHtml(const QString &html);
+
+private:
+    QTextEdit *textEdit;
+};
+
+// ─── Classe MainWindow ────────────────────────────────────────────────────────
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -48,6 +67,7 @@ private slots:
     void on_btn_nav_poubelle_clicked();
     void on_btn_nav_equipements_clicked();
     void on_btn_nav_stock_clicked();
+    void on_btn_nav_chatbot_clicked();
 
     void on_btn_dash_poubelle_clicked();
     void on_btn_dash_employe_clicked();
@@ -109,6 +129,10 @@ private slots:
     void contrat_validateDates();
     void contrat_validateFloats();
     void contrat_validateDescription();
+    void contrat_onGenererClicked();
+    void contrat_onImprimerClicked();
+    void contrat_onEmailClicked();
+    void contrat_updatePreviewClicked();
 
     // ─── Module Equipement ────────────────────────────────────────────────────
     void equipement_onAjouterClicked();
@@ -145,6 +169,11 @@ private:
     int poubelle_currentSelectedId = -1;
     Employe tmp_employe;
 
+    // Chatbot
+    Chatbot *chatbot;
+    QPushButton *btn_nav_chatbot;
+    bool chatbotVisible;
+
     void navigateToPage(int pageIndex);
     void clearFormPoubelle( );
     bool validerFormulairePoubelle(bool isUpdate);
@@ -162,6 +191,12 @@ private:
     int contrat_currentSelectedId = -1;
     QChartView *chartViewContratType    = nullptr;
     QChartView *chartViewContratTypePie = nullptr;
+    
+    // Éléments onglet "Contrat" (créés en C++)
+    QTextEdit *webview_contrat = nullptr;
+    QPushButton *btn_generer_contrat = nullptr;
+    QPushButton *btn_imprimer_contrat = nullptr;
+    QPushButton *btn_email_contrat = nullptr;
 
     void contrat_setupStatsUI();
     void contrat_refreshStats();
@@ -170,6 +205,7 @@ private:
     void contrat_setWidgetStyle(QWidget *widget, bool isValid);
     void contrat_resetValidationStyles();
     bool contrat_checkDates();
+    ContratGenerator::ContratData collectContratData();
 
     // ─── Module Equipement ────────────────────────────────────────────────────
     int     equipement_currentSelectedId = -1;
