@@ -1,15 +1,38 @@
-QT       += core gui widgets
+QT       += core gui widgets sql printsupport charts network
+
+CONFIG += c++17
+QMAKE_CXXFLAGS += -std=c++17
+QT += printsupport
 
 SOURCES += \
-    connection.cpp \
+    client.cpp \
+    equipement.cpp \
+    equipementai.cpp \
     main.cpp \
     login.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    connection.cpp \
+    employe.cpp \
+    mapwidget.cpp \
+    poubelle.cpp \
+    contrat.cpp \
+    produit.cpp \
+    smtp.cpp
+
 
 HEADERS += \
-    connection.h \
+    client.h \
+    equipement.h \
+    equipementai.h \
     login.h \
-    mainwindow.h
+    mainwindow.h \
+    connection.h \
+    employe.h \
+    mapwidget.h \
+    poubelle.h \
+    contrat.h \
+    produit.h \
+    smtp.h
 
 FORMS += \
     login.ui \
@@ -17,5 +40,3 @@ FORMS += \
 
 RESOURCES += \
     ressources.qrc
-
-QT+= sql

@@ -1,5 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QStandardItemModel>
+#include <QStandardItem>
+#include <QSqlQueryModel>
+#include <QSqlQuery>
 #include <QDebug>
 #include <QMessageBox>
 #include <QRegularExpression>
@@ -22,6 +26,7 @@
 #include <QPushButton>
 #include <QSqlQueryModel>
 #include <QLabel>
+#include <QHeaderView>
 
 #include <QtCharts/QChart>
 #include <QtCharts/QPieSeries>
@@ -30,6 +35,34 @@
 #include <QtCharts/QBarSet>
 #include <QtCharts/QBarCategoryAxis>
 #include <QtCharts/QValueAxis>
+#include <QStyledItemDelegate>
+
+#include <QProgressBar>
+#include <QHBoxLayout>
+
+#include <QtCharts/QChartView>
+#include <QGraphicsLayout>
+
+#include <QDate>
+#include <QSqlError>
+#include <QScrollBar>
+
+// ==================== CUSTOM DELEGATE FOR CIN ====================
+class CinDelegate : public QStyledItemDelegate
+{
+public:
+    CinDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent) {}
+
+    QString displayText(const QVariant &value, const QLocale &locale) const override
+    {
+        bool ok = false;
+        double cinDouble = value.toDouble(&ok);
+        if (ok) {
+            return QString::number(static_cast<qulonglong>(cinDouble)).rightJustified(8, '0');
+        }
+        return QStyledItemDelegate::displayText(value, locale);
+    }
+};
 
 // ─── Constructeur ────────────────────────────────────────────────────────────
 MainWindow::MainWindow(QWidget *parent)
@@ -42,6 +75,8 @@ MainWindow::MainWindow(QWidget *parent)
     // Initialisation de l'affichage des poubelles
     ui->tab_poubelle->setModel(tmp_poubelle.afficher());
 
+    // Module poubelle: slots `on_<object>_<signal>` are auto-connected by setupUi.
+
     // Initialisation du formulaire avec VALEURS PAR DÉFAUT
     clearFormPoubelle();
     
@@ -50,8 +85,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->navbar_container->hide();
     
     // Initialisation des gestionnaires de modules
-    employe = new Employe(ui, this);
-
     // ==================== MODULE EQUIPEMENT ====================
     // ── 1. Créer les labels ✕ d'erreur dans infoScrollContent ────────────────
     //    Géométries depuis le .ui (x, y, w, h) :
@@ -98,6 +131,10 @@ MainWindow::MainWindow(QWidget *parent)
     equipement_chargerCIN();
     ui->tab_employes_2->setModel(Equipement().afficher());
 
+    ui->tab_employes_2->setItemDelegate(
+        new EquipementDelegate(ui->tab_employes_2, this));
+
+
     // ── 4. Dates par défaut ───────────────────────────────────────────────────
     QDateTime now = QDateTime::currentDateTime();
     ui->Eq_Last_Maint_Date->setDateTime(now);
@@ -130,6 +167,38 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::equipement_validateDateSuivMaint);
     equipement_setupStatsUI();
     equipement_refreshStats();
+
+    // ==================== MODULE EMPLOYE ====================
+    ui->tab_employes->setModel(tmp_employe.afficher());
+    ui->tab_employes->setItemDelegateForColumn(0, new CinDelegate(this));
+    ui->tab_employes->setAlternatingRowColors(true);
+    ui->tab_employes->resizeColumnsToContents();
+
+    connect(ui->tab_employes,   &QTableView::clicked,  this, &MainWindow::employe_onTabClicked);
+    connect(ui->btn_ajouter,    &QPushButton::clicked, this, &MainWindow::employe_onAjouterClicked);
+    connect(ui->btn_modifier,   &QPushButton::clicked, this, &MainWindow::employe_onModifierClicked);
+    connect(ui->btn_supprimer,  &QPushButton::clicked, this, &MainWindow::employe_onSupprimerClicked);
+    connect(ui->le_recherche,   &QLineEdit::textChanged, this, &MainWindow::employe_onRechercheTextChanged);
+    connect(ui->btn_tri,        &QPushButton::clicked, this, &MainWindow::employe_onTriClicked);
+    connect(ui->btn_pdf,        &QPushButton::clicked, this, &MainWindow::employe_onPdfClicked);
+    connect(ui->btn_refresh,    &QPushButton::clicked, this, &MainWindow::employe_onRefreshClicked);
+    connect(ui->btn_generer_contrat_emp, &QPushButton::clicked, this, &MainWindow::employe_onGenererContratClicked);
+    employe_setupStatsUI();
+    employe_refreshStats();
+
+    // ==================== MODULE CLIENT ====================
+    ui->tab_clients->setModel(model);
+    ui->tab_clients->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tab_clients->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tab_clients->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    rafraichirAffichage();
+
+    connect(ui->btn_ajouter_client,  &QPushButton::clicked, this, &MainWindow::onBtnAjouterClicked);
+    connect(ui->btn_modifier_client, &QPushButton::clicked, this, &MainWindow::onBtnModifierClicked);
+    connect(ui->btn_supprimer_client,&QPushButton::clicked, this, &MainWindow::onBtnSupprimerClicked);
+    connect(ui->tab_clients,         &QTableView::clicked,  this, &MainWindow::onTableClicked);
+    connect(ui->le_recherche_client, &QLineEdit::textChanged, this, &MainWindow::onRechercheTextChanged);
 
     // ==================== DASHBOARD CONNECTIONS ====================
     connect(ui->btn_dash_employe,   &QPushButton::clicked, this, [this]() { navigateToPage(6); ui->btn_nav_employes->setChecked(true); });
@@ -254,11 +323,47 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 void MainWindow::on_btn_nav_employes_clicked()   { ui->stackedWidget->setCurrentIndex(6); }
 void MainWindow::on_btn_nav_client_clicked()     { ui->stackedWidget->setCurrentIndex(5); }
 void MainWindow::on_btn_nav_contrat_clicked()    { navigateToPage(2); }
-void MainWindow::on_btn_nav_poubelle_clicked()   { ui->stackedWidget->setCurrentIndex(7); }
+void MainWindow::on_btn_nav_poubelle_clicked()   {
+    ui->stackedWidget->setCurrentIndex(7);
+    ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+    
+    // Setup une seule fois au premier clic
+    static bool initialized = false;
+    if (!initialized) {
+        poubelle_setupMap();
+        poubelle_setupStatsUI();
+        poubelle_setupPredictionAI();
+        initialized = true;
+    }
+    
+    // Rafraichir les donnees a chaque clic
+    poubelle_refreshMap();
+    poubelle_refreshStats();
+    poubelle_refreshPredictionAI();
+    clearFormPoubelle();
+}
 void MainWindow::on_btn_nav_equipements_clicked(){ ui->stackedWidget->setCurrentIndex(3); }
 void MainWindow::on_btn_nav_stock_clicked()      { ui->stackedWidget->setCurrentIndex(4); }
 
-void MainWindow::on_btn_dash_poubelle_clicked()  { ui->stackedWidget->setCurrentIndex(7); }
+void MainWindow::on_btn_dash_poubelle_clicked()  {
+    ui->stackedWidget->setCurrentIndex(7);
+    ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+    
+    // Setup une seule fois au premier clic
+    static bool initialized = false;
+    if (!initialized) {
+        poubelle_setupMap();
+        poubelle_setupStatsUI();
+        poubelle_setupPredictionAI();
+        initialized = true;
+    }
+    
+    // Rafraichir les donnees a chaque clic
+    poubelle_refreshMap();
+    poubelle_refreshStats();
+    poubelle_refreshPredictionAI();
+    clearFormPoubelle();
+}
 void MainWindow::on_btn_dash_employe_clicked()   { ui->stackedWidget->setCurrentIndex(6); }
 void MainWindow::on_btn_dash_client_clicked()    { ui->stackedWidget->setCurrentIndex(5); }
 void MainWindow::on_btn_dash_contrat_clicked()   { navigateToPage(2); }
@@ -283,6 +388,13 @@ void MainWindow::navigateToPage(int pageIndex)
         Produit P;
         ui->tab_produit->setModel(P.afficher());
         chargerIdsClients();
+        afficherStatistiques();
+        refreshHistorique();
+        calculerValorisation();
+    }
+    if (pageIndex == 7) {
+        ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+        clearFormPoubelle();
     }
 }
 
@@ -311,6 +423,9 @@ void MainWindow::on_btn_ajouter_poubelle_clicked()
     if(p.ajouter()) {
         QMessageBox::information(this, "Succès", "Poubelle ajoutée avec succès");
         ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+        poubelle_refreshStats();
+        poubelle_refreshMap();
+        poubelle_refreshPredictionAI();
         clearFormPoubelle();
     } else {
         QMessageBox::critical(this, "Erreur", "Échec de l'ajout.\nDétail : " + p.getLastError());
@@ -330,6 +445,9 @@ void MainWindow::on_btn_supprimer_poubelle_clicked()
     if(tmp_poubelle.supprimer(id)) {
         QMessageBox::information(this, "Succès", "Poubelle supprimée");
         ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+        poubelle_refreshStats();
+        poubelle_refreshMap();
+        poubelle_refreshPredictionAI();
         clearFormPoubelle();
     } else {
         QMessageBox::critical(this, "Erreur", "Échec de la suppression");
@@ -338,9 +456,19 @@ void MainWindow::on_btn_supprimer_poubelle_clicked()
 
 void MainWindow::on_btn_modifier_poubelle_clicked()
 {
+    if (poubelle_currentSelectedId == -1) {
+        QMessageBox::warning(this, "Selection", "Veuillez sélectionner une poubelle à modifier dans le tableau.");
+        return;
+    }
+
     if (!validerFormulairePoubelle(true)) return;
 
     int id = ui->le_id_poubelle->text().toInt();
+    if (id != poubelle_currentSelectedId && tmp_poubelle.existe(id)) {
+        QMessageBox::warning(this, "Erreur", "ID existant. Veuillez saisir un ID unique.");
+        return;
+    }
+
     QString adresse = ui->le_adresse_poubelle->text();
     QString type = ui->le_type_dechet->text();
     int capacite = ui->sb_capacite->value();
@@ -354,12 +482,15 @@ void MainWindow::on_btn_modifier_poubelle_clicked()
 
     Poubelle p(id, type, adresse, capacite, etat, remplissage, batterie, statut_capteur, date_inst, date_coll);
 
-    if(p.modifier()) {
+    if(p.modifier(poubelle_currentSelectedId)) {
         QMessageBox::information(this, "Succès", "Poubelle modifiée");
         ui->tab_poubelle->setModel(tmp_poubelle.afficher());
+        poubelle_refreshStats();
+        poubelle_refreshMap();
+        poubelle_refreshPredictionAI();
         clearFormPoubelle();
     } else {
-        QMessageBox::critical(this, "Erreur", "Échec de la modification");
+        QMessageBox::critical(this, "Erreur", "Échec de la modification.\nDétail : " + p.getLastError());
     }
 }
 
@@ -367,8 +498,9 @@ void MainWindow::on_tab_poubelle_clicked(const QModelIndex &index)
 {
     int row = index.row();
     QAbstractItemModel *model = ui->tab_poubelle->model();
+    poubelle_currentSelectedId = model->data(model->index(row, 0)).toInt();
     ui->le_id_poubelle->setText(model->data(model->index(row, 0)).toString());
-    ui->le_id_poubelle->setEnabled(false);
+    ui->le_id_poubelle->setEnabled(true);
     ui->le_type_dechet->setText(model->data(model->index(row, 1)).toString());
     ui->le_adresse_poubelle->setText(model->data(model->index(row, 2)).toString());
     ui->sb_capacite->setValue(model->data(model->index(row, 3)).toInt());
@@ -378,24 +510,46 @@ void MainWindow::on_tab_poubelle_clicked(const QModelIndex &index)
     ui->cb_statut_capteur->setCurrentText(model->data(model->index(row, 7)).toString());
     ui->de_installation->setDate(model->data(model->index(row, 8)).toDate());
     ui->de_collecte->setDate(model->data(model->index(row, 9)).toDate());
+
+    // Ensure editable/locked fields always match the selected state.
+    on_cb_etat_poubelle_currentIndexChanged(ui->cb_etat_poubelle->currentIndex());
 }
 
 void MainWindow::on_cb_etat_poubelle_currentIndexChanged(int index)
 {
-    bool estInstalle = (index == 1);
-    ui->le_id_poubelle->setEnabled(true);
+    Q_UNUSED(index)
+    QString etat = ui->cb_etat_poubelle->currentText().trimmed().toUpper();
+    bool estInstalle = (etat == "INSTALLE" || etat == "INSTALLÉ");
+
+    // These fields stay editable regardless of state.
     ui->le_adresse_poubelle->setEnabled(true);
     ui->le_type_dechet->setEnabled(true);
     ui->sb_capacite->setEnabled(true);
+    ui->sb_capacite->setMinimum(estInstalle ? 1 : 0);
+    if (estInstalle && ui->sb_capacite->value() < 1) {
+        ui->sb_capacite->setValue(1);
+    }
+
+    // Only editable when the bin is installed.
     ui->sb_remplissage->setEnabled(estInstalle);
     ui->sb_batterie->setEnabled(estInstalle);
     ui->de_installation->setEnabled(estInstalle);
     ui->de_collecte->setEnabled(estInstalle);
     ui->cb_statut_capteur->setEnabled(estInstalle);
+
+    if (!estInstalle) {
+        // Keep stable defaults while locked in EN_STOCK mode.
+        ui->sb_remplissage->setValue(0);
+        ui->sb_batterie->setValue(100);
+        ui->cb_statut_capteur->setCurrentIndex(-1);
+        ui->de_installation->setDate(QDate::currentDate());
+        ui->de_collecte->setDate(QDate::currentDate().addDays(7));
+    }
 }
 
 void MainWindow::clearFormPoubelle()
 {
+    poubelle_currentSelectedId = -1;
     ui->le_id_poubelle->clear();
     ui->le_id_poubelle->setEnabled(true);
     ui->le_adresse_poubelle->clear();
@@ -407,6 +561,9 @@ void MainWindow::clearFormPoubelle()
     ui->cb_statut_capteur->setCurrentIndex(-1);
     ui->de_installation->setDate(QDate::currentDate());
     ui->de_collecte->setDate(QDate::currentDate().addDays(7));
+
+    // Force lock/unlock according to default state even if index did not change.
+    on_cb_etat_poubelle_currentIndexChanged(ui->cb_etat_poubelle->currentIndex());
 }
 
 bool MainWindow::validerFormulairePoubelle(bool isUpdate)
@@ -414,7 +571,8 @@ bool MainWindow::validerFormulairePoubelle(bool isUpdate)
     QString idStr = ui->le_id_poubelle->text();
     QString adresse = ui->le_adresse_poubelle->text();
     QString type = ui->le_type_dechet->text();
-    QString etat = ui->cb_etat_poubelle->currentText();
+    QString etat = ui->cb_etat_poubelle->currentText().trimmed().toUpper();
+    bool estInstallee = (etat == "INSTALLE" || etat == "INSTALLÉ");
     QRegularExpression idRegex("^\\d{5}$");
     QRegularExpression addrRegex("^[a-zA-Z\\s,]+$");
     QRegularExpression typeRegex("^[a-zA-Z\\s]+$");
@@ -439,7 +597,7 @@ bool MainWindow::validerFormulairePoubelle(bool isUpdate)
     QDate dateColl = ui->de_collecte->date();
     QDate today = QDate::currentDate();
 
-    if (etat == "INSTALLE" || etat == "INSTALLÉ") {
+    if (estInstallee) {
         if (dateColl < today) {
             QMessageBox::warning(this, "Erreur", "La date de collecte ne peut pas être dans le passé.");
             return false;
@@ -453,10 +611,16 @@ bool MainWindow::validerFormulairePoubelle(bool isUpdate)
             return false;
         }
     }
-    
-    if (etat == "INSTALLE") {
-        if (ui->sb_capacite->value() <= 0) return false;
-        if (ui->de_installation->date() > QDate::currentDate()) return false;
+
+    if (estInstallee) {
+        if (ui->sb_capacite->value() <= 0) {
+            QMessageBox::warning(this, "Erreur", "La capacite doit etre strictement superieure a 0 pour une poubelle installee.");
+            return false;
+        }
+        if (ui->de_installation->date() > QDate::currentDate()) {
+            QMessageBox::warning(this, "Erreur", "La date d'installation ne peut pas etre dans le futur.");
+            return false;
+        }
     }
     return true;
 }
@@ -465,7 +629,7 @@ void MainWindow::on_btn_tri_poubelle_clicked()
 {
     QString critere = ui->cb_tri_poubelle->currentText().trimmed();
     QString tri;
-    
+
     if (critere == "Niveau de remplissage") tri = "NIVEAU_REMPLISSAGE DESC";
     else if (critere == "Etat batterie") tri = "ETAT_BATTERIE";
     else if (critere == "Adresse") tri = "ADRESSE";
@@ -488,31 +652,403 @@ void MainWindow::on_le_recherche_poubelle_textChanged(const QString &arg1)
 
 void MainWindow::on_btn_pdf_poubelle_clicked()
 {
-    int row = ui->tab_poubelle->currentIndex().row();
-    if (row == -1) {
-        QMessageBox::warning(this, "Sélection", "Veuillez sélectionner une poubelle dans le tableau pour générer le PDF.");
-        return;
-    }
-    int id = ui->tab_poubelle->model()->data(ui->tab_poubelle->model()->index(row, 0)).toInt();
-    tmp_poubelle.exporterPDF(id);
+    tmp_poubelle.exporterTableauPDF();
 }
 
-// =========================================================
+// ───────────────────────────────────────────────────────────────────────────
+// ─── MODULE POUBELLE - CARTE GÉOGRAPHIQUE ─────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────
+
+void MainWindow::poubelle_setupMap()
+{
+    // Créer le MapWidget pour la carte
+    if (!poubelle_mapView) {
+        poubelle_mapView = new MapWidget();
+
+        // Remplacer l'onglet "Carte géolocalisation" avec la carte
+        QTabWidget *tabWidget = ui->tabWidget_right_2;
+
+        for (int i = 0; i < tabWidget->count(); i++) {
+            if (tabWidget->tabText(i) == "Carte géolocalisation") {
+                QWidget *cartePage = tabWidget->widget(i);
+
+                // Nettoyer le layout existant
+                QLayout *oldLayout = cartePage->layout();
+                if (oldLayout) {
+                    QLayoutItem *item;
+                    while ((item = oldLayout->takeAt(0))) {
+                        delete item->widget();
+                        delete item;
+                    }
+                    delete oldLayout;
+                }
+
+                // Créer un nouveau layout et ajouter la carte
+                QVBoxLayout *layout = new QVBoxLayout(cartePage);
+                layout->setContentsMargins(0, 0, 0, 0);
+                layout->setSpacing(0);
+                layout->addWidget(poubelle_mapView);
+                cartePage->setLayout(layout);
+                break;
+            }
+        }
+    }
+
+    // Charger les données de la carte initiales
+    poubelle_refreshMap();
+}
+
+void MainWindow::poubelle_refreshMap()
+{
+    if (!poubelle_mapView) {
+        qWarning() << "Erreur: poubelle_mapView est NULL!";
+        return;
+    }
+
+    qDebug() << "Chargement de la carte...";
+
+    // Map des 24 villes principales de Tunisie
+    QMap<QString, QPair<double, double>> cityCoordinates;
+
+    // Tunis
+    cityCoordinates["tunis"] = {36.7963, 10.1815};
+    cityCoordinates["tunisie"] = {36.7963, 10.1815};
+
+    // Bizerte
+    cityCoordinates["bizerte"] = {37.2744, 9.8739};
+    cityCoordinates["bizert"] = {37.2744, 9.8739};
+
+    // La Marsa
+    cityCoordinates["la marsa"] = {36.8624, 10.3173};
+    cityCoordinates["marsa"] = {36.8624, 10.3173};
+
+    // L'Ariana
+    cityCoordinates["ariana"] = {36.8629, 10.1844};
+    cityCoordinates["l'ariana"] = {36.8629, 10.1844};
+
+    // Sfax
+    cityCoordinates["sfax"] = {34.7406, 10.7608};
+
+    // Sousse
+    cityCoordinates["sousse"] = {35.8289, 10.6408};
+    cityCoordinates["souse"] = {35.8289, 10.6408};
+
+    // Kairouan
+    cityCoordinates["kairouan"] = {35.6713, 9.9170};
+    cityCoordinates["kairowan"] = {35.6713, 9.9170};
+    cityCoordinates["qairouan"] = {35.6713, 9.9170};
+
+    // Gafsa
+    cityCoordinates["gafsa"] = {34.4255, 8.7845};
+    cityCoordinates["gafessa"] = {34.4255, 8.7845};
+
+    // Gabès
+    cityCoordinates["gabès"] = {33.8869, 10.0982};
+    cityCoordinates["gabes"] = {33.8869, 10.0982};
+
+    // Tozeur
+    cityCoordinates["tozeur"] = {33.9227, 8.1353};
+    cityCoordinates["touzeur"] = {33.9227, 8.1353};
+
+    // Tataouine
+    cityCoordinates["tataouine"] = {32.9297, 10.4518};
+    cityCoordinates["tatewin"] = {32.9297, 10.4518};
+
+    // Médenine
+    cityCoordinates["médenine"] = {33.3637, 10.7556};
+    cityCoordinates["medenine"] = {33.3637, 10.7556};
+    cityCoordinates["medinine"] = {33.3637, 10.7556};
+
+    // Djerba
+    cityCoordinates["djerba"] = {33.8050, 10.9515};
+    cityCoordinates["jerba"] = {33.8050, 10.9515};
+    cityCoordinates["djerbra"] = {33.8050, 10.9515};
+    cityCoordinates["kélibia"] = {36.7914, 11.2944};
+    cityCoordinates["kelibia"] = {36.7914, 11.2944};
+
+    // Beja
+    cityCoordinates["béja"] = {36.7256, 9.1818};
+    cityCoordinates["beja"] = {36.7256, 9.1818};
+
+    // El Kef
+    cityCoordinates["el kef"] = {36.1806, 8.7097};
+    cityCoordinates["kef"] = {36.1806, 8.7097};
+
+    // Kasserine
+    cityCoordinates["kasserine"] = {35.1675, 8.8343};
+    cityCoordinates["qasserine"] = {35.1675, 8.8343};
+
+    // Sidi Bouzid
+    cityCoordinates["sidi bouzid"] = {35.0361, 9.4875};
+    cityCoordinates["sidi bou zid"] = {35.0361, 9.4875};
+
+    // Mahdia
+    cityCoordinates["mahdia"] = {35.5047, 11.0625};
+    cityCoordinates["mahdie"] = {35.5047, 11.0625};
+
+    // Monastir
+    cityCoordinates["monastir"] = {35.7686, 10.8167};
+    cityCoordinates["monastère"] = {35.7686, 10.8167};
+
+    // Hammamet
+    cityCoordinates["hammamet"] = {36.4009, 10.6156};
+    cityCoordinates["hamamet"] = {36.4009, 10.6156};
+
+    // Nabeul
+    cityCoordinates["nabeul"] = {36.4556, 10.7363};
+    cityCoordinates["nabul"] = {36.4556, 10.7363};
+
+    // Siliana
+    cityCoordinates["siliana"] = {36.0169, 9.3796};
+    cityCoordinates["silianna"] = {36.0169, 9.3796};
+
+    // Jendouba
+    cityCoordinates["jendouba"] = {36.5018, 8.7760};
+    cityCoordinates["jendouba"] = {36.5018, 8.7760};
+
+    // Douz
+    cityCoordinates["douz"] = {33.4623, 9.0253};
+    cityCoordinates["duz"] = {33.4623, 9.0253};
+
+    // Récupérer les poubelles de la base de données
+    QSqlQuery query;
+    query.prepare("SELECT ID_POUBELLE, TYPE_DECHET, ADRESSE, CAPACITE_MAX, ETAT_DEPLOYEMENT, "
+                  "NIVEAU_REMPLISSAGE, ETAT_BATTERIE, LATITUDE, LONGITUDE, STATUT_CAPTEUR FROM POUBELLE_INTELLIGENTE");
+
+    QVector<GeoPoubelle> poubellesList;
+
+    if (query.exec()) {
+        int count = 0;
+        while (query.next()) {
+            count++;
+            GeoPoubelle p;
+            p.id = query.value(0).toInt();
+            p.type = query.value(1).toString();
+            p.adresse = query.value(2).toString();
+            p.capacite = query.value(3).toInt();
+            p.etat = query.value(4).toString();
+            p.remplissage = query.value(5).toInt();
+            p.batterie = query.value(6).toInt();
+            p.statut_capteur = query.value(9).toString();
+
+            // Récupérer les coordonnées GPS de la base de données
+            bool hasLat = query.value(7).isNull() ? false : true;
+            bool hasLng = query.value(8).isNull() ? false : true;
+
+            if (hasLat && hasLng) {
+                // Coordonnées trouvées dans la base
+                p.lat = query.value(7).toDouble();
+                p.lng = query.value(8).toDouble();
+            } else {
+                // Utiliser les coordonnées des villes depuis le code
+                bool found = false;
+
+                // Convertir l'adresse en minuscules et nettoyer les accents
+                QString addressLower = p.adresse.toLower();
+                addressLower.replace("é", "e").replace("è", "e").replace("ê", "e");
+                addressLower.replace("à", "a").replace("â", "a");
+                addressLower.replace("ç", "c").replace("î", "i").replace("ô", "o");
+                addressLower.replace("û", "u").replace("ù", "u");
+
+                    // Chercher chaque ville dans l'adresse
+                    for (auto it = cityCoordinates.begin(); it != cityCoordinates.end(); ++it) {
+                        // Chercher le nom de la ville comme mot complet
+                        if (addressLower.contains(it.key())) {
+                            p.lat = it.value().first;
+                            p.lng = it.value().second;
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    // Si pas de correspondance, centrer sur Tunis
+                    if (!found) {
+                        p.lat = 36.7963;
+                        p.lng = 10.1815;
+                    }
+            }
+
+            poubellesList.append(p);
+        }
+        qDebug() << "Poubelles chargees:" << count;
+    } else {
+        qWarning() << "Erreur requete map:" << query.lastError().text();
+    }
+
+    // Passer les donnees au MapWidget
+    qDebug() << "Envoi de" << poubellesList.size() << "poubelles au MapWidget";
+    poubelle_mapView->setPoubelles(poubellesList);
+}
+
+void MainWindow::poubelle_setupStatsUI()
+{
+    if (ui->gb_stats_3->layout()) {
+        delete ui->gb_stats_3->layout();
+    }
+    QVBoxLayout *layout = new QVBoxLayout(ui->gb_stats_3);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+    
+    poubelle_chartViewRemplissage = new QChartView(ui->gb_stats_3);
+    poubelle_chartViewRemplissage->setRenderHint(QPainter::Antialiasing);
+    poubelle_chartViewRemplissage->setMinimumHeight(300);
+    
+    layout->addWidget(poubelle_chartViewRemplissage);
+    ui->gb_stats_3->setLayout(layout);
+}
+
+void MainWindow::poubelle_refreshStats()
+{
+    if (!poubelle_chartViewRemplissage) {
+        poubelle_setupStatsUI();
+    }
+
+    QChart *newChart = Poubelle::createRemplissageParAdresseChart();
+    if (!newChart) return;
+
+    QChart *oldChart = poubelle_chartViewRemplissage->chart();
+    poubelle_chartViewRemplissage->setChart(newChart);
+
+    // Qt takes ownership of the previous chart when setChart is called,
+    // but manually deleting the old one ensures immediate memory cleanup.
+    if (oldChart && oldChart != newChart) delete oldChart;
+
+    poubelle_chartViewRemplissage->update(); // Force visual update
+}
+
+void MainWindow::poubelle_setupPredictionAI()
+{
+    QTableView *tabPrediction = ui->tab_poubelle_3;
+
+    // Initialiser avec un modele vide
+    QStandardItemModel *model = new QStandardItemModel();
+
+    QStringList headers;
+    headers << "ID" << "Type" << "Adresse" << "Capacite" << "Remplissage %"
+            << "Installation" << "Batterie %" << "Date Prediction";
+
+    model->setHorizontalHeaderLabels(headers);
+    tabPrediction->setModel(model);
+
+    // Charger les donnees
+    poubelle_refreshPredictionAI();
+}
+
+void MainWindow::poubelle_refreshPredictionAI()
+{
+    QTableView *tabPrediction = ui->tab_poubelle_3;
+
+    // Créer un modele standard
+    QStandardItemModel *model = new QStandardItemModel();
+    
+    // Colonnes
+    QStringList headers;
+    headers << "ID" << "Type" << "Adresse" << "Capacite" << "Remplissage %"
+            << "Installation" << "Batterie %" << "Date Prediction";
+
+    model->setHorizontalHeaderLabels(headers);
+    tabPrediction->setModel(model);
+
+    // Recuperer les donnees
+    QSqlQuery query("SELECT ID_POUBELLE, TYPE_DECHET, ADRESSE, CAPACITE_MAX, "
+                    "NIVEAU_REMPLISSAGE, DATE_INSTALLATION, ETAT_BATTERIE, STATUT_CAPTEUR, "
+                    "ETAT_DEPLOYEMENT "
+                    "FROM POUBELLE_INTELLIGENTE "
+                    "WHERE ETAT_DEPLOYEMENT != 'EN_STOCK' "
+                    "ORDER BY ID_POUBELLE",
+                    QSqlDatabase::database());
+
+    int row = 0;
+    while (query.next()) {
+        int id = query.value(0).toInt();
+        QString type = query.value(1).toString();
+        QString adresse = query.value(2).toString();
+        int capacity = query.value(3).toInt();
+        int currentLevel = query.value(4).toInt();
+        QDate dateInstall = query.value(5).toDate();
+        int batterie = query.value(6).toInt();
+        QString statut = query.value(8).toString();
+
+        // Calculer la date estimee de remplissage
+        QString predictedDate = "N/A";
+
+        if (capacity > 0 && dateInstall.isValid()) {
+            int daysElapsed = dateInstall.daysTo(QDate::currentDate());
+            if (daysElapsed < 1) daysElapsed = 1;
+
+            // Taux de remplissage par jour
+            double fillRatePerDay = (double)currentLevel / daysElapsed;
+
+            if (fillRatePerDay > 0) {
+                // Jours restants avant remplissage complet
+                int remainingDays = (int)((capacity - currentLevel) / fillRatePerDay);
+                QDate estimatedFull = QDate::currentDate().addDays(remainingDays);
+
+                // Formater la date
+                predictedDate = estimatedFull.toString("dd/MM/yyyy");
+
+                // Si deja pleine
+                if (currentLevel >= capacity) {
+                    predictedDate = "PLEIN";
+                } else if (remainingDays <= 7) {
+                    predictedDate += " (URGENT)";
+                } else if (remainingDays <= 30) {
+                    predictedDate += " (BIENTOT)";
+                }
+            }
+        }
+
+        // Ajouter une ligne au modele
+        model->insertRow(row);
+
+        model->setData(model->index(row, 0), QString::number(id));
+        model->setData(model->index(row, 1), type);
+        model->setData(model->index(row, 2), adresse);
+        model->setData(model->index(row, 3), QString::number(capacity));
+        model->setData(model->index(row, 4), QString::number(currentLevel) + "%");
+        model->setData(model->index(row, 5), dateInstall.toString("dd/MM/yyyy"));
+        model->setData(model->index(row, 6), QString::number(batterie) + "%");
+        model->setData(model->index(row, 7), predictedDate);
+
+        row++;
+    }
+
+    // Configurer l'affichage du tableau
+    tabPrediction->resizeColumnsToContents();
+    tabPrediction->setColumnWidth(0, 40);
+    tabPrediction->setColumnWidth(1, 60);
+    tabPrediction->setColumnWidth(2, 100);
+    tabPrediction->setColumnWidth(3, 70);
+    tabPrediction->setColumnWidth(4, 85);
+    tabPrediction->setColumnWidth(5, 95);
+    tabPrediction->setColumnWidth(6, 75);
+    tabPrediction->setColumnWidth(7, 160);
+    
+    // Activer le scrolling horizontal pour afficher tout le tableau
+    tabPrediction->horizontalHeader()->setStretchLastSection(false);
+    tabPrediction->resizeRowsToContents();
+
+    tabPrediction->setAlternatingRowColors(true);
+    tabPrediction->setSelectionBehavior(QAbstractItemView::SelectRows);
+    tabPrediction->setStyleSheet("QTableView {gridline-color: #d0d0d0;} QHeaderView::section {background-color: #4CAF50; color: white;}");
+}
+
+//  =========================================================
 // ===                  MODULE PRODUIT                   ===
 // =========================================================
 
 void MainWindow::chargerIdsClients() {
-    ui->cb_id_client->clear();
-    ui->cb_id_client->addItem("");
+    ui->cb_id_client->clear(); // On vide la liste actuelle
+    ui->cb_id_client->addItem(""); // Optionnel : un champ vide par défaut
 
     QSqlQuery query("SELECT ID_CLIENT FROM CLIENT ORDER BY ID_CLIENT ASC");
     while (query.next()) {
         ui->cb_id_client->addItem(query.value(0).toString());
     }
 }
-
 void MainWindow::on_btn_ajouter_produit_clicked() {
-    if (!controleSaisieProduit()) return;
+    if (!controleSaisieProduit()) return; // On s'arrête si c'est faux
+    // Récupération des données
     int id = ui->le_id->text().toInt();
     int id_c = ui->cb_id_client->currentText().toInt();
     QString type = ui->cb_type_2->currentText();
@@ -525,19 +1061,28 @@ void MainWindow::on_btn_ajouter_produit_clicked() {
     Produit P(id, id_c, type, poids, dc, dv, statut, prix);
 
     if(P.ajouter()) {
+        QString nomClient = ui->cb_id_client->currentText();
+        QString details = "Produit ajouté au stock.";
+        if(!nomClient.isEmpty()) details += " Lié au client : " + nomClient;
+
+        P.enregistrerAction(id, "AJOUT", type, "Entrée en stock initial.");
+
         ui->tab_produit->setModel(P.afficher());
+        afficherStatistiques();
+        refreshHistorique(); // On force le rafraîchissement
         QMessageBox::information(this, "Succès", "Produit ajouté !");
         viderFormulaire();
     } else {
         QMessageBox::critical(this, "Erreur", "Ajout échoué.");
     }
 }
-
 void MainWindow::on_btn_supprimer_produit_clicked() {
-    int id = ui->le_id->text().toInt();
+    int id = ui->le_id->text().toInt(); // On récupère l'ID à supprimer
     Produit P;
     if(P.supprimer(id)) {
+        P.enregistrerAction(id, "SUPPRESSION", ui->cb_type_2->currentText(), "Produit définitivement retiré du stock.");
         ui->tab_produit->setModel(P.afficher());
+        afficherStatistiques();
         QMessageBox::information(this, "Succès", "Produit supprimé !");
         viderFormulaire();
     }
@@ -549,7 +1094,7 @@ void MainWindow::on_btn_modifier_produit_clicked() {
         return;
     }
 
-    if (!controleSaisieProduit()) return;
+    if (!controleSaisieProduit(true)) return;
 
     int id_c = 0;
     if (!ui->cb_id_client->currentText().isEmpty()) {
@@ -565,19 +1110,51 @@ void MainWindow::on_btn_modifier_produit_clicked() {
               ui->cb_statut->currentText(),
               ui->sb_prix->value());
 
+    int id_nouveau = ui->le_id->text().toInt();
+
     if(P.modifier(id_a_modifier)) {
+        QString statut_actuel = ui->cb_statut->currentText().trimmed();
+        // On nettoie aussi l'ancien statut au cas où
+        QString ancien_statut = this->statut_a_modifier.trimmed();
+
+        QString typeLog = "MODIFICATION";
+        QString details = QString("Mise à jour technique (Prix/Poids/Type) du produit ID %1.").arg(id_a_modifier);
+
+        // 1. DÉTECTION VENTE (Seulement si le statut CHANGE vers Vendu)
+        if (statut_actuel == "Vendu" && ancien_statut != "Vendu") {
+            typeLog = "VENTE";
+            details = QString("💰 VENTE EFFECTUÉE : Produit vendu au client %1").arg(ui->cb_id_client->currentText());
+        }
+        // 2. DÉTECTION RÉSERVATION (Seulement si le statut CHANGE vers Réservé)
+        else if (statut_actuel == "Réservé" && ancien_statut != "Réservé") {
+            typeLog = "RESERVATION";
+            details = QString("⏰ RÉSERVATION : Produit bloqué pour le client %1").arg(ui->cb_id_client->currentText());
+        }
+        // 3. TOUT LE RESTE (Si le statut est déjà Vendu ou déjà Réservé et qu'on change le prix)
+        // Le typeLog restera "MODIFICATION" et ira donc dans l'onglet Modifs.
+
+        // Enregistrement
+        P.enregistrerAction(id_nouveau, typeLog, ui->cb_type_2->currentText(), details);
+
+        // --- MISE À JOUR UI ---
         ui->tab_produit->setModel(P.afficher());
         QMessageBox::information(this, "Succès", "Produit mis à jour !");
-        id_a_modifier = ui->le_id->text().toInt();
+        afficherStatistiques();
+        refreshHistorique();
+        calculerValorisation();
+
+        // 4. TRÈS IMPORTANT : Mettre à jour les références pour la prochaine fois
+        id_a_modifier = id_nouveau;
+        this->statut_a_modifier = statut_actuel;
+
         viderFormulaire();
     } else {
-        QMessageBox::critical(this, "Erreur", "La modification a échoué. Vérifiez que le nouvel ID n'est pas déjà utilisé par un autre produit.");
+        QMessageBox::critical(this, "Erreur", "Modification échouée (ID déjà utilisé ?)");
     }
 }
-
 void MainWindow::on_cb_statut_currentIndexChanged(int index)
 {
-    Q_UNUSED(index)
+    Q_UNUSED(index);
     QString statut = ui->cb_statut->currentText();
 
     if (statut == "Vendu") {
@@ -589,10 +1166,12 @@ void MainWindow::on_cb_statut_currentIndexChanged(int index)
         ui->cb_id_client->setEnabled(true);
         ui->de_date_v->setEnabled(false);
     }
-    else {
+    else { // Cas "Disponible"
         ui->cb_id_client->setEnabled(false);
         ui->de_date_v->setEnabled(false);
-        ui->cb_id_client->setCurrentIndex(-1);
+
+        // IMPORTANT : Ne pas faire .clear() sur une ComboBox sinon elle se vide !
+        ui->cb_id_client->setCurrentIndex(-1); // Déselectionne l'élément sans vider la liste
     }
 }
 
@@ -600,19 +1179,22 @@ void MainWindow::on_tab_produit_clicked(const QModelIndex &index)
 {
     int row = index.row();
     auto model = ui->tab_produit->model();
+    // ON MÉMORISE L'ID ACTUEL AVANT TOUTE MODIFICATION
     this->id_a_modifier = model->index(row, 0).data().toInt();
+    this->statut_a_modifier = model->index(row, 6).data().toString().trimmed();
 
     QString statut_db = model->index(row, 6).data().toString().trimmed();
     ui->cb_statut->setCurrentText(statut_db);
 
     on_cb_statut_currentIndexChanged(ui->cb_statut->currentIndex());
 
+    // Pour la ComboBox client : on cherche l'index correspondant à l'ID du tableau
     QString id_client_db = model->index(row, 1).data().toString().trimmed();
     int idx_client = ui->cb_id_client->findText(id_client_db);
     if (idx_client != -1) {
         ui->cb_id_client->setCurrentIndex(idx_client);
     } else {
-        ui->cb_id_client->setCurrentIndex(0);
+        ui->cb_id_client->setCurrentIndex(0); // Vide si non trouvé
     }
 
     ui->le_id->setText(model->index(row, 0).data().toString());
@@ -622,38 +1204,46 @@ void MainWindow::on_tab_produit_clicked(const QModelIndex &index)
     ui->de_date_v->setDate(model->index(row, 5).data().toDate());
     ui->sb_prix->setValue(model->index(row, 7).data().toDouble());
 }
-
-bool MainWindow::controleSaisieProduit() {
+bool MainWindow::controleSaisieProduit(bool isModification) {
     QString id_p = ui->le_id->text();
     double prix = ui->sb_prix->value();
     double poids = ui->sb_poids->value();
     QString statut = ui->cb_statut->currentText();
     QString id_c = ui->cb_id_client->currentText();
 
+    // 1. Vérification de l'ID (toujours nécessaire)
     if (id_p.length() != 8) {
         QMessageBox::warning(this, "Erreur de saisie", "L'ID Produit doit contenir exactement 8 chiffres.");
         return false;
     }
+
+    // 2. Vérification du poids et du prix (toujours nécessaire)
     if (poids <= 0 || prix <= 0) {
         QMessageBox::warning(this, "Erreur de saisie", "Le poids et le prix doivent être supérieurs à 0.");
         return false;
     }
 
-    QDate dateCreation = ui->de_date_c->date();
-    QDate aujourdhui = QDate::currentDate();
-    QDate limitePassee = aujourdhui.addMonths(-1);
+    // ==================== CONTROLE DATE (UNIQUEMENT POUR L'AJOUT) ====================
+    if (!isModification) { // On n'entre ici que si on AJOUTE un nouveau produit
+        QDate dateCreation = ui->de_date_c->date();
+        QDate aujourdhui = QDate::currentDate();
+        QDate limitePassee = aujourdhui.addMonths(-1);
 
-    if (dateCreation < limitePassee) {
-        QMessageBox::warning(this, "Erreur de date",
-                             "La date de création est trop ancienne. Elle doit être comprise entre le "
-                                 + limitePassee.toString("dd/MM/yyyy") + " et aujourd'hui.");
-        return false;
+        if (dateCreation < limitePassee) {
+            QMessageBox::warning(this, "Erreur de date",
+                                 "La date de création est trop ancienne pour un nouveau produit.");
+            return false;
+        }
+
+        if (dateCreation > aujourdhui) {
+            QMessageBox::warning(this, "Erreur de date",
+                                 "La date de création ne peut pas être une date future.");
+            return false;
+        }
     }
-    if (dateCreation > aujourdhui) {
-        QMessageBox::warning(this, "Erreur de date",
-                             "La date de création ne peut pas être une date future.");
-        return false;
-    }
+    // =================================================================================
+
+    // 3. Vérification de l'ID Client
     if (statut != "Disponible" && id_c.isEmpty()) {
         QMessageBox::warning(this, "Erreur de saisie", "Un ID Client est obligatoire pour un produit Réservé ou Vendu.");
         return false;
@@ -661,7 +1251,6 @@ bool MainWindow::controleSaisieProduit() {
 
     return true;
 }
-
 void MainWindow::viderFormulaire() {
     ui->le_id->clear();
     ui->sb_poids->setValue(0.0);
@@ -669,10 +1258,432 @@ void MainWindow::viderFormulaire() {
     ui->de_date_c->setDate(QDate::currentDate());
     ui->de_date_v->setDate(QDate::currentDate());
     ui->cb_type_2->setCurrentIndex(0);
+
+    // Remettre le statut à "Disponible"
     ui->cb_statut->setCurrentText("Disponible");
+
+    // Forcer manuellement l'appel de la fonction qui bloque les champs
     on_cb_statut_currentIndexChanged(ui->cb_statut->currentIndex());
+
+    // Réinitialiser l'ID de modification
     this->id_a_modifier = -1;
 }
+void MainWindow::on_le_recherche_3_textChanged(const QString &arg1)
+{
+    Produit P;
+    // Si le champ est vide, on affiche tout, sinon on filtre
+    if (arg1.isEmpty()) {
+        ui->tab_produit->setModel(P.afficher());
+    } else {
+        ui->tab_produit->setModel(P.rechercherSimple(arg1));
+    }
+}
+void MainWindow::on_btn_trier_2_clicked() // Remplace par le nom exact de ton bouton
+{
+    // On récupère le critère choisi dans la ComboBox de tri
+    // Vérifie le nom de ta combo (ex: cb_tri ou cb_trier_par)
+    QString critere = ui->cb_trier->currentText();
+
+    Produit P;
+    // On met à jour le tableau avec le résultat trié
+    ui->tab_produit->setModel(P.trier(critere));
+}
+
+void MainWindow::afficherStatistiques() {
+    Produit P;
+
+    // 1. Initialisation du Layout
+    if (ui->container_stats->layout() == nullptr) {
+        QVBoxLayout *mainLayout = new QVBoxLayout(ui->container_stats);
+        mainLayout->setContentsMargins(5, 5, 5, 5);
+        mainLayout->setSpacing(10);
+        ui->container_stats->setLayout(mainLayout);
+    }
+
+    QLayoutItem *child;
+    while ((child = ui->container_stats->layout()->takeAt(0)) != nullptr) {
+        if(child->widget()) delete child->widget();
+        delete child;
+    }
+
+    // =========================================================
+    // SECTION 1 : HISTOGRAMME
+    // =========================================================
+    QMap<QString, double> statsPoids = P.statistiquePoidsParType();
+    QBarSeries *barSeries = new QBarSeries();
+    double maxPoids = 0;
+    for (auto it = statsPoids.begin(); it != statsPoids.end(); ++it) {
+        QBarSet *set = new QBarSet(it.key());
+        *set << it.value();
+        barSeries->append(set);
+        if (it.value() > maxPoids) maxPoids = it.value();
+    }
+
+    QChart *barChart = new QChart();
+    barChart->addSeries(barSeries);
+    barChart->setTitle("Poids Total Recyclé (Kg)");
+    barChart->setAnimationOptions(QChart::SeriesAnimations);
+    barChart->setMargins(QMargins(0, 0, 0, 0));
+    barChart->setBackgroundRoundness(0);
+    barChart->legend()->setAlignment(Qt::AlignRight);
+    barChart->legend()->setMarkerShape(QLegend::MarkerShapeCircle);
+
+    QFont fontTitle = barChart->titleFont();
+    fontTitle.setPointSize(10);
+    fontTitle.setBold(true);
+    barChart->setTitleFont(fontTitle);
+
+    QBarCategoryAxis *axisX = new QBarCategoryAxis();
+    axisX->append("");
+    barChart->addAxis(axisX, Qt::AlignBottom);
+    barSeries->attachAxis(axisX);
+
+    QValueAxis *axisY = new QValueAxis();
+    axisY->setRange(0, maxPoids + (maxPoids * 0.2));
+    barChart->addAxis(axisY, Qt::AlignLeft);
+    barSeries->attachAxis(axisY);
+
+    QChartView *barChartView = new QChartView(barChart);
+    barChartView->setRenderHint(QPainter::Antialiasing);
+    barChartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    // =========================================================
+    // SECTION 2 : DIAGRAMME EN ANNEAU (Modifiée pour visibilité)
+    // =========================================================
+    QMap<QString, int> statsNb = P.statistiqueParType();
+    QPieSeries *pieSeries = new QPieSeries();
+
+    pieSeries->setHoleSize(0.35);
+    // --- CHANGEMENT ICI : Taille réduite pour laisser de la place aux labels ---
+    pieSeries->setPieSize(0.5);
+
+    for (auto it = statsNb.begin(); it != statsNb.end(); ++it) {
+        QString label = it.key() + " (" + QString::number(it.value()) + ")";
+        QPieSlice *slice = pieSeries->append(label, it.value());
+        slice->setLabelVisible(true);
+
+        QFont fontSlice = slice->labelFont();
+        fontSlice.setPointSize(8);
+        slice->setLabelFont(fontSlice);
+    }
+
+    QChart *pieChart = new QChart();
+    pieChart->addSeries(pieSeries);
+    pieChart->setTitle("Répartition du Stock (Articles)");
+    pieChart->setAnimationOptions(QChart::SeriesAnimations);
+
+    // --- CHANGEMENT ICI : Marges ajoutées pour que le texte ne sorte pas du cadre ---
+    pieChart->setMargins(QMargins(30, 0, 30, 0));
+    pieChart->setBackgroundRoundness(0);
+    pieChart->setTitleFont(fontTitle);
+    pieChart->legend()->hide();
+
+    QChartView *pieChartView = new QChartView(pieChart);
+    pieChartView->setRenderHint(QPainter::Antialiasing);
+    pieChartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    // Ajout au layout
+    QVBoxLayout *vLayout = qobject_cast<QVBoxLayout*>(ui->container_stats->layout());
+    vLayout->addWidget(barChartView, 1);
+    vLayout->addWidget(pieChartView, 1);
+}
+
+void MainWindow::on_tabWidget_Stock_currentChanged(int index)
+{
+    if (index == 0)
+    {
+        afficherStatistiques();
+
+    }
+    else if (index == 1) { // Onglet Historique (Vérifiez l'index de votre onglet)
+        refreshHistorique();
+    }
+    else if (index == 2) { // Index 2 correspond à votre onglet tab_finance
+        calculerValorisation();
+    }
+}
+
+
+void MainWindow::on_btn_pdf_produit_clicked()
+{
+    // 1. Demander à l'utilisateur où sauvegarder le fichier
+    QString fileName = QFileDialog::getSaveFileName(this, "Exporter en PDF", "", "Fichiers PDF (*.pdf)");
+    if (fileName.isEmpty()) {
+        return; // L'utilisateur a annulé
+    }
+
+    // 2. Récupérer le modèle du tableau
+    QAbstractItemModel *model = ui->tab_produit->model();
+    if (!model) {
+        QMessageBox::warning(this, "Erreur", "Aucune donnée à exporter.");
+        return;
+    }
+
+    // 3. Préparer le document HTML (Design du PDF)
+    QString html =
+        "<html>"
+        "<head>"
+        "<style>"
+        "  table { border-collapse: collapse; font-family: Arial; }"
+        "  th { background-color: #2E7D32; color: white; padding: 10px; text-align: left; border: 1px solid #ddd; }"
+        "  td { padding: 8px; border: 1px solid #ddd; }"
+        "  h1 { color: #2E7D32; text-align: center; font-size: 24px; }"
+        "  .date { text-align: right; font-style: italic; color: #555; }"
+        "</style>"
+        "</head>"
+        "<body>"
+        "<h1>Rapport d'Inventaire - EcoCycle</h1>"
+        "<p class='date'>Généré le : " + QDate::currentDate().toString("dd/MM/yyyy") + "</p>"
+                                                        // C'EST CETTE LIGNE QUI FORCE LA LARGEUR MAXIMALE :
+                                                        "<table width=\"100%\">"
+                                                        "<thead><tr>";
+
+    // 4. Ajouter les en-têtes des colonnes (Noms personnalisés et propres)
+    QStringList jolisTitres = {"ID Produit", "ID Client", "Type", "Poids (Kg)", "Date Création", "Date Vente", "Statut", "Prix (TND)"};
+    int columnCount = model->columnCount();
+
+    // On s'assure de ne pas dépasser le nombre de colonnes de la BDD
+    for (int col = 0; col < columnCount; ++col) {
+        if (col < jolisTitres.size()) {
+            html += "<th>" + jolisTitres[col] + "</th>";
+        } else {
+            html += "<th>" + model->headerData(col, Qt::Horizontal).toString() + "</th>";
+        }
+    }
+    html += "</tr></thead><tbody>";
+
+    // 5. Ajouter les données des lignes (Avec formatage des dates)
+    int rowCount = model->rowCount();
+    for (int row = 0; row < rowCount; ++row) {
+        html += "<tr>";
+        for (int col = 0; col < columnCount; ++col) {
+
+            // On récupère la donnée sous sa forme brute (QVariant)
+            QVariant valeur = model->data(model->index(row, col));
+            QString data = valeur.toString();
+
+            // Si c'est la colonne 4 (Création) ou 5 (Vente) ET que la case n'est pas vide
+            if ((col == 4 || col == 5) && !data.isEmpty()) {
+                // On la transforme en jolie date : JJ/MM/AAAA
+                data = valeur.toDateTime().toString("dd/MM/yyyy");
+            }
+
+            // (Optionnel) Si la donnée est "0" dans le client d'un produit dispo, on n'affiche rien
+            if (col == 1 && data == "0") data = "";
+
+            html += "<td>" + data + "</td>";
+        }
+        html += "</tr>";
+    }
+    // 6. Générer le PDF
+    QPrinter printer(QPrinter::PrinterResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setOutputFileName(fileName);
+    printer.setPageSize(QPageSize(QPageSize::A4)); // Format A4
+    printer.setPageOrientation(QPageLayout::Landscape); // Paysage pour avoir de la place
+
+    QTextDocument document;
+    document.setHtml(html);
+    document.print(&printer);
+
+    QMessageBox::information(this, "Succès", "Le fichier PDF a été généré avec succès !");
+
+}
+
+void MainWindow::renderHistorique(QString typeFiltre, QTextBrowser* targetFeed, QString searchKeyword) {
+    QFile file("historique_ecocycle.csv");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        targetFeed->setHtml("<p style='color:#666; font-size:12px;'>Aucun historique disponible.</p>");
+        return;
+    }
+
+    QTextStream in(&file);
+    QStringList allLines;
+    while (!in.atEnd()) { allLines.append(in.readLine()); }
+    file.close();
+
+    QString html =
+        "<html><head><style>"
+        "  body { font-family: 'Segoe UI', Arial; margin: 0; padding: 0; }"
+        "  table { width: 100%; border-collapse: collapse; }"
+        "  th { background-color: #f8f9fa; color: #333; font-size: 11px; text-transform: uppercase; "
+        "       padding: 10px; border-bottom: 2px solid #2e7d32; text-align: left; }"
+        "  td { padding: 10px; border-bottom: 1px solid #eee; font-size: 12px; color: #444; }"
+        "  .id-cell { font-family: 'Courier New'; font-weight: bold; color: #2e7d32; width: 80px; }"
+        "  .type-label { color: #e67e22; font-weight: bold; }" // Couleur orange pour le type
+        "  .date-cell { color: #888; width: 110px; font-size: 11px; }"
+        "</style></head><body>"
+        "<table>"
+        "<thead><tr>"
+        "  <th class='date-cell'>Date / Heure</th>"
+        "  <th class='id-cell'>ID Produit</th>"
+        "  <th>Détails de l'opération</th>"
+        "</tr></thead><tbody>";
+
+    int rows = 0;
+    for (int i = allLines.size() - 1; i >= 0; --i) {
+        QStringList fields = allLines[i].split(";");
+        if (fields.size() < 5) continue; // On attend maintenant 5 champs
+
+        QString date = fields[0];
+        QString typeAction = fields[1];
+        QString id_p = fields[2];
+        QString typeProduit = fields[3]; // Le type (Verre, Plastique...)
+        QString details = fields[4];
+
+        if (typeAction != typeFiltre) continue;
+
+        // ON AJOUTE LA RECHERCHE SUR LE TYPE ICI :
+        if (!searchKeyword.isEmpty() &&
+            !details.contains(searchKeyword, Qt::CaseInsensitive) &&
+            !id_p.contains(searchKeyword) &&
+            !typeProduit.contains(searchKeyword, Qt::CaseInsensitive)) // <--- AJOUTEZ CETTE LIGNE
+        {
+            continue;
+        }
+
+        rows++;
+        html += QString(
+                    "<tr>"
+                    "  <td class='date-cell'>%1</td>"
+                    "  <td class='id-cell'>%2</td>"
+                    "  <td><span class='type-label'>[%3]</span> %4</td>"
+                    "</tr>"
+                    ).arg(date, id_p, typeProduit, details);
+    }
+
+    if(rows == 0) html += "<tr><td colspan='3' style='text-align:center; padding:20px; color:#999;'>Aucune donnée.</td></tr>";
+
+    html += "</tbody></table></body></html>";
+    targetFeed->setHtml(html);
+}
+void MainWindow::refreshHistorique() {
+    // Cette fonction met à jour les 5 TextBrowsers en lisant le fichier CSV
+    // Assurez-vous que les noms ui->feed_... et ui->le_search_... sont corrects
+    renderHistorique("AJOUT", ui->feed_ajout, ui->le_search_ajout->text());
+    renderHistorique("MODIFICATION", ui->feed_modif, ui->le_search_modif->text());
+    renderHistorique("SUPPRESSION", ui->feed_suppr, ui->le_search_suppr->text());
+    renderHistorique("RESERVATION", ui->feed_resv, ui->le_search_resv->text());
+    renderHistorique("VENTE", ui->feed_vente, ui->le_search_vente->text());
+}
+
+// 1. Recherche dans les AJOUTS
+void MainWindow::on_le_search_ajout_textChanged(const QString &arg1) {
+    renderHistorique("AJOUT", ui->feed_ajout, arg1);
+}
+
+// 2. Recherche dans les MODIFICATIONS
+void MainWindow::on_le_search_modif_textChanged(const QString &arg1) {
+    renderHistorique("MODIFICATION", ui->feed_modif, arg1);
+}
+
+// 3. Recherche dans les SUPPRESSIONS
+void MainWindow::on_le_search_suppr_textChanged(const QString &arg1) {
+    renderHistorique("SUPPRESSION", ui->feed_suppr, arg1);
+}
+
+// 4. Recherche dans les RÉSERVATIONS
+void MainWindow::on_le_search_resv_textChanged(const QString &arg1) {
+    renderHistorique("RESERVATION", ui->feed_resv, arg1);
+}
+
+// 5. Recherche dans les VENTES
+void MainWindow::on_le_search_vente_textChanged(const QString &arg1) {
+    renderHistorique("VENTE", ui->feed_vente, arg1);
+}
+
+void MainWindow::calculerValorisation() {
+    QSqlQuery query("SELECT TYPE_PRODUIT, POIDS_KG, PRIX_VENTE_ESTIME, STATUT, DATE_DE_CREATION, ID_PRODUIT FROM PRODUIT");
+
+    double totalDispo = 0;
+    double totalCA = 0;
+    struct StatMatiere { double poids = 0; double valeur = 0; int nbLots = 0; };
+    QMap<QString, StatMatiere> stats;
+    QStringList alertes;
+    QDate aujourdhui = QDate::currentDate();
+
+    while (query.next()) {
+        QString type = query.value(0).toString();
+        double poids = query.value(1).toDouble();
+        double prix = query.value(2).toDouble();
+        QString statut = query.value(3).toString();
+        QDate dateC = query.value(4).toDate();
+        QString id_p = query.value(5).toString();
+
+        stats[type].poids += poids;
+        stats[type].valeur += (poids * prix);
+        stats[type].nbLots++;
+
+        if (statut == "Disponible") totalDispo += (poids * prix);
+        else if (statut == "Vendu") totalCA += (poids * prix);
+
+        int jours = dateC.daysTo(aujourdhui);
+        if (statut == "Disponible" && jours > 60) {
+            double valeurRisque = poids * prix;
+            QString msg = QString("<b>ID: %1</b> [%2] - Critique : %3 jours (Risque: %4 DT)")
+                              .arg(id_p, type, QString::number(jours), QString::number(valeurRisque, 'f', 2));
+            alertes << msg;
+        }
+    }
+
+    // --- 1. MISE À JOUR DES KPI ---
+    ui->lbl_val_dispo->setText(QString::number(totalDispo, 'f', 2) + " DT");
+    ui->lbl_val_ca->setText(QString::number(totalCA, 'f', 2) + " DT");
+
+    // --- 2. CONFIGURATION DU TABLEAU ---
+    ui->table_finance->setRowCount(0);
+    ui->table_finance->setAlternatingRowColors(true); // Active les lignes grises/blanches
+    ui->table_finance->verticalHeader()->setVisible(false); // Cache les numéros à gauche
+
+    for (auto it = stats.begin(); it != stats.end(); ++it) {
+        int r = ui->table_finance->rowCount();
+        ui->table_finance->insertRow(r);
+
+        double ratio = (it.value().poids > 0) ? (it.value().valeur / it.value().poids) : 0;
+
+        // Création des items
+        QTableWidgetItem *itemType = new QTableWidgetItem(it.key().toUpper());
+        QTableWidgetItem *itemLots = new QTableWidgetItem(QString::number(it.value().nbLots));
+        QTableWidgetItem *itemMasse = new QTableWidgetItem(QString::number(it.value().poids, 'f', 1) + " Kg");
+        QTableWidgetItem *itemValeur = new QTableWidgetItem(QString::number(it.value().valeur, 'f', 2) + " DT");
+        QTableWidgetItem *itemRatio = new QTableWidgetItem(QString::number(ratio, 'f', 2) + " DT/Kg");
+
+        // Alignement au centre pour la propreté
+        itemLots->setTextAlignment(Qt::AlignCenter);
+        itemMasse->setTextAlignment(Qt::AlignCenter);
+        itemValeur->setTextAlignment(Qt::AlignCenter);
+        itemRatio->setTextAlignment(Qt::AlignCenter);
+
+        // Appliquer les items
+        ui->table_finance->setItem(r, 0, itemType);
+        ui->table_finance->setItem(r, 1, itemLots);
+        ui->table_finance->setItem(r, 2, itemMasse);
+        ui->table_finance->setItem(r, 3, itemValeur);
+        ui->table_finance->setItem(r, 4, itemRatio);
+    }
+
+    // Forcer les colonnes à prendre TOUTE la place sans couper le texte
+    ui->table_finance->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    // --- 3. MISE À JOUR DES ALERTES ---
+    ui->list_alertes->clear();
+    if (alertes.isEmpty()) {
+        ui->frame_alertes->hide();
+    } else {
+        ui->frame_alertes->show();
+        for (const QString& a : alertes) {
+            QListWidgetItem *item = new QListWidgetItem();
+            // On utilise setData pour que le HTML soit interprété
+            QLabel *label = new QLabel("• " + a);
+            label->setStyleSheet("color: #c0392b; font-size: 11px; font-family: 'Segoe UI';");
+
+            item->setSizeHint(label->sizeHint());
+            ui->list_alertes->addItem(item);
+            ui->list_alertes->setItemWidget(item, label);
+        }
+    }
+}
+
 
 // =========================================================
 // ===                  MODULE CONTRAT                   ===
@@ -908,6 +1919,25 @@ void MainWindow::contrat_onTabDoubleClicked(const QModelIndex &index)
 // ─── Ajouter un contrat ───────────────────────────────────────────────────────
 void MainWindow::contrat_onAjouterClicked()
 {
+    bool hasCustomId = !ui->ID_Contrat->text().trimmed().isEmpty();
+    bool idOk = false;
+    int newId = ui->ID_Contrat->text().trimmed().toInt(&idOk);
+    if (hasCustomId && (!idOk || !Contrat::validerID(newId))) {
+        QMessageBox::warning(this, "ID invalide", "Veuillez saisir un ID de contrat numérique valide (supérieur à 0).");
+        return;
+    }
+    if (!hasCustomId) {
+        QSqlQuery q;
+        if (!q.exec("SELECT NVL(MAX(ID_CONTRAT), 0) + 1 FROM CONTRAT") || !q.next()) {
+            QMessageBox::critical(this, "Erreur lors de l'ajout",
+                                  "Impossible de générer automatiquement l'ID du contrat.\n\nDétails techniques :\n"
+                                  + q.lastError().text());
+            return;
+        }
+        newId = q.value(0).toInt();
+        ui->ID_Contrat->setText(QString::number(newId));
+    }
+
     int     id_client       = ui->combo_ID_Client->currentText().toInt();
     int     cin             = ui->combo_CIN_Employe->currentText().toInt();
     QString type_ex         = ui->type_ex->currentText();
@@ -935,6 +1965,7 @@ void MainWindow::contrat_onAjouterClicked()
 
     Contrat c(id_client, cin, type_ex, prod_con, date_debut, date_fin,
               obj_ach_ann, tau_rem_acc, statut_contrat, clause_penale);
+    c.setId_contrat(newId);
 
     if (c.ajouter()) {
         QMessageBox::information(this, "Succès", "Le contrat a été ajouté avec succès !");
@@ -945,9 +1976,10 @@ void MainWindow::contrat_onAjouterClicked()
         contrat_resetValidationStyles();
         contrat_refreshStats();
     } else {
-        QSqlError err = QSqlDatabase::database().lastError();
+        QString err = c.getLastError().trimmed();
+        if (err.isEmpty()) err = "Erreur SQL inconnue (aucun détail retourné par le pilote).";
         QMessageBox::critical(this, "Erreur lors de l'ajout",
-                              "L'opération a échoué.\n\nDétails techniques :\n" + err.text());
+                              "L'opération a échoué.\n\nDétails techniques :\n" + err);
     }
 }
 
@@ -1002,9 +2034,10 @@ void MainWindow::contrat_onModifierClicked()
         ui->tab_contrat_2->setModel(Contrat().afficher());
         contrat_refreshStats();
     } else {
-        QSqlError err = QSqlDatabase::database().lastError();
+        QString err = c.getLastError().trimmed();
+        if (err.isEmpty()) err = "Erreur SQL inconnue (aucun détail retourné par le pilote).";
         QMessageBox::critical(this, "Erreur lors de la modification",
-                              "L'opération a échoué.\n\nDétails techniques :\n" + err.text());
+                              "L'opération a échoué.\n\nDétails techniques :\n" + err);
     }
 }
 
@@ -1562,7 +2595,10 @@ void MainWindow::equipement_onAjouterClicked()
         equipement_clearForm();
         equipement_rafraichirTable();
     } else {
-        QMessageBox::critical(this, "Erreur DB", "L'ajout de l'équipement a échoué.");
+        QString err = eq.getLastError().trimmed();
+        if (err.isEmpty()) err = "Erreur SQL inconnue (aucun détail retourné par le pilote).";
+        QMessageBox::critical(this, "Erreur DB",
+                              "L'ajout de l'équipement a échoué.\n\nDétails techniques :\n" + err);
     }
 }
 
@@ -1598,7 +2634,10 @@ void MainWindow::equipement_onModifierClicked()
         equipement_clearForm();
         equipement_rafraichirTable();
     } else {
-        QMessageBox::critical(this, "Erreur DB", "La modification a échoué.");
+        QString err = eq.getLastError().trimmed();
+        if (err.isEmpty()) err = "Erreur SQL inconnue (aucun détail retourné par le pilote).";
+        QMessageBox::critical(this, "Erreur DB",
+                              "La modification a échoué.\n\nDétails techniques :\n" + err);
     }
 }
 
@@ -1790,10 +2829,356 @@ void MainWindow::equipement_refreshStats()
 }
 
 // =========================================================
+// ===                  MODULE EMPLOYE                   ===
+// =========================================================
+
+void MainWindow::employe_clearForm()
+{
+    ui->le_cin->clear();
+    ui->le_nom->clear();
+    ui->le_prenom->clear();
+    ui->cb_poste->setCurrentIndex(0);
+    ui->le_salaire->clear();
+    ui->de_embauche->setDate(QDate::currentDate());
+    ui->le_badge->clear();
+    ui->le_age->clear();
+    ui->cb_genre->setCurrentIndex(0);
+}
+
+void MainWindow::employe_onAjouterClicked()
+{
+    QString cin      = ui->le_cin->text();
+    QString nom      = ui->le_nom->text();
+    QString prenom   = ui->le_prenom->text();
+    QString poste    = ui->cb_poste->currentText();
+    double  salaire  = ui->le_salaire->text().replace(",", ".").toDouble();
+    QDate   dateEmb  = ui->de_embauche->date();
+    QString idBadge  = ui->le_badge->text();
+    int     age      = ui->le_age->text().toInt();
+    QString genre    = ui->cb_genre->currentText();
+
+    QString errorMessage;
+    if (!Employe::validerFormulaire(cin, nom, prenom, idBadge, salaire, errorMessage)) {
+        QMessageBox::warning(this, "Erreur de saisie", errorMessage);
+        return;
+    }
+
+    if (tmp_employe.ajouter(cin, nom, prenom, poste, salaire, dateEmb, idBadge, age, genre)) {
+        QMessageBox::information(this, "Succès", "Employé ajouté avec succès.");
+        ui->tab_employes->setModel(tmp_employe.afficher());
+        employe_clearForm();
+        employe_refreshStats();
+    } else {
+        QMessageBox::critical(this, "Erreur", "Erreur lors de l'ajout.");
+    }
+}
+
+void MainWindow::employe_onModifierClicked()
+{
+    QString cin      = ui->le_cin->text();
+    QString nom      = ui->le_nom->text();
+    QString prenom   = ui->le_prenom->text();
+    QString poste    = ui->cb_poste->currentText();
+    double  salaire  = ui->le_salaire->text().replace(",", ".").toDouble();
+    QDate   dateEmb  = ui->de_embauche->date();
+    QString idBadge  = ui->le_badge->text();
+    int     age      = ui->le_age->text().toInt();
+    QString genre    = ui->cb_genre->currentText();
+
+    QString errorMessage;
+    if (!Employe::validerFormulaire(cin, nom, prenom, idBadge, salaire, errorMessage)) {
+        QMessageBox::warning(this, "Erreur de saisie", errorMessage);
+        return;
+    }
+
+    if (tmp_employe.modifier(cin, nom, prenom, poste, salaire, dateEmb, idBadge, age, genre)) {
+        QMessageBox::information(this, "Succès", "Employé modifié avec succès.");
+        ui->tab_employes->setModel(tmp_employe.afficher());
+        employe_clearForm();
+        employe_refreshStats();
+    } else {
+        QMessageBox::critical(this, "Erreur", "Erreur lors de la modification.");
+    }
+}
+
+void MainWindow::employe_onSupprimerClicked()
+{
+    QString cin = ui->le_cin->text();
+
+    if (cin.isEmpty()) {
+        QMessageBox::warning(this, "Avertissement", "Veuillez sélectionner un employé à supprimer.");
+        return;
+    }
+
+    QString erreurInfo;
+    if (QMessageBox::question(this, "Confirmation", "Voulez-vous vraiment supprimer cet employé ?", QMessageBox::Yes|QMessageBox::No) != QMessageBox::Yes) {
+        return;
+    }
+
+    if (tmp_employe.supprimer(cin, erreurInfo)) {
+        QMessageBox::information(this, "Succès", "Employé supprimé avec succès.");
+        employe_clearForm();
+        ui->tab_employes->setModel(tmp_employe.afficher());
+        employe_refreshStats();
+    } else {
+        QMessageBox::critical(this, "Erreur", "Erreur lors de la suppression.\n" + erreurInfo);
+    }
+}
+
+void MainWindow::employe_onTabClicked(const QModelIndex &index)
+{
+    int row = index.row();
+    QAbstractItemModel *model = ui->tab_employes->model();
+    
+    QVariant cinData = model->data(model->index(row, 0));
+    bool ok = false;
+    double cinDouble = cinData.toDouble(&ok);
+    QString cinStr = ok ? QString::number(static_cast<qulonglong>(cinDouble)).rightJustified(8, '0') : cinData.toString();
+    
+    ui->le_cin->setText(cinStr);
+    ui->le_nom->setText(model->data(model->index(row, 1)).toString());
+    ui->le_prenom->setText(model->data(model->index(row, 2)).toString());
+    ui->cb_poste->setCurrentText(model->data(model->index(row, 3)).toString());
+    ui->le_salaire->setText(model->data(model->index(row, 4)).toString());
+    ui->de_embauche->setDate(model->data(model->index(row, 5)).toDate());
+    ui->le_badge->setText(model->data(model->index(row, 6)).toString());
+    ui->le_age->setText(model->data(model->index(row, 7)).toString());
+    ui->cb_genre->setCurrentText(model->data(model->index(row, 8)).toString());
+}
+
+void MainWindow::employe_onRechercheTextChanged(const QString &arg1)
+{
+    ui->tab_employes->setModel(tmp_employe.rechercher(arg1));
+}
+
+void MainWindow::employe_onTriClicked()
+{
+    QString currentSort = ui->comboBox->currentText();
+    ui->tab_employes->setModel(tmp_employe.trier(currentSort));
+}
+
+void MainWindow::employe_onPdfClicked()
+{
+    QString filePath = QFileDialog::getSaveFileName(this, "Exporter la liste", "Liste_Employes.pdf", "PDF (*.pdf)");
+    if (filePath.isEmpty()) return;
+
+    QSqlTableModel* m = tmp_employe.afficher();
+    if (tmp_employe.exporterPDF(filePath, m)) {
+        QMessageBox::information(this, "Succès", "La liste des employés a été exportée en PDF avec succès.");
+    } else {
+        QMessageBox::critical(this, "Erreur", "Echec de l'export PDF.");
+    }
+    delete m;
+}
+
+void MainWindow::employe_onRefreshClicked()
+{
+    ui->tab_employes->setModel(tmp_employe.afficher());
+    employe_refreshStats();
+}
+
+void MainWindow::employe_setupStatsUI()
+{
+    QVBoxLayout *mainLayout = new QVBoxLayout(ui->gb_stats);
+    mainLayout->setSpacing(20);
+    mainLayout->setContentsMargins(20, 20, 20, 20);
+
+    QHBoxLayout *pieLayout = new QHBoxLayout();
+
+    employe_chartViewGenre = new QChartView();
+    employe_chartViewGenre->setRenderHint(QPainter::Antialiasing);
+    employe_chartViewGenre->setMinimumHeight(300);
+
+    employe_chartViewPoste = new QChartView();
+    employe_chartViewPoste->setRenderHint(QPainter::Antialiasing);
+    employe_chartViewPoste->setMinimumHeight(300);
+
+    pieLayout->addWidget(employe_chartViewGenre);
+    pieLayout->addWidget(employe_chartViewPoste);
+    mainLayout->addLayout(pieLayout);
+
+    employe_chartViewSalaire = new QChartView();
+    employe_chartViewSalaire->setRenderHint(QPainter::Antialiasing);
+    employe_chartViewSalaire->setMinimumHeight(350);
+    mainLayout->addWidget(employe_chartViewSalaire);
+
+    ui->gb_stats->setLayout(mainLayout);
+}
+
+void MainWindow::employe_refreshStats()
+{
+    QChart *cGenre = tmp_employe.createGenreChart();
+    QChart *cPoste = tmp_employe.createPosteChart();
+    QChart *cSalaire = tmp_employe.createSalaireChart();
+    
+    QChart *oldCGenre = employe_chartViewGenre->chart();
+    QChart *oldCPoste = employe_chartViewPoste->chart();
+    QChart *oldCSalaire = employe_chartViewSalaire->chart();
+
+    employe_chartViewGenre->setChart(cGenre);
+    employe_chartViewPoste->setChart(cPoste);
+    employe_chartViewSalaire->setChart(cSalaire);
+    
+    // Memory cleanup
+    if(oldCGenre) delete oldCGenre;
+    if(oldCPoste) delete oldCPoste;
+    if(oldCSalaire) delete oldCSalaire;
+}
+
+void MainWindow::employe_onGenererContratClicked()
+{
+    // 1. Vérifier si un employé a été sélectionné dans le tableau 
+    // (s'il est sélectionné, le champ CIN est rempli)
+    QString cin = ui->le_cin->text();
+    if (cin.isEmpty()) {
+        QMessageBox::warning(this, "Sélection requise", "Veuillez d'abord sélectionner un employé dans le tableau pour générer son contrat.");
+        return;
+    }
+
+    // 2. Récupérer les données de l'employé depuis les champs existants
+    QString nom     = ui->le_nom->text();
+    QString prenom  = ui->le_prenom->text();
+    QString poste   = ui->cb_poste->currentText();
+    double  salaire = ui->le_salaire->text().replace(",", ".").toDouble();
+    QDate   dateEmb = ui->de_embauche->date();
+
+    // 3. Récupérer les données spécifiques au contrat depuis la groupBox gb_contrat
+    QString typeContrat = ui->cb_type_contrat_emp->currentText();
+    int periodeEssai    = ui->sb_periode_essai_emp->value();
+    QString lieuTravail = ui->le_lieu_travail_emp->text();
+
+    if (lieuTravail.isEmpty()) {
+        QMessageBox::warning(this, "Champ vide", "Veuillez préciser le lieu de travail.");
+        return;
+    }
+
+    // 4. Demander où enregistrer le PDF
+    QString nomFichierDefaut = QString("Contrat_%1_%2_%3.pdf").arg(typeContrat, nom, prenom);
+    QString filePath = QFileDialog::getSaveFileName(this, "Enregistrer le contrat", nomFichierDefaut, "PDF (*.pdf)");
+    
+    if (filePath.isEmpty()) return; // L'utilisateur a annulé
+
+    // 5. Générer le document
+    if (tmp_employe.genererContratPDF(filePath, cin, nom, prenom, poste, salaire, dateEmb, typeContrat, periodeEssai, lieuTravail)) {
+        QMessageBox::information(this, "Succès", "Le contrat de travail a été généré et sauvegardé avec succès !");
+    } else {
+        QMessageBox::critical(this, "Erreur", "Une erreur est survenue lors de la création du PDF.");
+    }
+}
+
+// =========================================================
 // ===                  MODULE CLIENT                    ===
 // =========================================================
 
-void Client::onBtnAjouterClicked() {
+void MainWindow::rafraichirAffichage()
+{
+    QString sql = "SELECT ID_CLIENT, NOM_CLIENT, VILLE, CODE_POSTAL, NUM_TEL, PDG, ADRESSE FROM CLIENT";
+    if (!currentFilter.isEmpty()) {
+        sql += " WHERE " + currentFilter;
+    }
+
+    model->setQuery(sql, QSqlDatabase::database());
+
+    model->setHeaderData(0, Qt::Horizontal, "ID Client");
+    model->setHeaderData(1, Qt::Horizontal, "Nom Client");
+    model->setHeaderData(2, Qt::Horizontal, "Ville");
+    model->setHeaderData(3, Qt::Horizontal, "Code Postal");
+    model->setHeaderData(4, Qt::Horizontal, "Num Tel");
+    model->setHeaderData(5, Qt::Horizontal, "Responsable");
+    model->setHeaderData(6, Qt::Horizontal, "Adresse");
+
+    if (model->lastError().isValid()) {
+        qDebug() << "Erreur requête Client:" << model->lastError().text();
+    }
+}
+
+bool MainWindow::verifierSaisie()
+{
+    QString id = ui->le_id_client->text();
+    QString nom = ui->le_nom_client->text();
+    QString tel = ui->le_tel_client->text();
+    QString adr = ui->le_adresse_client->text();
+    QString responsable = ui->le_responsable_client->text();
+    QString cp = ui->dsb_codepostal_client->text();
+
+    if (id.isEmpty() || nom.isEmpty() || tel.isEmpty() || adr.isEmpty() || responsable.isEmpty() || cp.isEmpty()) {
+        QMessageBox::warning(this, "Champs vides", "Veuillez remplir tous les champs du formulaire.");
+        return false;
+    }
+
+    QRegularExpression rxNom("^[A-Za-zÀ-ÿ\\s]+$");
+    if (!rxNom.match(nom).hasMatch()) {
+        QMessageBox::warning(this, "Erreur Nom", "Le nom ne doit contenir que des lettres.");
+        return false;
+    }
+
+    QRegularExpression rxTel("^[0-9]{8}$");
+    if (!rxTel.match(tel).hasMatch()) {
+        QMessageBox::warning(this, "Erreur Téléphone", "Le numéro de téléphone doit contenir 8 chiffres.");
+        return false;
+    }
+
+    if (id.toInt() <= 0) {
+        QMessageBox::warning(this, "Erreur ID", "L'ID doit être un nombre positif.");
+        return false;
+    }
+
+    QRegularExpression rxCP("^[0-9]+$");
+    if (!rxCP.match(cp).hasMatch()) {
+        QMessageBox::warning(this, "Erreur Code Postal", "Le code postal doit être numérique.");
+        return false;
+    }
+
+    return true;
+}
+
+bool MainWindow::reaffecterIdClientDansRelations(int oldId, int newId)
+{
+    QSqlQuery q(QSqlDatabase::database());
+
+    q.prepare("UPDATE CONTRAT SET ID_CLIENT = :newId WHERE ID_CLIENT = :oldId");
+    q.bindValue(":newId", newId);
+    q.bindValue(":oldId", oldId);
+    if (!q.exec()) {
+        QMessageBox::critical(this, "Erreur de base de données", "Échec de la mise à jour des contrats :\n" + q.lastError().text());
+        return false;
+    }
+
+    q.prepare("UPDATE PRODUIT SET ID_CLIENT = :newId WHERE ID_CLIENT = :oldId");
+    q.bindValue(":newId", newId);
+    q.bindValue(":oldId", oldId);
+    if (!q.exec()) {
+        QMessageBox::critical(this, "Erreur de base de données", "Échec de la mise à jour des produits :\n" + q.lastError().text());
+        return false;
+    }
+
+    return true;
+}
+
+void MainWindow::onTableClicked(const QModelIndex &index)
+{
+    int r = index.row();
+    selectedClientId = model->data(model->index(r, 0)).toInt();
+    ui->le_id_client->setText(model->data(model->index(r, 0)).toString());
+    ui->le_nom_client->setText(model->data(model->index(r, 1)).toString());
+    ui->cb_ville_client->setCurrentText(model->data(model->index(r, 2)).toString());
+    ui->dsb_codepostal_client->setText(model->data(model->index(r, 3)).toString());
+    ui->le_tel_client->setText(model->data(model->index(r, 4)).toString());
+    ui->le_responsable_client->setText(model->data(model->index(r, 5)).toString());
+    ui->le_adresse_client->setText(model->data(model->index(r, 6)).toString());
+}
+
+void MainWindow::onRechercheTextChanged(const QString &text)
+{
+    if (text.isEmpty()) {
+        currentFilter.clear();
+    } else {
+        currentFilter = QString("UPPER(NOM_CLIENT) LIKE UPPER('%%1%')").arg(text);
+    }
+    rafraichirAffichage();
+}
+
+void MainWindow::onBtnAjouterClicked() {
     if(!verifierSaisie()) return;
 
     QSqlQuery query;
@@ -1818,7 +3203,7 @@ void Client::onBtnAjouterClicked() {
     }
 }
 
-void Client::onBtnModifierClicked() {
+void MainWindow::onBtnModifierClicked() {
     if(!verifierSaisie()) return;
 
     if (selectedClientId == -1) {
@@ -1835,27 +3220,82 @@ void Client::onBtnModifierClicked() {
     }
 
     QSqlQuery query(db);
-    query.prepare("UPDATE CLIENT SET ID_CLIENT=:newId, NOM_CLIENT=:nom, VILLE=:ville, CODE_POSTAL=:cp, NUM_TEL=:tel, PDG=:pdg, ADRESSE=:adr WHERE ID_CLIENT=:oldId");
 
-    query.bindValue(":newId", newId);
-    query.bindValue(":oldId", selectedClientId);
-    query.bindValue(":nom", ui->le_nom_client->text());
-    query.bindValue(":ville", ui->cb_ville_client->currentText());
-    query.bindValue(":cp", ui->dsb_codepostal_client->text());
-    query.bindValue(":tel", ui->le_tel_client->text());
-    query.bindValue(":pdg", ui->le_responsable_client->text());
-    query.bindValue(":adr", ui->le_adresse_client->text());
+    if (newId == selectedClientId) {
+        query.prepare("UPDATE CLIENT SET NOM_CLIENT=:nom, VILLE=:ville, CODE_POSTAL=:cp, NUM_TEL=:tel, PDG=:pdg, ADRESSE=:adr WHERE ID_CLIENT=:id");
+        query.bindValue(":id", selectedClientId);
+        query.bindValue(":nom", ui->le_nom_client->text());
+        query.bindValue(":ville", ui->cb_ville_client->currentText());
+        query.bindValue(":cp", ui->dsb_codepostal_client->text());
+        query.bindValue(":tel", ui->le_tel_client->text());
+        query.bindValue(":pdg", ui->le_responsable_client->text());
+        query.bindValue(":adr", ui->le_adresse_client->text());
 
-    if(!query.exec()) {
-        db.rollback();
-        QMessageBox::critical(nullptr, "Erreur de base de données", 
-                              "Erreur lors de la modification :\n" + query.lastError().text());
-        return;
-    }
+        if(!query.exec()) {
+            db.rollback();
+            QMessageBox::critical(nullptr, "Erreur de base de données",
+                                  "Erreur lors de la modification :\n" + query.lastError().text());
+            return;
+        }
+    } else {
+        // Oracle does not support ON UPDATE CASCADE; migrate to a new row then move child records.
+        query.prepare("SELECT COUNT(*) FROM CLIENT WHERE ID_CLIENT = :id");
+        query.bindValue(":id", newId);
+        if (!query.exec() || !query.next()) {
+            db.rollback();
+            QMessageBox::critical(nullptr, "Erreur de base de données",
+                                  "Impossible de vérifier le nouvel ID client :\n" + query.lastError().text());
+            return;
+        }
+        if (query.value(0).toInt() > 0) {
+            db.rollback();
+            QMessageBox::warning(nullptr, "ID déjà utilisé",
+                                 "Ce nouvel ID client existe déjà. Veuillez choisir un autre ID.");
+            return;
+        }
 
-    if (!reaffecterIdClientDansRelations(selectedClientId, newId)) {
-        db.rollback();
-        return;
+        int pointsFidelite = 0;
+        query.prepare("SELECT POINT_DE_FIDELITE FROM CLIENT WHERE ID_CLIENT = :oldId");
+        query.bindValue(":oldId", selectedClientId);
+        if (!query.exec() || !query.next()) {
+            db.rollback();
+            QMessageBox::critical(nullptr, "Erreur de base de données",
+                                  "Impossible de lire le client actuel :\n" + query.lastError().text());
+            return;
+        }
+        pointsFidelite = query.value(0).toInt();
+
+        query.prepare("INSERT INTO CLIENT (ID_CLIENT, NOM_CLIENT, VILLE, CODE_POSTAL, NUM_TEL, PDG, ADRESSE, POINT_DE_FIDELITE) "
+                      "VALUES (:id, :nom, :ville, :cp, :tel, :pdg, :adr, :points)");
+        query.bindValue(":id", newId);
+        query.bindValue(":nom", ui->le_nom_client->text());
+        query.bindValue(":ville", ui->cb_ville_client->currentText());
+        query.bindValue(":cp", ui->dsb_codepostal_client->text());
+        query.bindValue(":tel", ui->le_tel_client->text());
+        query.bindValue(":pdg", ui->le_responsable_client->text());
+        query.bindValue(":adr", ui->le_adresse_client->text());
+        query.bindValue(":points", pointsFidelite);
+
+        if (!query.exec()) {
+            db.rollback();
+            QMessageBox::critical(nullptr, "Erreur de base de données",
+                                  "Impossible de créer le client avec le nouvel ID :\n" + query.lastError().text());
+            return;
+        }
+
+        if (!reaffecterIdClientDansRelations(selectedClientId, newId)) {
+            db.rollback();
+            return;
+        }
+
+        query.prepare("DELETE FROM CLIENT WHERE ID_CLIENT = :oldId");
+        query.bindValue(":oldId", selectedClientId);
+        if (!query.exec()) {
+            db.rollback();
+            QMessageBox::critical(nullptr, "Erreur de base de données",
+                                  "Impossible de supprimer l'ancien client :\n" + query.lastError().text());
+            return;
+        }
     }
 
     if (!db.commit()) {
@@ -1868,7 +3308,7 @@ void Client::onBtnModifierClicked() {
     rafraichirAffichage();
 }
 
-void Client::onBtnSupprimerClicked() {
+void MainWindow::onBtnSupprimerClicked() {
     int row = ui->tab_clients->currentIndex().row();
     if(row < 0) {
         QMessageBox::warning(nullptr, "Sélection", "Veuillez sélectionner un client dans le tableau.");

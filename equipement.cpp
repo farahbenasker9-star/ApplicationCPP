@@ -35,8 +35,19 @@ Equipement::Equipement(const QString &cin,
 // ─── Méthode AJOUTER ─────────────────────────────────────────────────────────
 bool Equipement::ajouter()
 {
-    QSqlQuery query;
+    last_error.clear();
 
+    auto bindCommon = [&](QSqlQuery &q) {
+        q.bindValue(":cin",    cin.isEmpty() ? QVariant(QVariant::String) : QVariant(cin));
+        q.bindValue(":type",   equipment_type);
+        q.bindValue(":fab",    fabricant);
+        q.bindValue(":statut", statut);
+        q.bindValue(":last",   date_der_maint.isValid() ? QVariant(date_der_maint) : QVariant(QVariant::DateTime));
+        q.bindValue(":next",   date_suiv_maint.isValid() ? QVariant(date_suiv_maint) : QVariant(QVariant::DateTime));
+        q.bindValue(":notes",  notes);
+    };
+
+    QSqlQuery query;
     query.prepare(
         "INSERT INTO EQUIPMENT "
         "  (EQUIPMENT_ID, CIN, EQUIPMENT_TYPE, FABRICANT, STATUT, "
@@ -45,18 +56,42 @@ bool Equipement::ajouter()
         "  (SEQ_EQUIPMENT.NEXTVAL, :cin, :type, :fab, :statut, "
         "   :last, :next, :notes)"
     );
-
-    query.bindValue(":cin",    cin.isEmpty() ? QVariant(QVariant::String) : QVariant(cin));
-    query.bindValue(":type",   equipment_type);
-    query.bindValue(":fab",    fabricant);
-    query.bindValue(":statut", statut);
-    query.bindValue(":last",   date_der_maint);
-    query.bindValue(":next",   date_suiv_maint);
-    query.bindValue(":notes",  notes);
+    bindCommon(query);
 
     if (!query.exec()) {
-        qDebug() << "Erreur ajouter equipement:" << query.lastError().text();
-        return false;
+        last_error = query.lastError().text();
+
+        // Fallback for schemas where SEQ_EQUIPMENT does not exist.
+        if (last_error.contains("ORA-02289", Qt::CaseInsensitive) ||
+            last_error.contains("SEQ_EQUIPMENT", Qt::CaseInsensitive)) {
+            QSqlQuery qId;
+            if (!qId.exec("SELECT NVL(MAX(EQUIPMENT_ID), 0) + 1 FROM EQUIPMENT") || !qId.next()) {
+                last_error = qId.lastError().text();
+                qDebug() << "Erreur ajouter equipement (fallback id):" << last_error;
+                return false;
+            }
+
+            const int nextId = qId.value(0).toInt();
+            QSqlQuery qInsert;
+            qInsert.prepare(
+                "INSERT INTO EQUIPMENT "
+                "  (EQUIPMENT_ID, CIN, EQUIPMENT_TYPE, FABRICANT, STATUT, "
+                "   DATE_DER_MAINT, DATE_SUIV_MAINT, NOTES) "
+                "VALUES "
+                "  (:id, :cin, :type, :fab, :statut, :last, :next, :notes)"
+            );
+            qInsert.bindValue(":id", nextId);
+            bindCommon(qInsert);
+
+            if (!qInsert.exec()) {
+                last_error = qInsert.lastError().text();
+                qDebug() << "Erreur ajouter equipement (fallback insert):" << last_error;
+                return false;
+            }
+        } else {
+            qDebug() << "Erreur ajouter equipement:" << last_error;
+            return false;
+        }
     }
 
     qDebug() << "Équipement ajouté avec succès.";
@@ -137,6 +172,7 @@ QSqlQueryModel * Equipement::rechercher(const QString &texte) const
 bool Equipement::modifier(int old_id)
 {
     QSqlQuery query;
+    last_error.clear();
 
     query.prepare(
         "UPDATE EQUIPMENT SET "
@@ -154,16 +190,22 @@ bool Equipement::modifier(int old_id)
     query.bindValue(":type",   equipment_type);
     query.bindValue(":fab",    fabricant);
     query.bindValue(":statut", statut);
-    query.bindValue(":last",   date_der_maint);
-    query.bindValue(":next",   date_suiv_maint);
+    query.bindValue(":last",   date_der_maint.isValid() ? QVariant(date_der_maint) : QVariant(QVariant::DateTime));
+    query.bindValue(":next",   date_suiv_maint.isValid() ? QVariant(date_suiv_maint) : QVariant(QVariant::DateTime));
     query.bindValue(":notes",  notes);
     query.bindValue(":old_id", old_id);
 
     if (!query.exec()) {
-        qDebug() << "Erreur modification equipement:" << query.lastError().text();
+        last_error = query.lastError().text();
+        qDebug() << "Erreur modification equipement:" << last_error;
         return false;
     }
     return true;
+}
+
+QString Equipement::getLastError() const
+{
+    return last_error;
 }
 
 // ─── Méthode SUPPRIMER ───────────────────────────────────────────────────────
@@ -276,4 +318,189 @@ bool Equipement::validerCoherenceCinStatut(const QString &cin, const QString &st
     if (!cinSelected && statut != "Disponible")  return false;
     if (cinSelected  && statut == "Disponible")  return false;
     return true;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  EquipementDelegate  —  implementation
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── Constructor ─────────────────────────────────────────────────────────────
+EquipementDelegate::EquipementDelegate(QAbstractItemView *parentView,
+                                       QObject           *parent)
+    : QStyledItemDelegate(parent)
+    , m_view(parentView)
+    , m_flickerTimer(new QTimer(this))
+{
+    // The timer fires every 500 ms.  It is only started when a "today" row is
+    // detected during a paint pass, and stopped the moment none are visible.
+    m_flickerTimer->setInterval(500);
+    // Lambda connection: no Q_OBJECT/slot needed on EquipementDelegate.
+    connect(m_flickerTimer, &QTimer::timeout, [this]() {
+        onFlickerTimeout();
+    });
+
+    // FIX: start the timer unconditionally so "today" rows flicker from the
+    // first paint pass. The timer is cheap — one bool toggle + viewport update
+    // every 500 ms — and the auto-stop logic in onFlickerTimeout() will halt it
+    // when no "today" row is visible anyway.
+    m_flickerTimer->start();
+}
+
+// ─── parseDateFromVariant ─────────────────────────────────────────────────────
+//  Oracle's QOCI driver typically returns DATE columns as QDateTime.
+//  However, if the column comes through a string path (cast, view, etc.) we
+//  also attempt a handful of common date-string formats.
+QDate EquipementDelegate::parseDateFromVariant(const QVariant &v)
+{
+    // Fast path: already a QDateTime
+    if (v.type() == QVariant::DateTime) {
+        QDateTime dt = v.toDateTime();
+        if (dt.isValid()) return dt.date();
+    }
+
+    // Second path: already a QDate
+    if (v.type() == QVariant::Date) {
+        QDate d = v.toDate();
+        if (d.isValid()) return d;
+    }
+
+    // Fallback: try converting via QDateTime
+    QDateTime dt = v.toDateTime();
+    if (dt.isValid()) return dt.date();
+
+    // Last resort: string parsing
+    const QString s = v.toString().trimmed();
+    if (s.isEmpty()) return QDate();
+
+    static const QStringList fmts = {
+        "yyyy-MM-dd HH:mm:ss",
+        "dd/MM/yyyy HH:mm:ss",
+        "dd-MM-yyyy HH:mm:ss",
+        "yyyy-MM-dd",
+        "dd/MM/yyyy",
+        "dd-MM-yyyy",
+        "MM/dd/yyyy"
+    };
+    for (const QString &fmt : fmts) {
+        QDateTime parsed = QDateTime::fromString(s, fmt);
+        if (parsed.isValid()) return parsed.date();
+    }
+
+    return QDate();   // invalid — no colour applied
+}
+
+// ─── paint ───────────────────────────────────────────────────────────────────
+void EquipementDelegate::paint(QPainter                   *painter,
+                               const QStyleOptionViewItem &option,
+                               const QModelIndex          &index) const
+{
+    // ── 1. Read DATE_SUIV_MAINT from column 7 of this row ────────────────────
+    const QModelIndex nextIdx =
+        index.model()
+             ? index.model()->index(index.row(), COL_NEXT_MAINT)
+             : QModelIndex();
+
+    QDate maintDate;
+    if (nextIdx.isValid()) {
+        maintDate = parseDateFromVariant(nextIdx.data(Qt::EditRole));
+        if (!maintDate.isValid())
+            maintDate = parseDateFromVariant(nextIdx.data(Qt::DisplayRole));
+    }
+
+    // ── 2. Choose background colour ──────────────────────────────────────────
+    static const QColor COLOR_FUTURE  (168, 213, 168);   // soft green
+    static const QColor COLOR_PAST    (244, 160, 160);   // soft red
+    static const QColor COLOR_TODAY_A (255, 238,   0);   // bright yellow
+    static const QColor COLOR_TODAY_B (184, 148,   0);   // dark amber
+
+    QColor bgColor;
+    bool   isToday = false;
+
+    if (maintDate.isValid()) {
+        const QDate today = QDate::currentDate();
+        if      (maintDate > today) { bgColor = COLOR_FUTURE; }
+        else if (maintDate < today) { bgColor = COLOR_PAST;   }
+        else {
+            bgColor = m_flickerOn ? COLOR_TODAY_A : COLOR_TODAY_B;
+            isToday  = true;
+        }
+    }
+
+    if (isToday) m_hasTodayRow = true;
+
+    // ── 3. Paint background then let Qt render the cell content ─────────────
+    //
+    // Strategy:
+    //   a) Fill our custom background colour first.
+    //   b) Remove State_Selected from the option so Qt's drawControl() does NOT
+    //      overwrite our background with the palette highlight colour.
+    //   c) Call QStyledItemDelegate::paint() — it will draw text, icons,
+    //      checkboxes etc. on top of our background.  Text is drawn correctly
+    //      for every data type (int, string, QDateTime) this way.
+    //   d) If the row was actually selected, draw a semi-transparent selection
+    //      overlay on top so the selection is still visible.
+
+    QStyleOptionViewItem opt = option;
+    initStyleOption(&opt, index);
+
+    painter->save();
+
+    if (bgColor.isValid()) {
+        // (a) Fill custom background (darken a little for selected rows)
+        QColor fillBg = bgColor;
+        bool selected = (opt.state & QStyle::State_Selected);
+        if (selected) fillBg = bgColor.darker(125);
+        painter->fillRect(opt.rect, fillBg);
+
+        // (b) Strip selection + alternate so Qt doesn't re-paint background
+        opt.state  &= ~QStyle::State_Selected;
+        opt.state  &= ~QStyle::State_HasFocus;      // redraw focus rect manually
+        opt.features &= ~QStyleOptionViewItem::Alternate;
+        // Make the background brush transparent so CE_ItemViewItem background
+        // pass becomes a no-op on top of what we just painted.
+        opt.backgroundBrush = QBrush(Qt::transparent);
+
+        // (c) Let the style draw decorations + text with correct formatting
+        painter->restore();                 // restore before calling super
+        QStyledItemDelegate::paint(painter, opt, index);
+        painter->save();
+
+        // (d) Subtle selection overlay so the selected row is still obvious
+        if (selected) {
+            QColor overlay(0, 0, 0, 40);   // semi-transparent black wash
+            painter->fillRect(opt.rect, overlay);
+        }
+    } else {
+        // No valid date — fall back to full default rendering (no colour)
+        painter->restore();
+        QStyledItemDelegate::paint(painter, option, index);
+        return;
+    }
+
+    painter->restore();
+}
+
+// ─── onFlickerTimeout ────────────────────────────────────────────────────────
+void EquipementDelegate::onFlickerTimeout()
+{
+    m_flickerOn    = !m_flickerOn;
+    m_hasTodayRow  = false;   // reset; paint() will set it back if needed
+
+    // Repaint the whole viewport so all "today" rows refresh simultaneously.
+    if (m_view && m_view->viewport())
+        m_view->viewport()->update();
+
+    // After the repaint pass, m_hasTodayRow will have been updated by paint().
+    // If no "today" row was painted, stop the timer to save resources.
+    // We check on the *next* timeout cycle to avoid a race between timer and
+    // paint — use a single-shot delayed check.
+    QTimer::singleShot(50, this, [this]() {
+        if (!m_hasTodayRow && m_flickerTimer->isActive())
+            m_flickerTimer->stop();
+    });
+
+    // If a today row is present and the timer has somehow been stopped, restart.
+    if (m_hasTodayRow && !m_flickerTimer->isActive())
+        m_flickerTimer->start();
 }

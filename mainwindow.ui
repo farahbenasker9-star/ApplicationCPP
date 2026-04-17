@@ -1796,7 +1796,7 @@ QTabBar::tab:hover {
 }</string>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="tab_stats_client_4">
          <attribute name="title">
@@ -1845,6 +1845,120 @@ QGroupBox::title {
          <attribute name="title">
           <string>Assignation Optimale (AI)</string>
          </attribute>
+         <widget class="QGroupBox" name="gb_stats_equipement_2">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>-10</y>
+            <width>341</width>
+            <height>591</height>
+           </rect>
+          </property>
+          <property name="font">
+           <font>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"> /* --- 2. LE CADRE FORMULAIRE &amp; STATISTIQUES (Verre Blanc) --- */
+QGroupBox {
+    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilité) */
+    background-color: rgba(255, 255, 255, 210); 
+    border: 1px solid rgba(0, 0, 0, 20); /* Bordure grise subtile */
+    border-radius: 15px;
+    margin-top: 25px; 
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 20px;
+    color: #2E7D32; /* Vert Foncé EcoCycle pour le contraste sur blanc */
+    font-weight: bold;
+    font-size: 16px;
+    background-color: transparent;
+}</string>
+          </property>
+          <property name="title">
+           <string/>
+          </property>
+          <widget class="QLabel" name="labelNomEquipement_2">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>40</y>
+             <width>171</width>
+             <height>17</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Type d'équipement voulu</string>
+           </property>
+          </widget>
+          <widget class="QComboBox" name="Eq_type_2">
+           <property name="geometry">
+            <rect>
+             <x>180</x>
+             <y>30</y>
+             <width>117</width>
+             <height>40</height>
+            </rect>
+           </property>
+           <item>
+            <property name="text">
+             <string>-</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Ordinateur</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Imprimante</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Scanner</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Projecteur</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Téléphone</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Aspirateur</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Camionnette</string>
+            </property>
+           </item>
+          </widget>
+          <widget class="QPlainTextEdit" name="plainTextEdit">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>260</y>
+             <width>321</width>
+             <height>311</height>
+            </rect>
+           </property>
+           <property name="placeholderText">
+            <string>Bonjour, Veuillez selectionner un type d'equipement pour commencer l'analyse</string>
+           </property>
+          </widget>
+         </widget>
         </widget>
        </widget>
        <widget class="QGroupBox" name="infoGroupBox_5">
@@ -2347,16 +2461,6 @@ QGroupBox::title {
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QPushButton" name="btn_mailing_2">
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(170, 0, 255);</string>
-           </property>
-           <property name="text">
-            <string>Analyse Notes AI</string>
-           </property>
-          </widget>
-         </item>
         </layout>
        </widget>
       </widget>
@@ -2547,7 +2651,7 @@ QTabBar::tab:hover {
          <rect>
           <x>0</x>
           <y>50</y>
-          <width>261</width>
+          <width>201</width>
           <height>651</height>
          </rect>
         </property>
@@ -2736,190 +2840,15 @@ font: 700 9pt &quot;Segoe UI&quot;;</string>
          </item>
         </layout>
        </widget>
-       <widget class="QTabWidget" name="tabWidget_Stock">
-        <property name="geometry">
-         <rect>
-          <x>860</x>
-          <y>40</y>
-          <width>471</width>
-          <height>661</height>
-         </rect>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">font: 12pt &quot;Segoe UI&quot;;
-font: 700 9pt &quot;Segoe UI&quot;;
-background-color: rgb(200, 221, 211); border-radius: 15px;</string>
-        </property>
-        <property name="currentIndex">
-         <number>0</number>
-        </property>
-        <widget class="QWidget" name="tab_stats_3">
-         <attribute name="title">
-          <string>Statistiques</string>
-         </attribute>
-        </widget>
-        <widget class="QWidget" name="tab_historique">
-         <attribute name="title">
-          <string>Historique</string>
-         </attribute>
-        </widget>
-        <widget class="QWidget" name="tab_finance">
-         <attribute name="title">
-          <string>Valorisation Financiére</string>
-         </attribute>
-        </widget>
-       </widget>
        <widget class="QTableView" name="tab_produit">
         <property name="geometry">
          <rect>
-          <x>270</x>
+          <x>210</x>
           <y>190</y>
-          <width>581</width>
+          <width>591</width>
           <height>461</height>
          </rect>
         </property>
-       </widget>
-       <widget class="QGroupBox" name="groupBox_3">
-        <property name="geometry">
-         <rect>
-          <x>270</x>
-          <y>50</y>
-          <width>581</width>
-          <height>131</height>
-         </rect>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">font: 12pt &quot;Segoe UI&quot;;
-font: 700 9pt &quot;Segoe UI&quot;;</string>
-        </property>
-        <property name="title">
-         <string>Recherche et Tri</string>
-        </property>
-        <widget class="QLabel" name="label_2">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>40</y>
-           <width>151</width>
-           <height>20</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Rechercher par :&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-        <widget class="QLineEdit" name="lineEdit">
-         <property name="geometry">
-          <rect>
-           <x>122</x>
-           <y>30</y>
-           <width>131</width>
-           <height>41</height>
-          </rect>
-         </property>
-        </widget>
-        <widget class="QComboBox" name="cb_chercher">
-         <property name="geometry">
-          <rect>
-           <x>270</x>
-           <y>30</y>
-           <width>131</width>
-           <height>41</height>
-          </rect>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">font: 9pt &quot;Segoe UI&quot;;</string>
-         </property>
-         <item>
-          <property name="text">
-           <string>ID</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Type</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Statut</string>
-          </property>
-         </item>
-        </widget>
-        <widget class="QPushButton" name="btn_chercher">
-         <property name="geometry">
-          <rect>
-           <x>432</x>
-           <y>30</y>
-           <width>141</width>
-           <height>41</height>
-          </rect>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">background-color: rgb(0, 121, 58);
-background-color: rgb(254, 164, 0);</string>
-         </property>
-         <property name="text">
-          <string>Chercher</string>
-         </property>
-        </widget>
-        <widget class="QLabel" name="label_3">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>80</y>
-           <width>121</width>
-           <height>31</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Trier par :&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-        <widget class="QComboBox" name="cb_trier">
-         <property name="geometry">
-          <rect>
-           <x>270</x>
-           <y>80</y>
-           <width>131</width>
-           <height>41</height>
-          </rect>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">font: 9pt &quot;Segoe UI&quot;;</string>
-         </property>
-         <item>
-          <property name="text">
-           <string>Date</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Poids</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Prix</string>
-          </property>
-         </item>
-        </widget>
-        <widget class="QPushButton" name="btn_trier_2">
-         <property name="geometry">
-          <rect>
-           <x>432</x>
-           <y>80</y>
-           <width>141</width>
-           <height>41</height>
-          </rect>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">background-color: rgb(255, 165, 0);</string>
-         </property>
-         <property name="text">
-          <string>Trier</string>
-         </property>
-        </widget>
        </widget>
        <widget class="QLabel" name="label_75">
         <property name="geometry">
@@ -2947,7 +2876,7 @@ background-color: rgb(254, 164, 0);</string>
        <widget class="QPushButton" name="btn_ajouter_produit">
         <property name="geometry">
          <rect>
-          <x>270</x>
+          <x>210</x>
           <y>660</y>
           <width>121</width>
           <height>41</height>
@@ -2963,7 +2892,7 @@ background-color: rgb(254, 164, 0);</string>
        <widget class="QPushButton" name="btn_modifier_produit">
         <property name="geometry">
          <rect>
-          <x>400</x>
+          <x>340</x>
           <y>660</y>
           <width>121</width>
           <height>41</height>
@@ -2980,7 +2909,7 @@ background-color: rgb(30, 136, 229);</string>
        <widget class="QPushButton" name="btn_supprimer_produit">
         <property name="geometry">
          <rect>
-          <x>530</x>
+          <x>470</x>
           <y>660</y>
           <width>121</width>
           <height>39</height>
@@ -2993,12 +2922,12 @@ background-color: rgb(30, 136, 229);</string>
          <string>SUPPRIMER</string>
         </property>
        </widget>
-       <widget class="QPushButton" name="btn_pdf_3">
+       <widget class="QPushButton" name="btn_pdf_produit">
         <property name="geometry">
          <rect>
-          <x>700</x>
+          <x>660</x>
           <y>660</y>
-          <width>151</width>
+          <width>131</width>
           <height>41</height>
          </rect>
         </property>
@@ -3008,6 +2937,738 @@ background-color: rgb(30, 136, 229);</string>
         <property name="text">
          <string>Exporter PDF</string>
         </property>
+       </widget>
+       <widget class="QGroupBox" name="groupBox_3">
+        <property name="geometry">
+         <rect>
+          <x>210</x>
+          <y>50</y>
+          <width>591</width>
+          <height>131</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">font: 12pt &quot;Segoe UI&quot;;
+font: 700 9pt &quot;Segoe UI&quot;;</string>
+        </property>
+        <property name="title">
+         <string>Recherche et Tri</string>
+        </property>
+        <widget class="QLabel" name="label_2">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>40</y>
+           <width>151</width>
+           <height>20</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Rechercher par :&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+        <widget class="QLineEdit" name="le_recherche_3">
+         <property name="geometry">
+          <rect>
+           <x>122</x>
+           <y>30</y>
+           <width>431</width>
+           <height>41</height>
+          </rect>
+         </property>
+         <property name="placeholderText">
+          <string>Rechercher par ID, Statut ou Type...</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_3">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>80</y>
+           <width>121</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Trier par :&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+        <widget class="QComboBox" name="cb_trier">
+         <property name="geometry">
+          <rect>
+           <x>120</x>
+           <y>80</y>
+           <width>311</width>
+           <height>41</height>
+          </rect>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">font: 9pt &quot;Segoe UI&quot;;</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>Date</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Poids</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Prix</string>
+          </property>
+         </item>
+        </widget>
+        <widget class="QPushButton" name="btn_trier_2">
+         <property name="geometry">
+          <rect>
+           <x>440</x>
+           <y>80</y>
+           <width>111</width>
+           <height>41</height>
+          </rect>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color: rgb(255, 165, 0);</string>
+         </property>
+         <property name="text">
+          <string>Trier</string>
+         </property>
+        </widget>
+       </widget>
+       <widget class="QTabWidget" name="tabWidget_Stock">
+        <property name="geometry">
+         <rect>
+          <x>810</x>
+          <y>40</y>
+          <width>511</width>
+          <height>661</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">font: 12pt &quot;Segoe UI&quot;;
+font: 700 9pt &quot;Segoe UI&quot;;
+background-color: rgb(200, 221, 211); border-radius: 15px;</string>
+        </property>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="btn_stats_onglet">
+         <attribute name="title">
+          <string>Statistiques</string>
+         </attribute>
+         <widget class="QWidget" name="container_stats" native="true">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>491</width>
+            <height>621</height>
+           </rect>
+          </property>
+         </widget>
+        </widget>
+        <widget class="QWidget" name="tab_historique">
+         <attribute name="title">
+          <string>Historique</string>
+         </attribute>
+         <widget class="QTabWidget" name="tabWidget_sub_hist">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>10</y>
+            <width>491</width>
+            <height>601</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">/* 1. On supprime totalement le cadre (le pane) pour un look aéré */
+QTabWidget#tabWidget_sub_hist::pane {
+    border: none;
+    background-color: #ffffff;
+    border-radius: 15px;
+    margin-top: 10px; /* Espace entre les boutons et le contenu */
+}
+
+/* 2. On rend la barre d'onglets transparente */
+QTabWidget#tabWidget_sub_hist QTabBar {
+    background-color: transparent;
+}
+
+/* 3. Le style des &quot;Capsules&quot; non sélectionnées */
+QTabWidget#tabWidget_sub_hist QTabBar::tab {
+    background-color: #f8f9fa; /* Gris très clair */
+    color: #95a5a6;           /* Texte discret */
+    border: 1px solid #e9ecef;
+    padding: 6px 20px;
+    margin-right: 8px;
+    border-radius: 20px;      /* Forme de capsule/pilule */
+    font-size: 12px;
+    min-width: 70px;
+}
+
+/* 4. Effet de survol (Hover) */
+QTabWidget#tabWidget_sub_hist QTabBar::tab:hover {
+    background-color: #f1f2f6;
+    color: #2c3e50;
+    border: 1px solid #dcdde1;
+}
+
+/* 5. La &quot;Capsule Active&quot; (Style innovant) */
+QTabWidget#tabWidget_sub_hist QTabBar::tab:selected {
+    background-color: #2e7d32; /* Vert EcoCycle */
+    color: #ffffff;           /* Texte blanc */
+    font-weight: bold;
+    border: none;
+    /* On ajoute une petite ombre portée pour l'effet flottant */
+    box-shadow: 0 4px 8px rgba(46, 125, 50, 0.3);
+}
+
+/* 6. Pour que le contenu à l'intérieur soit propre */
+QTextBrowser {
+    border: none;
+    background-color: #ffffff;
+}</string>
+          </property>
+          <property name="currentIndex">
+           <number>4</number>
+          </property>
+          <widget class="QWidget" name="tab_3">
+           <attribute name="title">
+            <string>Ajouts</string>
+           </attribute>
+           <widget class="QLineEdit" name="le_search_ajout">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>15</y>
+              <width>451</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QLineEdit {
+    border: 1px solid #BDC3C7;
+    border-radius: 18px; /* Forme de pilule très moderne */
+    padding: 6px 15px 6px 30px; /* Laisse de la place pour une icône à gauche */
+    background-color: white;
+    font-size: 12px;
+}
+
+QLineEdit:focus {
+    border: 2px solid #27ae60; /* Vert quand on clique */
+}</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="placeholderText">
+             <string>🔍 Recherche par ID ou Type... </string>
+            </property>
+           </widget>
+           <widget class="QTextBrowser" name="feed_ajout">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>60</y>
+              <width>451</width>
+              <height>491</height>
+             </rect>
+            </property>
+           </widget>
+          </widget>
+          <widget class="QWidget" name="tab_5">
+           <attribute name="title">
+            <string>Modifs</string>
+           </attribute>
+           <widget class="QLineEdit" name="le_search_modif">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>15</y>
+              <width>451</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QLineEdit {
+    border: 1px solid #BDC3C7;
+    border-radius: 18px; /* Forme de pilule très moderne */
+    padding: 6px 15px 6px 30px; /* Laisse de la place pour une icône à gauche */
+    background-color: white;
+    font-size: 12px;
+}
+
+QLineEdit:focus {
+    border: 2px solid #27ae60; /* Vert quand on clique */
+}</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="placeholderText">
+             <string>🔍 Recherche par ID ou Type... </string>
+            </property>
+           </widget>
+           <widget class="QTextBrowser" name="feed_modif">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>60</y>
+              <width>451</width>
+              <height>491</height>
+             </rect>
+            </property>
+           </widget>
+          </widget>
+          <widget class="QWidget" name="tab_6">
+           <attribute name="title">
+            <string>Suppressions</string>
+           </attribute>
+           <widget class="QLineEdit" name="le_search_suppr">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>15</y>
+              <width>451</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QLineEdit {
+    border: 1px solid #BDC3C7;
+    border-radius: 18px; /* Forme de pilule très moderne */
+    padding: 6px 15px 6px 30px; /* Laisse de la place pour une icône à gauche */
+    background-color: white;
+    font-size: 12px;
+}
+
+QLineEdit:focus {
+    border: 2px solid #27ae60; /* Vert quand on clique */
+}</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="placeholderText">
+             <string>🔍 Recherche par ID ou Type... </string>
+            </property>
+           </widget>
+           <widget class="QTextBrowser" name="feed_suppr">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>60</y>
+              <width>451</width>
+              <height>481</height>
+             </rect>
+            </property>
+           </widget>
+          </widget>
+          <widget class="QWidget" name="tab_7">
+           <attribute name="title">
+            <string>Réservations</string>
+           </attribute>
+           <widget class="QLineEdit" name="le_search_resv">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>15</y>
+              <width>451</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QLineEdit {
+    border: 1px solid #BDC3C7;
+    border-radius: 18px; /* Forme de pilule très moderne */
+    padding: 6px 15px 6px 30px; /* Laisse de la place pour une icône à gauche */
+    background-color: white;
+    font-size: 12px;
+}
+
+QLineEdit:focus {
+    border: 2px solid #27ae60; /* Vert quand on clique */
+}
+</string>
+            </property>
+            <property name="placeholderText">
+             <string>🔍 Recherche par ID ou Type... </string>
+            </property>
+           </widget>
+           <widget class="QTextBrowser" name="feed_resv">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>60</y>
+              <width>451</width>
+              <height>471</height>
+             </rect>
+            </property>
+           </widget>
+          </widget>
+          <widget class="QWidget" name="tab_8">
+           <attribute name="title">
+            <string>Ventes</string>
+           </attribute>
+           <widget class="QLineEdit" name="le_search_vente">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>15</y>
+              <width>451</width>
+              <height>31</height>
+             </rect>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QLineEdit {
+    border: 1px solid #BDC3C7;
+    border-radius: 18px; /* Forme de pilule très moderne */
+    padding: 6px 15px 6px 30px; /* Laisse de la place pour une icône à gauche */
+    background-color: white;
+    font-size: 12px;
+}
+
+QLineEdit:focus {
+    border: 2px solid #27ae60; /* Vert quand on clique */
+}</string>
+            </property>
+            <property name="placeholderText">
+             <string>🔍 Recherche par ID ou Type... </string>
+            </property>
+           </widget>
+           <widget class="QTextBrowser" name="feed_vente">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>60</y>
+              <width>451</width>
+              <height>471</height>
+             </rect>
+            </property>
+           </widget>
+          </widget>
+         </widget>
+        </widget>
+        <widget class="QWidget" name="tab_finance">
+         <property name="styleSheet">
+          <string notr="true">/* --- FOND GLOBAL DE L'ONGLET --- */
+QWidget#tab_finance {
+    background-color: #f8f9fa; /* Gris très clair pour faire ressortir les cadres blancs */
+}
+
+/* --- STYLE GÉNÉRAL DES TEXTES --- */
+QLabel {
+    font-family: &quot;Segoe UI&quot;, Arial, sans-serif;
+    color: #2c3e50;
+    background: transparent;
+}
+
+/* --- CADRES DES INDICATEURS (KPI) --- */
+QFrame#frame_dispo, QFrame#frame_ca {
+    background-color: #ffffff;
+    border: 1px solid #dcdde1;
+    border-radius: 6px;
+}
+
+/* Barre supérieure verte pour le Capital */
+QFrame#frame_dispo {
+    border-top: 4px solid #2e7d32;
+}
+
+/* Barre supérieure bleue pour le Chiffre d'Affaires */
+QFrame#frame_ca {
+    border-top: 4px solid #1565c0;
+}
+
+/* Titres à l'intérieur des cadres (Capital / Chiffre d'affaires) */
+QLabel#label_6, QLabel#label_7, QLabel#lbl_titre_dispo, QLabel#lbl_titre_ca {
+    color: #7f8c8d;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* Valeurs numériques à l'intérieur des cadres */
+QLabel#lbl_val_dispo {
+    color: #1b5e20;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+QLabel#lbl_val_ca {
+    color: #0d47a1;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* --- STYLE DU TABLEAU FINANCIER --- */
+/*QTableWidget {
+    background-color: #ffffff;
+    border: 1px solid #dcdde1;
+    gridline-color: #f1f2f6;
+    alternate-background-color: #fafafa; /* Lignes alternées grises 
+    selection-background-color: #e8f5e9;
+    selection-color: #2e7d32;
+    border-radius: 4px;
+}*/
+
+/* En-tête du tableau (Matière, Unités, etc.) */
+/*QHeaderView::section {
+    background-color: #f1f2f6;
+    color: #444444;
+    padding: 10px;
+    font-weight: bold;
+    font-size: 11px;
+    border: none;
+    border-right: 1px solid #dcdde1;
+    border-bottom: 2px solid #dcdde1;
+    text-transform: uppercase;
+}*/
+/* --- STYLE DU TABLEAU (POLICE DIMINUÉE) --- */
+QTableWidget {
+    background-color: #ffffff;
+    border: 1px solid #dcdde1;
+    gridline-color: #f1f2f6;
+    alternate-background-color: #fcfcfc;
+    
+    /* ON DIMINUE LA TAILLE ICI */
+    font-size: 10px; 
+    color: #2c3e50;
+    outline: none;
+}
+
+/* En-tête du tableau plus compact */
+QHeaderView::section {
+    background-color: #f8f9fa;
+    color: #333333;
+    padding: 6px;
+    font-weight: bold;
+    font-size: 9px; /* En-tête encore plus petit */
+    border: none;
+    border-right: 1px solid #dcdde1;
+    border-bottom: 2px solid #2e7d32;
+    text-transform: uppercase;
+}
+
+/* Style des cellules sélectionnées */
+QTableWidget::item:selected {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+/* --- SECTION ALERTES --- */
+QFrame#frame_alertes {
+    background-color: #fff9db; /* Jaune alerte doux */
+    border: 1px solid #ffe066;
+    border-radius: 6px;
+}
+
+QLabel#label_17, QLabel#lbl_titre_alertes {
+    color: #f59f00; /* Orange foncé pour le titre d'alerte */
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+QListWidget#list_alertes {
+    background-color: transparent;
+    border: none;
+    font-size: 12px;
+    color: #576574;
+}
+/* --- STYLE DU TITRE DE SECTION --- */
+QLabel#lbl_titre_tableau {
+    color: #576574;           /* Gris anthracite discret */
+    font-size: 10px;          /* Petite taille */
+    font-weight: bold;
+    text-transform: uppercase; /* Majuscules professionnelles */
+    letter-spacing: 1px;      /* Espacement des lettres pour le look &quot;pro&quot; */
+    margin-bottom: 5px;
+}
+
+</string>
+         </property>
+         <attribute name="title">
+          <string>Valorisation Financiére</string>
+         </attribute>
+         <widget class="QTableWidget" name="table_finance">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>170</y>
+            <width>481</width>
+            <height>311</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <column>
+           <property name="text">
+            <string>MATIÈRE</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>UNITÉS</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>MASSE(KG)</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>VALEUR ESTIMÉE</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>RATIO(DT/KG)</string>
+           </property>
+          </column>
+         </widget>
+         <widget class="QLabel" name="lbl_titre_tableau">
+          <property name="geometry">
+           <rect>
+            <x>120</x>
+            <y>140</y>
+            <width>271</width>
+            <height>20</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Analyse de Performance par Matière </string>
+          </property>
+         </widget>
+         <widget class="QFrame" name="frame_alertes">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>490</y>
+            <width>481</width>
+            <height>121</height>
+           </rect>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Shape::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Shadow::Raised</enum>
+          </property>
+          <widget class="QListWidget" name="list_alertes">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>40</y>
+             <width>461</width>
+             <height>71</height>
+            </rect>
+           </property>
+          </widget>
+          <widget class="QLabel" name="lbl_titre_alertes">
+           <property name="geometry">
+            <rect>
+             <x>110</x>
+             <y>10</y>
+             <width>251</width>
+             <height>20</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>OBSERVATIONS ET ALERTES D'INVENTAIRE </string>
+           </property>
+          </widget>
+         </widget>
+         <widget class="QWidget" name="layoutWidget_2">
+          <property name="geometry">
+           <rect>
+            <x>40</x>
+            <y>40</y>
+            <width>411</width>
+            <height>71</height>
+           </rect>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_6">
+           <item>
+            <widget class="QFrame" name="frame_dispo">
+             <property name="frameShape">
+              <enum>QFrame::Shape::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Shadow::Raised</enum>
+             </property>
+             <widget class="QLabel" name="lbl_val_dispo">
+              <property name="geometry">
+               <rect>
+                <x>42</x>
+                <y>40</y>
+                <width>111</width>
+                <height>20</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+             <widget class="QLabel" name="lbl_titre_dispo">
+              <property name="geometry">
+               <rect>
+                <x>40</x>
+                <y>10</y>
+                <width>121</width>
+                <height>20</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string>CAPITAL IMMOBILISÉ  </string>
+              </property>
+             </widget>
+            </widget>
+           </item>
+           <item>
+            <widget class="QFrame" name="frame_ca">
+             <property name="frameShape">
+              <enum>QFrame::Shape::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Shadow::Raised</enum>
+             </property>
+             <widget class="QLabel" name="lbl_titre_ca">
+              <property name="geometry">
+               <rect>
+                <x>40</x>
+                <y>10</y>
+                <width>111</width>
+                <height>20</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string>CHIFFRE D'AFFAIRES</string>
+              </property>
+             </widget>
+             <widget class="QLabel" name="lbl_val_ca">
+              <property name="geometry">
+               <rect>
+                <x>42</x>
+                <y>40</y>
+                <width>101</width>
+                <height>20</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
        </widget>
       </widget>
       <widget class="QWidget" name="page_client">
@@ -4085,7 +4746,7 @@ background-color: rgb(30, 136, 229);</string>
         <item>
          <widget class="QTabWidget" name="tabWidget_right">
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab_stats">
            <attribute name="title">
@@ -4114,6 +4775,133 @@ background-color: rgb(30, 136, 229);</string>
            <attribute name="title">
             <string>Contrat</string>
            </attribute>
+           <widget class="QGroupBox" name="gb_contrat">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>-40</y>
+              <width>481</width>
+              <height>691</height>
+             </rect>
+            </property>
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="title">
+             <string>Statistiques</string>
+            </property>
+            <widget class="QComboBox" name="cb_type_contrat_emp">
+             <property name="geometry">
+              <rect>
+               <x>130</x>
+               <y>190</y>
+               <width>161</width>
+               <height>41</height>
+              </rect>
+             </property>
+             <item>
+              <property name="text">
+               <string>CDI</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>CDD</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Stage</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>SIVP</string>
+              </property>
+             </item>
+            </widget>
+            <widget class="QLabel" name="label_17">
+             <property name="geometry">
+              <rect>
+               <x>150</x>
+               <y>150</y>
+               <width>101</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Type de contrat</string>
+             </property>
+            </widget>
+            <widget class="QSpinBox" name="sb_periode_essai_emp">
+             <property name="geometry">
+              <rect>
+               <x>110</x>
+               <y>300</y>
+               <width>221</width>
+               <height>41</height>
+              </rect>
+             </property>
+            </widget>
+            <widget class="QLabel" name="label_18">
+             <property name="geometry">
+              <rect>
+               <x>140</x>
+               <y>260</y>
+               <width>161</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Période d'essai (en mois)</string>
+             </property>
+            </widget>
+            <widget class="QLabel" name="label_19">
+             <property name="geometry">
+              <rect>
+               <x>170</x>
+               <y>350</y>
+               <width>161</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Lieu de travail</string>
+             </property>
+            </widget>
+            <widget class="QLineEdit" name="le_lieu_travail_emp">
+             <property name="geometry">
+              <rect>
+               <x>110</x>
+               <y>400</y>
+               <width>231</width>
+               <height>51</height>
+              </rect>
+             </property>
+             <property name="placeholderText">
+              <string>Siège EcoCycle, Tunis</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="btn_generer_contrat_emp">
+             <property name="geometry">
+              <rect>
+               <x>140</x>
+               <y>560</y>
+               <width>191</width>
+               <height>41</height>
+              </rect>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">
+background-color: rgb(67, 160, 71);</string>
+             </property>
+             <property name="text">
+              <string>Génerer</string>
+             </property>
+            </widget>
+           </widget>
           </widget>
          </widget>
         </item>
@@ -4305,7 +5093,7 @@ QTabBar::tab:hover {
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>0</y>
+          <y>40</y>
           <width>321</width>
           <height>661</height>
          </rect>
@@ -4507,7 +5295,7 @@ QTabBar::tab:hover {
         <property name="geometry">
          <rect>
           <x>360</x>
-          <y>120</y>
+          <y>110</y>
           <width>631</width>
           <height>42</height>
          </rect>
@@ -4654,7 +5442,7 @@ QTabBar::tab:hover {
           <x>360</x>
           <y>60</y>
           <width>631</width>
-          <height>54</height>
+          <height>57</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_7_client_2">
