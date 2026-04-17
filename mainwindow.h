@@ -8,6 +8,7 @@
 #include "contrat.h"
 #include "produit.h"
 #include "equipement.h"
+#include "mapwidget.h"
 
 #include <QSqlQueryModel>
 #include <QSqlDatabase>
@@ -18,8 +19,11 @@
 #include <QModelIndex>
 #include <QEvent>
 #include <QLabel>
-
+#include <QString>
+#include <QDate>
+#include <QTextBrowser>
 #include <QtCharts/QChartView>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -70,6 +74,28 @@ private slots:
     void on_tab_produit_clicked(const QModelIndex &index);
     void viderFormulaire();
 
+    void on_le_recherche_3_textChanged(const QString &arg1);
+
+    void on_btn_trier_2_clicked();
+
+    void on_tabWidget_Stock_currentChanged(int index);
+
+    void on_btn_pdf_produit_clicked();
+    void refreshHistorique();
+    void renderHistorique(QString typeFiltre, QTextBrowser* targetFeed, QString searchKeyword);
+
+
+    void on_le_search_ajout_textChanged(const QString &arg1);
+
+    void on_le_search_modif_textChanged(const QString &arg1);
+
+    void on_le_search_suppr_textChanged(const QString &arg1);
+
+    void on_le_search_resv_textChanged(const QString &arg1);
+
+    void on_le_search_vente_textChanged(const QString &arg1);
+
+
     // ─── Module Contrat ───────────────────────────────────────────────────────
     void contrat_onAjouterClicked();
     void contrat_onModifierClicked();
@@ -109,37 +135,28 @@ private slots:
     void employe_onTriClicked();
     void employe_onPdfClicked();
     void employe_onRefreshClicked();
-
-    // ─── Module Client ───────────────────────────────────────────────────────
-    void onBtnAjouterClicked();
-    void onBtnModifierClicked();
-    void onBtnSupprimerClicked();
-    void onTableClicked(const QModelIndex &index);
-    void onRechercheTextChanged(const QString &text);
+    void employe_onGenererContratClicked();
 
 private:
     Ui::MainWindow *ui;
+    Client *clientObject; // Utilise la classe Client (client.cpp) pour la logique
+
     Poubelle tmp_poubelle;
     int poubelle_currentSelectedId = -1;
     Employe tmp_employe;
-    QSqlQueryModel *model;
-    QString currentFilter;
-    int selectedClientId = -1;
 
     void navigateToPage(int pageIndex);
-    void clearFormPoubelle();
+    void clearFormPoubelle( );
     bool validerFormulairePoubelle(bool isUpdate);
-    void rafraichirAffichage();
-    bool verifierSaisie();
-    bool reaffecterIdClientDansRelations(int oldId, int newId);
-
-    // ─── Gestionnaires de pages ───────────────────────────────────────────────
-    Client  *client;
 
     // ─── Module Produit ───────────────────────────────────────────────────────
-    bool controleSaisieProduit();
     void chargerIdsClients();
     int id_a_modifier = -1;
+    bool controleSaisieProduit(bool isModification = false);
+    void afficherStatistiques();
+    QString statut_a_modifier; // Pour stocker le statut avant la modification
+    void calculerValorisation();
+
 
     // ─── Module Contrat ───────────────────────────────────────────────────────
     int contrat_currentSelectedId = -1;
@@ -189,6 +206,15 @@ private:
     QChartView *employe_chartViewGenre   = nullptr;
     QChartView *employe_chartViewPoste   = nullptr;
     QChartView *employe_chartViewSalaire = nullptr;
+    // ─── Module Poubelle Stats ────────────────────────────────────────────────
+    void poubelle_setupStatsUI();
+    void poubelle_refreshStats();
+    void poubelle_setupMap();
+    void poubelle_refreshMap();
+    void poubelle_setupPredictionAI();
+    void poubelle_refreshPredictionAI();
+    QChartView *poubelle_chartViewRemplissage = nullptr;
+    MapWidget *poubelle_mapView = nullptr;
 };
 
 #endif // MAINWINDOW_H

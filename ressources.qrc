@@ -5,7 +5,6 @@
     </qresource>
     <qresource prefix="/">
         <file>images/bg_left.jpg</file>
-
         <file>images/logo-removebg-preview (1).png</file>
         <file>images/logo-removebg-preview (1) (1).png</file>
         <file>images/client0.png</file>
@@ -23,5 +22,9 @@
         <file>images/btn6.png</file>
         <file>images/logo2.png</file>
         <file>images/icon_profile.png</file>
+        <file>images/idea.png</file>
+        <file>images/think1.png</file>
+        <file>images/think2.png</file>
+        <file>images/wave.png</file>
     </qresource>
 </RCC>

@@ -8,9 +8,8 @@ debug/employe.o
 debug/poubelle.o
 debug/contrat.o
 debug/produit.o
+debug/smtp.o
 debug/qrc_ressources.o
 debug/moc_client.o
-debug/moc_equipement.o
 debug/moc_login.o
 debug/moc_mainwindow.o
-debug/moc_employe.o

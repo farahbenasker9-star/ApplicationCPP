@@ -1,4 +1,7 @@
 #include "produit.h"
+#include <QFile>
+#include <QTextStream>
+#include <QDateTime>
 
 Produit::Produit(int id_p, int id_c, QString type, float p_kg, QDate d_c, QDate d_v, QString s, float pr) {
     this->id_produit = id_p; this->id_client = id_c; this->type_produit = type;
@@ -52,44 +55,6 @@ bool Produit::supprimer(int id) {
     return query.exec();
 }
 
-/*bool Produit::modifier() {
-    QSqlQuery query;
-
-    // 1. On prépare la requête SQL de mise à jour
-    query.prepare("UPDATE PRODUIT SET ID_CLIENT=:idc, TYPE_PRODUIT=:type, POIDS_KG=:poids, "
-                  "DATE_DE_CREATION=:dc, DATE_DE_VENTE=:dv, STATUT=:statut, PRIX_VENTE_ESTIME=:prix "
-                  "WHERE ID_PRODUIT=:idp");
-
-    // 2. On lie les valeurs qui ne changent pas de logique
-    query.bindValue(":idp", id_produit);
-    query.bindValue(":type", type_produit);
-    query.bindValue(":poids", poids);
-    query.bindValue(":dc", date_creation);
-    query.bindValue(":statut", statut);
-    query.bindValue(":prix", prix);
-
-    // 3. Logique conditionnelle pour ID_CLIENT et DATE_DE_VENTE
-    // On utilise .trimmed() pour être sûr de la comparaison de texte
-    QString st = statut.trimmed();
-
-    if (st == "Vendu") {
-        query.bindValue(":dv", date_vente);
-        query.bindValue(":idc", id_client);
-    }
-    else if (st == "Réservé" || st == "Reservé") {
-        // Pour Réservé : On garde l'ID Client mais on force la Date à NULL (vide)
-        query.bindValue(":dv", QVariant(QMetaType::fromType<QDate>()));
-        query.bindValue(":idc", id_client);
-    }
-    else {
-        // Pour Disponible : On force tout à NULL (vide)
-        query.bindValue(":dv", QVariant(QMetaType::fromType<QDate>()));
-        query.bindValue(":idc", QVariant(QMetaType::fromType<int>()));
-    }
-
-    // 4. Exécution de la requête
-    return query.exec();
-}*/
 bool Produit::modifier(int old_id) {
     QSqlQuery query;
     query.prepare("UPDATE PRODUIT SET ID_PRODUIT=:new_id, ID_CLIENT=:idc, TYPE_PRODUIT=:type, "
@@ -120,4 +85,77 @@ bool Produit::modifier(int old_id) {
     }
 
     return query.exec();
+}
+QSqlQueryModel* Produit::rechercherSimple(QString valeur) {
+    QSqlQueryModel* model = new QSqlQueryModel();
+    QSqlQuery query;
+
+    // On cherche dans ID_PRODUIT (converti en texte), STATUT et TYPE_PRODUIT
+    query.prepare("SELECT TO_CHAR(ID_PRODUIT) AS \"ID_PRODUIT\", "
+                  "TO_CHAR(ID_CLIENT) AS \"ID_CLIENT\", "
+                  "TYPE_PRODUIT, POIDS_KG, DATE_DE_CREATION, DATE_DE_VENTE, STATUT, PRIX_VENTE_ESTIME "
+                  "FROM PRODUIT WHERE "
+                  "TO_CHAR(ID_PRODUIT) LIKE :val OR "
+                  "STATUT LIKE :val OR "
+                  "TYPE_PRODUIT LIKE :val");
+
+    query.bindValue(":val", "%" + valeur + "%");
+    query.exec();
+
+    model->setQuery(query);
+    return model;
+}
+QSqlQueryModel* Produit::trier(QString critere) {
+    QSqlQueryModel* model = new QSqlQueryModel();
+    QString triSQL;
+
+    // Mapping entre le texte de la ComboBox et les colonnes de la BDD
+    if (critere == "Date") {
+        triSQL = "DATE_DE_CREATION DESC"; // Les plus récents en premier
+    } else if (critere == "Poids") {
+        triSQL = "POIDS_KG ASC";          // Du plus léger au plus lourd
+    } else if (critere == "Prix") {
+        triSQL = "PRIX_VENTE_ESTIME DESC"; // Du plus cher au moins cher
+    } else {
+        triSQL = "ID_PRODUIT ASC";         // Tri par défaut par ID
+    }
+
+    // On utilise la même structure de requête que pour l'affichage
+    model->setQuery("SELECT TO_CHAR(ID_PRODUIT), TO_CHAR(ID_CLIENT), TYPE_PRODUIT, POIDS_KG, "
+                    "DATE_DE_CREATION, DATE_DE_VENTE, STATUT, PRIX_VENTE_ESTIME "
+                    "FROM PRODUIT ORDER BY " + triSQL);
+
+    return model;
+}
+QMap<QString, int> Produit::statistiqueParType() {
+    QMap<QString, int> stats;
+    QSqlQuery query("SELECT TYPE_PRODUIT, COUNT(*) FROM PRODUIT GROUP BY TYPE_PRODUIT");
+    while (query.next()) {
+        stats.insert(query.value(0).toString(), query.value(1).toInt());
+    }
+    return stats;
+}
+
+QMap<QString, double> Produit::statistiquePoidsParType() {
+    QMap<QString, double> stats;
+    QSqlQuery query("SELECT TYPE_PRODUIT, SUM(POIDS_KG) FROM PRODUIT GROUP BY TYPE_PRODUIT");
+    while (query.next()) {
+        stats.insert(query.value(0).toString(), query.value(1).toDouble());
+    }
+    return stats;
+}
+
+bool Produit::enregistrerAction(int id_p, QString type_action, QString type_produit, QString details) {
+    QFile file("historique_ecocycle.csv");
+    if (!file.open(QIODevice::Append | QIODevice::Text))
+        return false;
+
+    QTextStream out(&file);
+    QString date = QDateTime::currentDateTime().toString("dd/MM/yyyy HH:mm:ss");
+
+    // On enregistre maintenant 5 champs : Date ; Action ; ID ; Type ; Détails
+    out << date << ";" << type_action << ";" << QString::number(id_p) << ";" << type_produit << ";" << details << "\n";
+
+    file.close();
+    return true;
 }

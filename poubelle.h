@@ -5,6 +5,13 @@
 #include <QSqlQuery>
 #include <QSqlQueryModel>
 #include <QDate>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QtCharts/QChart>
+#include <QtCharts/QBarSeries>
+#include <QtCharts/QBarSet>
+#include <QtCharts/QBarCategoryAxis>
+#include <QtCharts/QValueAxis>
 
 class Poubelle
 {
@@ -22,7 +29,7 @@ class Poubelle
 public:
     // Constructeurs
     Poubelle();
-    Poubelle(int id, QString type, QString addr, int cap, QString etat, 
+    Poubelle(int id, QString type, QString addr, int cap, QString etat,
              int remplissage, int batterie, QString capteur,
              QDate installation, QDate collecte);
 
@@ -58,10 +65,17 @@ public:
     bool existe(int id);
     QSqlQueryModel* trier(QString critere);
     QSqlQueryModel* rechercher(QString critere, QString val);
-    
+
     // Pour remplir le formulaire lors de la modification
     static Poubelle getPoubelle(int id);
     void exporterPDF(int id);
+    void exporterTableauPDF();
+
+    // Statistiques
+    static QChart* createRemplissageParAdresseChart();
+
+    // Méthode pour récupérer les poubelles au format JSON pour la carte
+    static QJsonArray getPoubellesToJSON();
 
     // Récupérer la dernière erreur
     QString getLastError() { return lastError; }

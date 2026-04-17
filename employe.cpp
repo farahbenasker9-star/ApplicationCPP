@@ -323,3 +323,103 @@ QChart* Employe::createSalaireChart()
     return chartSalaire;
 }
 
+bool Employe::genererContratPDF(const QString &filePath, const QString &cin, const QString &nom, 
+                                const QString &prenom, const QString &poste, double salaire, 
+                                const QDate &dateEmb, const QString &typeContrat, 
+                                int periodeEssai, const QString &lieuTravail)
+{
+    if (filePath.isEmpty()) return false;
+
+    QString logoPath = "C:\\Users\\MSI\\Downloads\\logo.png"; //changer le chemin du logo selon votre machine
+    QString html =
+        "<html>\n"
+        "<head>\n"
+        "    <style>\n"
+        "        body { font-family: 'Times New Roman', serif; font-size: 12pt; color: #000; margin: 40px; }\n"
+        "        .logo-container { text-align: center; margin-bottom: 20px; }\n"
+        "        h1 { text-align: center; color: #1B4332; font-size: 18pt; text-transform: uppercase; text-decoration: underline; margin-bottom: 30px;}\n"
+        "        h2 { color: #333; font-size: 14pt; margin-top: 20px; }\n"
+        "        p { text-align: justify; line-height: 1.5; }\n"
+        "        .bold { font-weight: bold; }\n"
+        "        .signature-box { width: 100%; margin-top: 50px; }\n"
+        "        .signature-left { float: left; width: 45%; text-align: center; }\n"
+        "        .signature-right { float: right; width: 45%; text-align: center; }\n"
+        "        .footer { text-align: center; font-size: 9pt; color: #777; margin-top: 50px; border-top: 1px solid #ccc; padding-top: 10px; }\n"
+        "    </style>\n"
+        "</head>\n"
+        "<body>\n"
+        "    <div class=\"logo-container\">\n"
+        "        <img src=\"%11\" width=\"200\" />\n"
+        "    </div>\n"
+        "    <h1>Contrat de Travail (%1)</h1>\n"
+        "    \n"
+        "    <p>Entre les soussign&eacute;s :</p>\n"
+        "    <p><span class=\"bold\">La soci&eacute;t&eacute; EcoCycle</span>, sise &agrave; Tunis, repr&eacute;sent&eacute;e par son Directeur G&eacute;n&eacute;ral,<br>\n"
+        "    Ci-apr&egrave;s d&eacute;nomm&eacute;e <span class=\"bold\">\"L'Employeur\"</span>,</p>\n"
+        "    \n"
+        "    <p>ET</p>\n"
+        "    \n"
+        "    <p>M./Mme <span class=\"bold\">%2 %3</span>, titulaire du CIN n&deg; <span class=\"bold\">%4</span>,<br>\n"
+        "    Ci-apr&egrave;s d&eacute;nomm&eacute;(e) <span class=\"bold\">\"L'Employ&eacute;(e)\"</span>.</p>\n"
+        "    \n"
+        "    <p>Il a &eacute;t&eacute; convenu et arr&ecirc;t&eacute; ce qui suit :</p>\n"
+        "\n"
+        "    <h2>Article 1 : Objet et Poste</h2>\n"
+        "    <p>L'Employeur engage l'Employ&eacute;(e) dans le cadre d'un contrat de type <span class=\"bold\">%1</span>. L'Employ&eacute;(e) exercera les fonctions de <span class=\"bold\">%5</span>.</p>\n"
+        "\n"
+        "    <h2>Article 2 : Date d'effet et P&eacute;riode d'essai</h2>\n"
+        "    <p>Le pr&eacute;sent contrat prend effet &agrave; compter du <span class=\"bold\">%6</span>. Il est assorti d'une p&eacute;riode d'essai de <span class=\"bold\">%7 mois</span>, durant laquelle chacune des parties pourra rompre le contrat sans pr&eacute;avis ni indemnit&eacute;.</p>\n"
+        "\n"
+        "    <h2>Article 3 : R&eacute;mun&eacute;ration</h2>\n"
+        "    <p>En contrepartie de ses services, l'Employ&eacute;(e) percevra un salaire mensuel brut de <span class=\"bold\">%8 TND</span>. Ce salaire sera vers&eacute; &agrave; la fin de chaque mois par virement bancaire.</p>\n"
+        "\n"
+        "    <h2>Article 4 : Lieu de travail</h2>\n"
+        "    <p>Le lieu de travail est fix&eacute; &agrave; : <span class=\"bold\">%9</span>. L'Employeur se r&eacute;serve le droit de modifier ce lieu en fonction des n&eacute;cessit&eacute;s du service.</p>\n"
+        "\n"
+        "    <h2>Article 5 : Confidentialit&eacute;</h2>\n"
+        "    <p>L'Employ&eacute;(e) s'engage &agrave; conserver une discr&eacute;tion absolue sur l'ensemble des informations et documents relatifs &agrave; EcoCycle auxquels il/elle aura acc&egrave;s dans l'exercice de ses fonctions.</p>\n"
+        "\n"
+        "    <p style=\"margin-top: 40px; text-align: right;\">Fait &agrave; Tunis, le %10, en deux exemplaires originaux.</p>\n"
+        "\n"
+        "    <div class=\"signature-box\">\n"
+        "        <div class=\"signature-left\">\n"
+        "            <p class=\"bold\">L'Employ&eacute;(e)</p>\n"
+        "            <p style=\"font-size: 10pt; font-style: italic;\">(Lu et approuv&eacute;)</p>\n"
+        "        </div>\n"
+        "        <div class=\"signature-right\">\n"
+        "            <p class=\"bold\">Pour EcoCycle</p>\n"
+        "            <p style=\"font-size: 10pt; font-style: italic;\">(Le Directeur / La Direction RH)</p>\n"
+        "        </div>\n"
+        "    </div>\n"
+        "\n"
+        "    <div style=\"clear: both;\"></div>\n"
+        "\n"
+        "    <div class=\"footer\">\n"
+        "        EcoCycle - Entreprise Innovante de Recyclage - SIRET : 123456789 - Contact : rh@ecocycle.tn\n"
+        "    </div>\n"
+        "</body>\n"
+        "</html>";
+
+    // Remplacement des %1 à %11
+    // Astuce Qt : '.arg()' ne peut prendre que 9 paramètres maximum à la fois.
+    // On doit donc enchaîner les appels '.arg()' pour les paramètres 10 et 11 !
+    html = html.arg(typeContrat, nom.toUpper(), prenom, cin, poste, 
+                    dateEmb.toString("dd/MM/yyyy"), QString::number(periodeEssai), 
+                    QString::number(salaire, 'f', 2), lieuTravail)
+               .arg(QDate::currentDate().toString("dd/MM/yyyy"), logoPath);
+
+    // Impression en PDF
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setOutputFileName(filePath);
+    printer.setPageSize(QPageSize(QPageSize::A4));
+    
+    // Ajout de marges pour un rendu "Document Officiel"
+    printer.setPageMargins(QMarginsF(15, 15, 15, 15), QPageLayout::Millimeter);
+
+    QTextDocument doc;
+    doc.setHtml(html);
+    doc.print(&printer);
+
+    return true;
+}
