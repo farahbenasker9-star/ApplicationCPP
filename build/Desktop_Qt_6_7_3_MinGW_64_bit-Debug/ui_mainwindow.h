@@ -57,7 +57,6 @@ public:
     QPushButton *btn_nav_stock;
     QSpacerItem *verticalSpacer_5;
     QPushButton *btn_quit;
-    QWidget *widget_2;
     QStackedWidget *stackedWidget;
     QWidget *page_dashboard;
     QLabel *label_logo_dash;
@@ -115,10 +114,9 @@ public:
     QLabel *headerLabel;
     QTabWidget *tabWidget_right_contrat_2;
     QWidget *tab_stats_client_4;
-    QGroupBox *gb_stats_contrat_3;
+    QGroupBox *gb_stats_equipement;
     QWidget *tab_4;
     QGroupBox *infoGroupBox_5;
-    QVBoxLayout *infoGroupBoxLayout;
     QScrollArea *infoScrollArea;
     QWidget *infoScrollContent;
     QLabel *labelNomEquipement;
@@ -135,6 +133,8 @@ public:
     QLabel *labelFabricant_10;
     QLabel *labelFabricant_11;
     QPlainTextEdit *Notes;
+    QLabel *labelFabricant_12;
+    QComboBox *Eq_Statut_2;
     QWidget *layoutWidget;
     QHBoxLayout *horizontalLayout_8;
     QLineEdit *le_recherche_2;
@@ -155,7 +155,7 @@ public:
     QLabel *label_31;
     QLineEdit *le_id;
     QLabel *label_34;
-    QComboBox *cb_type;
+    QComboBox *cb_type_2;
     QLabel *label_33;
     QDoubleSpinBox *sb_poids;
     QLabel *label_35;
@@ -165,14 +165,14 @@ public:
     QLabel *label_27;
     QComboBox *cb_statut;
     QLabel *label_6;
-    QLineEdit *le_id_client_2;
+    QComboBox *cb_id_client;
     QLabel *label_29;
     QDateEdit *de_date_v;
     QTabWidget *tabWidget_Stock;
     QWidget *tab_stats_3;
     QWidget *tab_historique;
     QWidget *tab_finance;
-    QTableView *tab_stock;
+    QTableView *tab_produit;
     QGroupBox *groupBox_3;
     QLabel *label_2;
     QLineEdit *lineEdit;
@@ -182,9 +182,9 @@ public:
     QComboBox *cb_trier;
     QPushButton *btn_trier_2;
     QLabel *label_75;
-    QPushButton *btn_ajouter_4;
-    QPushButton *btn_modifier_4;
-    QPushButton *btn_supprimer_5;
+    QPushButton *btn_ajouter_produit;
+    QPushButton *btn_modifier_produit;
+    QPushButton *btn_supprimer_produit;
     QPushButton *btn_pdf_3;
     QWidget *page_client;
     QGroupBox *gb_form_client;
@@ -265,6 +265,14 @@ public:
     QWidget *tab_stats;
     QGroupBox *gb_stats;
     QWidget *tab_contrat;
+    QGroupBox *gb_contrat;
+    QComboBox *cb_type_contrat_emp;
+    QLabel *label_17;
+    QSpinBox *sb_periode_essai_emp;
+    QLabel *label_18;
+    QLabel *label_19;
+    QLineEdit *le_lieu_travail_emp;
+    QPushButton *btn_generer_contrat_emp;
     QWidget *page_poubelle;
     QGroupBox *gb_form_2;
     QVBoxLayout *verticalLayout;
@@ -276,12 +284,12 @@ public:
     QLineEdit *le_type_dechet;
     QLabel *label_28;
     QSpinBox *sb_capacite;
-    QLabel *label_etat;
-    QComboBox *cb_etat_poubelle;
     QLabel *label_remp;
     QSpinBox *sb_remplissage;
     QLabel *label_batt;
     QSpinBox *sb_batterie;
+    QLabel *label_etat;
+    QComboBox *cb_etat_poubelle;
     QLabel *label_statut_cap;
     QComboBox *cb_statut_capteur;
     QLabel *label_date_inst;
@@ -306,14 +314,14 @@ public:
     QHBoxLayout *horizontalLayout_7_client_2;
     QLineEdit *le_recherche_poubelle;
     QComboBox *comboBox_client_2;
-    QPushButton *btn_tri_client_2;
     QWidget *layoutWidget5;
     QHBoxLayout *horizontalLayout_client_2;
     QPushButton *btn_ajouter_poubelle;
     QPushButton *btn_modifier_poubelle;
     QPushButton *btn_supprimer_poubelle;
     QSpacerItem *horizontalSpacer_client_2;
-    QPushButton *btn_pdf_client_2;
+    QPushButton *btn_pdf_poubelle;
+    QWidget *widget_2;
     QMenuBar *menubar;
     QStatusBar *statusbar;
 
@@ -557,11 +565,8 @@ public:
 
         horizontalLayout_4->addWidget(navbar_container);
 
-        widget_2 = new QWidget(centralwidget);
-        widget_2->setObjectName("widget_2");
-        stackedWidget = new QStackedWidget(widget_2);
+        stackedWidget = new QStackedWidget(centralwidget);
         stackedWidget->setObjectName("stackedWidget");
-        stackedWidget->setGeometry(QRect(0, 10, 1341, 731));
         page_dashboard = new QWidget();
         page_dashboard->setObjectName("page_dashboard");
         label_logo_dash = new QLabel(page_dashboard);
@@ -1457,11 +1462,11 @@ public:
 "}"));
         tab_stats_client_4 = new QWidget();
         tab_stats_client_4->setObjectName("tab_stats_client_4");
-        gb_stats_contrat_3 = new QGroupBox(tab_stats_client_4);
-        gb_stats_contrat_3->setObjectName("gb_stats_contrat_3");
-        gb_stats_contrat_3->setGeometry(QRect(0, 0, 351, 581));
-        gb_stats_contrat_3->setFont(font);
-        gb_stats_contrat_3->setStyleSheet(QString::fromUtf8(" /* --- 2. LE CADRE FORMULAIRE & STATISTIQUES (Verre Blanc) --- */\n"
+        gb_stats_equipement = new QGroupBox(tab_stats_client_4);
+        gb_stats_equipement->setObjectName("gb_stats_equipement");
+        gb_stats_equipement->setGeometry(QRect(0, 0, 351, 581));
+        gb_stats_equipement->setFont(font);
+        gb_stats_equipement->setStyleSheet(QString::fromUtf8(" /* --- 2. LE CADRE FORMULAIRE & STATISTIQUES (Verre Blanc) --- */\n"
 "QGroupBox {\n"
 "    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilit\303\251) */\n"
 "    background-color: rgba(255, 255, 255, 210); \n"
@@ -1485,8 +1490,8 @@ public:
         tabWidget_right_contrat_2->addTab(tab_4, QString());
         infoGroupBox_5 = new QGroupBox(page_equipement);
         infoGroupBox_5->setObjectName("infoGroupBox_5");
-        infoGroupBox_5->setGeometry(QRect(20, 80, 401, 561));
-        infoGroupBox_5->setMinimumSize(QSize(401, 561));
+        infoGroupBox_5->setGeometry(QRect(20, 80, 408, 621));
+        infoGroupBox_5->setMinimumSize(QSize(408, 621));
         infoGroupBox_5->setMaximumSize(QSize(401, 561));
         infoGroupBox_5->setStyleSheet(QString::fromUtf8("QGroupBox {\n"
 "    /* Fond BLANC avec transparence (Alpha = 210 sur 255 pour lisibilit\303\251) */\n"
@@ -1502,16 +1507,15 @@ public:
 "    padding: 0 5px;\n"
 "    color: qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(8, 102, 0, 255), stop:1 rgba(0, 255, 127, 255));\n"
 "}"));
-        infoGroupBoxLayout = new QVBoxLayout(infoGroupBox_5);
-        infoGroupBoxLayout->setObjectName("infoGroupBoxLayout");
         infoScrollArea = new QScrollArea(infoGroupBox_5);
         infoScrollArea->setObjectName("infoScrollArea");
+        infoScrollArea->setGeometry(QRect(22, 47, 357, 561));
         infoScrollArea->setStyleSheet(QString::fromUtf8("QScrollArea { background-color: transparent; border: none; }"));
         infoScrollArea->setFrameShape(QFrame::Shape::NoFrame);
         infoScrollArea->setWidgetResizable(true);
         infoScrollContent = new QWidget();
         infoScrollContent->setObjectName("infoScrollContent");
-        infoScrollContent->setGeometry(QRect(0, 0, 357, 492));
+        infoScrollContent->setGeometry(QRect(0, 0, 357, 561));
         infoScrollContent->setStyleSheet(QString::fromUtf8("background-color: transparent;"));
         labelNomEquipement = new QLabel(infoScrollContent);
         labelNomEquipement->setObjectName("labelNomEquipement");
@@ -1558,27 +1562,33 @@ public:
         labelFabricant_8->setGeometry(QRect(60, 180, 57, 17));
         Eq_Last_Maint_Date = new QDateTimeEdit(infoScrollContent);
         Eq_Last_Maint_Date->setObjectName("Eq_Last_Maint_Date");
-        Eq_Last_Maint_Date->setGeometry(QRect(160, 220, 161, 37));
+        Eq_Last_Maint_Date->setGeometry(QRect(160, 280, 161, 37));
         Eq_Next_Maint_Date = new QDateTimeEdit(infoScrollContent);
         Eq_Next_Maint_Date->setObjectName("Eq_Next_Maint_Date");
-        Eq_Next_Maint_Date->setGeometry(QRect(160, 270, 161, 37));
+        Eq_Next_Maint_Date->setGeometry(QRect(160, 330, 161, 37));
         labelFabricant_9 = new QLabel(infoScrollContent);
         labelFabricant_9->setObjectName("labelFabricant_9");
-        labelFabricant_9->setGeometry(QRect(10, 230, 141, 20));
+        labelFabricant_9->setGeometry(QRect(10, 290, 141, 20));
         labelFabricant_10 = new QLabel(infoScrollContent);
         labelFabricant_10->setObjectName("labelFabricant_10");
-        labelFabricant_10->setGeometry(QRect(10, 280, 141, 20));
+        labelFabricant_10->setGeometry(QRect(10, 340, 141, 20));
         labelFabricant_11 = new QLabel(infoScrollContent);
         labelFabricant_11->setObjectName("labelFabricant_11");
-        labelFabricant_11->setGeometry(QRect(150, 320, 41, 20));
+        labelFabricant_11->setGeometry(QRect(150, 390, 41, 20));
         labelFabricant_11->setStyleSheet(QString::fromUtf8("text-align:center;"));
         Notes = new QPlainTextEdit(infoScrollContent);
         Notes->setObjectName("Notes");
-        Notes->setGeometry(QRect(10, 350, 341, 131));
+        Notes->setGeometry(QRect(10, 420, 341, 131));
+        labelFabricant_12 = new QLabel(infoScrollContent);
+        labelFabricant_12->setObjectName("labelFabricant_12");
+        labelFabricant_12->setGeometry(QRect(50, 230, 71, 20));
+        Eq_Statut_2 = new QComboBox(infoScrollContent);
+        Eq_Statut_2->addItem(QString());
+        Eq_Statut_2->addItem(QString());
+        Eq_Statut_2->addItem(QString());
+        Eq_Statut_2->setObjectName("Eq_Statut_2");
+        Eq_Statut_2->setGeometry(QRect(160, 220, 151, 40));
         infoScrollArea->setWidget(infoScrollContent);
-
-        infoGroupBoxLayout->addWidget(infoScrollArea);
-
         layoutWidget = new QWidget(page_equipement);
         layoutWidget->setObjectName("layoutWidget");
         layoutWidget->setGeometry(QRect(432, 81, 521, 48));
@@ -1860,15 +1870,22 @@ public:
 
         verticalLayout_2->addWidget(label_34);
 
-        cb_type = new QComboBox(groupBox_2);
-        cb_type->addItem(QString());
-        cb_type->addItem(QString());
-        cb_type->addItem(QString());
-        cb_type->addItem(QString());
-        cb_type->setObjectName("cb_type");
-        cb_type->setStyleSheet(QString::fromUtf8("font: 9pt \"Segoe UI\";"));
+        cb_type_2 = new QComboBox(groupBox_2);
+        cb_type_2->addItem(QString());
+        cb_type_2->addItem(QString());
+        cb_type_2->addItem(QString());
+        cb_type_2->addItem(QString());
+        cb_type_2->addItem(QString());
+        cb_type_2->addItem(QString());
+        cb_type_2->addItem(QString());
+        cb_type_2->addItem(QString());
+        cb_type_2->addItem(QString());
+        cb_type_2->addItem(QString());
+        cb_type_2->addItem(QString());
+        cb_type_2->setObjectName("cb_type_2");
+        cb_type_2->setStyleSheet(QString::fromUtf8("font: 9pt \"Segoe UI\";"));
 
-        verticalLayout_2->addWidget(cb_type);
+        verticalLayout_2->addWidget(cb_type_2);
 
         label_33 = new QLabel(groupBox_2);
         label_33->setObjectName("label_33");
@@ -1922,10 +1939,10 @@ public:
 
         verticalLayout_2->addWidget(label_6);
 
-        le_id_client_2 = new QLineEdit(groupBox_2);
-        le_id_client_2->setObjectName("le_id_client_2");
+        cb_id_client = new QComboBox(groupBox_2);
+        cb_id_client->setObjectName("cb_id_client");
 
-        verticalLayout_2->addWidget(le_id_client_2);
+        verticalLayout_2->addWidget(cb_id_client);
 
         label_29 = new QLabel(groupBox_2);
         label_29->setObjectName("label_29");
@@ -1952,9 +1969,9 @@ public:
         tab_finance = new QWidget();
         tab_finance->setObjectName("tab_finance");
         tabWidget_Stock->addTab(tab_finance, QString());
-        tab_stock = new QTableView(page_stock);
-        tab_stock->setObjectName("tab_stock");
-        tab_stock->setGeometry(QRect(270, 190, 581, 461));
+        tab_produit = new QTableView(page_stock);
+        tab_produit->setObjectName("tab_produit");
+        tab_produit->setGeometry(QRect(270, 190, 581, 461));
         groupBox_3 = new QGroupBox(page_stock);
         groupBox_3->setObjectName("groupBox_3");
         groupBox_3->setGeometry(QRect(270, 50, 581, 131));
@@ -2000,19 +2017,19 @@ public:
         font2.setBold(true);
         label_75->setFont(font2);
         label_75->setStyleSheet(QString::fromUtf8(""));
-        btn_ajouter_4 = new QPushButton(page_stock);
-        btn_ajouter_4->setObjectName("btn_ajouter_4");
-        btn_ajouter_4->setGeometry(QRect(270, 660, 121, 41));
-        btn_ajouter_4->setStyleSheet(QString::fromUtf8("background-color: rgb(0, 96, 0);"));
-        btn_modifier_4 = new QPushButton(page_stock);
-        btn_modifier_4->setObjectName("btn_modifier_4");
-        btn_modifier_4->setGeometry(QRect(400, 660, 121, 41));
-        btn_modifier_4->setStyleSheet(QString::fromUtf8("background-color: rgb(0, 0, 127);\n"
+        btn_ajouter_produit = new QPushButton(page_stock);
+        btn_ajouter_produit->setObjectName("btn_ajouter_produit");
+        btn_ajouter_produit->setGeometry(QRect(270, 660, 121, 41));
+        btn_ajouter_produit->setStyleSheet(QString::fromUtf8("background-color: rgb(0, 96, 0);"));
+        btn_modifier_produit = new QPushButton(page_stock);
+        btn_modifier_produit->setObjectName("btn_modifier_produit");
+        btn_modifier_produit->setGeometry(QRect(400, 660, 121, 41));
+        btn_modifier_produit->setStyleSheet(QString::fromUtf8("background-color: rgb(0, 0, 127);\n"
 "background-color: rgb(30, 136, 229);"));
-        btn_supprimer_5 = new QPushButton(page_stock);
-        btn_supprimer_5->setObjectName("btn_supprimer_5");
-        btn_supprimer_5->setGeometry(QRect(530, 660, 121, 39));
-        btn_supprimer_5->setStyleSheet(QString::fromUtf8("background-color: rgb(255, 0, 0);"));
+        btn_supprimer_produit = new QPushButton(page_stock);
+        btn_supprimer_produit->setObjectName("btn_supprimer_produit");
+        btn_supprimer_produit->setGeometry(QRect(530, 660, 121, 39));
+        btn_supprimer_produit->setStyleSheet(QString::fromUtf8("background-color: rgb(255, 0, 0);"));
         btn_pdf_3 = new QPushButton(page_stock);
         btn_pdf_3->setObjectName("btn_pdf_3");
         btn_pdf_3->setGeometry(QRect(700, 660, 151, 41));
@@ -2606,49 +2623,49 @@ public:
         label_10 = new QLabel(gb_form);
         label_10->setObjectName("label_10");
 
-        formLayout->setWidget(4, QFormLayout::LabelRole, label_10);
+        formLayout->setWidget(1, QFormLayout::LabelRole, label_10);
 
         le_nom = new QLineEdit(gb_form);
         le_nom->setObjectName("le_nom");
 
-        formLayout->setWidget(4, QFormLayout::FieldRole, le_nom);
+        formLayout->setWidget(1, QFormLayout::FieldRole, le_nom);
 
         label_11 = new QLabel(gb_form);
         label_11->setObjectName("label_11");
 
-        formLayout->setWidget(5, QFormLayout::LabelRole, label_11);
+        formLayout->setWidget(2, QFormLayout::LabelRole, label_11);
 
         le_prenom = new QLineEdit(gb_form);
         le_prenom->setObjectName("le_prenom");
 
-        formLayout->setWidget(5, QFormLayout::FieldRole, le_prenom);
+        formLayout->setWidget(2, QFormLayout::FieldRole, le_prenom);
 
         label_7 = new QLabel(gb_form);
         label_7->setObjectName("label_7");
 
-        formLayout->setWidget(6, QFormLayout::LabelRole, label_7);
+        formLayout->setWidget(3, QFormLayout::LabelRole, label_7);
 
         le_age = new QLineEdit(gb_form);
         le_age->setObjectName("le_age");
 
-        formLayout->setWidget(6, QFormLayout::FieldRole, le_age);
+        formLayout->setWidget(3, QFormLayout::FieldRole, le_age);
 
         label_16 = new QLabel(gb_form);
         label_16->setObjectName("label_16");
 
-        formLayout->setWidget(7, QFormLayout::LabelRole, label_16);
+        formLayout->setWidget(4, QFormLayout::LabelRole, label_16);
 
         cb_genre = new QComboBox(gb_form);
         cb_genre->addItem(QString());
         cb_genre->addItem(QString());
         cb_genre->setObjectName("cb_genre");
 
-        formLayout->setWidget(7, QFormLayout::FieldRole, cb_genre);
+        formLayout->setWidget(4, QFormLayout::FieldRole, cb_genre);
 
         label_12 = new QLabel(gb_form);
         label_12->setObjectName("label_12");
 
-        formLayout->setWidget(8, QFormLayout::LabelRole, label_12);
+        formLayout->setWidget(5, QFormLayout::LabelRole, label_12);
 
         cb_poste = new QComboBox(gb_form);
         cb_poste->addItem(QString());
@@ -2657,38 +2674,38 @@ public:
         cb_poste->addItem(QString());
         cb_poste->setObjectName("cb_poste");
 
-        formLayout->setWidget(8, QFormLayout::FieldRole, cb_poste);
+        formLayout->setWidget(5, QFormLayout::FieldRole, cb_poste);
 
         label_13 = new QLabel(gb_form);
         label_13->setObjectName("label_13");
 
-        formLayout->setWidget(9, QFormLayout::LabelRole, label_13);
+        formLayout->setWidget(6, QFormLayout::LabelRole, label_13);
 
         le_salaire = new QLineEdit(gb_form);
         le_salaire->setObjectName("le_salaire");
 
-        formLayout->setWidget(9, QFormLayout::FieldRole, le_salaire);
+        formLayout->setWidget(6, QFormLayout::FieldRole, le_salaire);
 
         label_14 = new QLabel(gb_form);
         label_14->setObjectName("label_14");
 
-        formLayout->setWidget(10, QFormLayout::LabelRole, label_14);
+        formLayout->setWidget(7, QFormLayout::LabelRole, label_14);
 
         de_embauche = new QDateEdit(gb_form);
         de_embauche->setObjectName("de_embauche");
         de_embauche->setCalendarPopup(true);
 
-        formLayout->setWidget(10, QFormLayout::FieldRole, de_embauche);
+        formLayout->setWidget(7, QFormLayout::FieldRole, de_embauche);
 
         label_15 = new QLabel(gb_form);
         label_15->setObjectName("label_15");
 
-        formLayout->setWidget(11, QFormLayout::LabelRole, label_15);
+        formLayout->setWidget(8, QFormLayout::LabelRole, label_15);
 
         le_badge = new QLineEdit(gb_form);
         le_badge->setObjectName("le_badge");
 
-        formLayout->setWidget(11, QFormLayout::FieldRole, le_badge);
+        formLayout->setWidget(8, QFormLayout::FieldRole, le_badge);
 
 
         horizontalLayout_3->addWidget(gb_form);
@@ -2791,6 +2808,37 @@ public:
         tabWidget_right->addTab(tab_stats, QString());
         tab_contrat = new QWidget();
         tab_contrat->setObjectName("tab_contrat");
+        gb_contrat = new QGroupBox(tab_contrat);
+        gb_contrat->setObjectName("gb_contrat");
+        gb_contrat->setGeometry(QRect(0, -40, 481, 691));
+        gb_contrat->setFont(font);
+        cb_type_contrat_emp = new QComboBox(gb_contrat);
+        cb_type_contrat_emp->addItem(QString());
+        cb_type_contrat_emp->addItem(QString());
+        cb_type_contrat_emp->addItem(QString());
+        cb_type_contrat_emp->addItem(QString());
+        cb_type_contrat_emp->setObjectName("cb_type_contrat_emp");
+        cb_type_contrat_emp->setGeometry(QRect(130, 190, 161, 41));
+        label_17 = new QLabel(gb_contrat);
+        label_17->setObjectName("label_17");
+        label_17->setGeometry(QRect(150, 150, 101, 20));
+        sb_periode_essai_emp = new QSpinBox(gb_contrat);
+        sb_periode_essai_emp->setObjectName("sb_periode_essai_emp");
+        sb_periode_essai_emp->setGeometry(QRect(110, 300, 221, 41));
+        label_18 = new QLabel(gb_contrat);
+        label_18->setObjectName("label_18");
+        label_18->setGeometry(QRect(140, 260, 161, 20));
+        label_19 = new QLabel(gb_contrat);
+        label_19->setObjectName("label_19");
+        label_19->setGeometry(QRect(170, 350, 161, 20));
+        le_lieu_travail_emp = new QLineEdit(gb_contrat);
+        le_lieu_travail_emp->setObjectName("le_lieu_travail_emp");
+        le_lieu_travail_emp->setGeometry(QRect(110, 400, 231, 51));
+        btn_generer_contrat_emp = new QPushButton(gb_contrat);
+        btn_generer_contrat_emp->setObjectName("btn_generer_contrat_emp");
+        btn_generer_contrat_emp->setGeometry(QRect(140, 560, 191, 41));
+        btn_generer_contrat_emp->setStyleSheet(QString::fromUtf8("\n"
+"background-color: rgb(67, 160, 71);"));
         tabWidget_right->addTab(tab_contrat, QString());
 
         horizontalLayout_3->addWidget(tabWidget_right);
@@ -2985,7 +3033,7 @@ public:
 ""));
         gb_form_2 = new QGroupBox(page_poubelle);
         gb_form_2->setObjectName("gb_form_2");
-        gb_form_2->setGeometry(QRect(10, 50, 321, 661));
+        gb_form_2->setGeometry(QRect(10, 40, 321, 661));
         gb_form_2->setFont(font);
         verticalLayout = new QVBoxLayout(gb_form_2);
         verticalLayout->setObjectName("verticalLayout");
@@ -3031,18 +3079,6 @@ public:
 
         verticalLayout->addWidget(sb_capacite);
 
-        label_etat = new QLabel(gb_form_2);
-        label_etat->setObjectName("label_etat");
-
-        verticalLayout->addWidget(label_etat);
-
-        cb_etat_poubelle = new QComboBox(gb_form_2);
-        cb_etat_poubelle->addItem(QString());
-        cb_etat_poubelle->addItem(QString());
-        cb_etat_poubelle->setObjectName("cb_etat_poubelle");
-
-        verticalLayout->addWidget(cb_etat_poubelle);
-
         label_remp = new QLabel(gb_form_2);
         label_remp->setObjectName("label_remp");
 
@@ -3064,6 +3100,18 @@ public:
         sb_batterie->setMaximum(100);
 
         verticalLayout->addWidget(sb_batterie);
+
+        label_etat = new QLabel(gb_form_2);
+        label_etat->setObjectName("label_etat");
+
+        verticalLayout->addWidget(label_etat);
+
+        cb_etat_poubelle = new QComboBox(gb_form_2);
+        cb_etat_poubelle->addItem(QString());
+        cb_etat_poubelle->addItem(QString());
+        cb_etat_poubelle->setObjectName("cb_etat_poubelle");
+
+        verticalLayout->addWidget(cb_etat_poubelle);
 
         label_statut_cap = new QLabel(gb_form_2);
         label_statut_cap->setObjectName("label_statut_cap");
@@ -3158,7 +3206,7 @@ public:
         tabWidget_right_2->addTab(tab, QString());
         tab_poubelle = new QTableView(page_poubelle);
         tab_poubelle->setObjectName("tab_poubelle");
-        tab_poubelle->setGeometry(QRect(360, 170, 631, 491));
+        tab_poubelle->setGeometry(QRect(360, 160, 631, 491));
         tab_poubelle->setAlternatingRowColors(true);
         tab_poubelle->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
         layoutWidget4 = new QWidget(page_poubelle);
@@ -3180,15 +3228,9 @@ public:
 
         horizontalLayout_7_client_2->addWidget(comboBox_client_2);
 
-        btn_tri_client_2 = new QPushButton(layoutWidget4);
-        btn_tri_client_2->setObjectName("btn_tri_client_2");
-        btn_tri_client_2->setStyleSheet(QString::fromUtf8("background-color: rgb(255, 193, 7);"));
-
-        horizontalLayout_7_client_2->addWidget(btn_tri_client_2);
-
         layoutWidget5 = new QWidget(page_poubelle);
         layoutWidget5->setObjectName("layoutWidget5");
-        layoutWidget5->setGeometry(QRect(361, 660, 631, 51));
+        layoutWidget5->setGeometry(QRect(361, 650, 631, 51));
         horizontalLayout_client_2 = new QHBoxLayout(layoutWidget5);
         horizontalLayout_client_2->setObjectName("horizontalLayout_client_2");
         horizontalLayout_client_2->setContentsMargins(0, 0, 0, 0);
@@ -3214,21 +3256,26 @@ public:
 
         horizontalLayout_client_2->addItem(horizontalSpacer_client_2);
 
-        btn_pdf_client_2 = new QPushButton(layoutWidget5);
-        btn_pdf_client_2->setObjectName("btn_pdf_client_2");
-        btn_pdf_client_2->setStyleSheet(QString::fromUtf8("\n"
+        btn_pdf_poubelle = new QPushButton(layoutWidget5);
+        btn_pdf_poubelle->setObjectName("btn_pdf_poubelle");
+        btn_pdf_poubelle->setStyleSheet(QString::fromUtf8("\n"
 "background-color: rgb(67, 160, 71);"));
 
-        horizontalLayout_client_2->addWidget(btn_pdf_client_2);
+        horizontalLayout_client_2->addWidget(btn_pdf_poubelle);
 
         stackedWidget->addWidget(page_poubelle);
-        layoutWidget5->raise();
-        layoutWidget5->raise();
+        layoutWidget2->raise();
+        layoutWidget2->raise();
         gb_form_2->raise();
         lbl_page_title_3->raise();
         tab_poubelle->raise();
         layoutWidget_3->raise();
         tabWidget_right_2->raise();
+
+        horizontalLayout_4->addWidget(stackedWidget);
+
+        widget_2 = new QWidget(centralwidget);
+        widget_2->setObjectName("widget_2");
 
         horizontalLayout_4->addWidget(widget_2);
 
@@ -3243,12 +3290,12 @@ public:
 
         retranslateUi(MainWindow);
 
-        stackedWidget->setCurrentIndex(2);
+        stackedWidget->setCurrentIndex(6);
         statistique_contrat->setCurrentIndex(0);
         tabWidget_right_contrat_2->setCurrentIndex(0);
         tabWidget_Stock->setCurrentIndex(0);
         tabWidget_right_client->setCurrentIndex(0);
-        tabWidget_right->setCurrentIndex(0);
+        tabWidget_right->setCurrentIndex(1);
         tabWidget_right_2->setCurrentIndex(0);
 
 
@@ -3278,7 +3325,7 @@ public:
         recherche0_contrat->setPlaceholderText(QCoreApplication::translate("MainWindow", "\360\237\224\215 Rechercher par ID, Type, Mati\303\250re...", nullptr));
         gb_stats_contrat->setTitle(QCoreApplication::translate("MainWindow", "Statistiques", nullptr));
         statistique_contrat->setTabText(statistique_contrat->indexOf(tab_stats_client_2), QCoreApplication::translate("MainWindow", "Statistiques", nullptr));
-        statistique_contrat->setTabText(statistique_contrat->indexOf(tab_2), QCoreApplication::translate("MainWindow", "Page", nullptr));
+        statistique_contrat->setTabText(statistique_contrat->indexOf(tab_2), QCoreApplication::translate("MainWindow", "Contrat", nullptr));
         lbl_info_contrat_title->setText(QCoreApplication::translate("MainWindow", " Informations Contrat", nullptr));
         group_informations->setTitle(QString());
         label_id->setText(QCoreApplication::translate("MainWindow", "ID Contrat", nullptr));
@@ -3313,7 +3360,7 @@ public:
         ajouter_contrat->setText(QCoreApplication::translate("MainWindow", " Ajouter", nullptr));
         supprimer_contrat->setText(QCoreApplication::translate("MainWindow", "Supprimer", nullptr));
         headerLabel->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:14pt;\">Gestion d'\303\251quipements</span></p></body></html>", nullptr));
-        gb_stats_contrat_3->setTitle(QCoreApplication::translate("MainWindow", "Statistiques", nullptr));
+        gb_stats_equipement->setTitle(QCoreApplication::translate("MainWindow", "Statistiques", nullptr));
         tabWidget_right_contrat_2->setTabText(tabWidget_right_contrat_2->indexOf(tab_stats_client_4), QCoreApplication::translate("MainWindow", "Statistiques", nullptr));
         tabWidget_right_contrat_2->setTabText(tabWidget_right_contrat_2->indexOf(tab_4), QCoreApplication::translate("MainWindow", "Assignation Optimale (AI)", nullptr));
         infoGroupBox_5->setTitle(QCoreApplication::translate("MainWindow", "Informations \303\211quipement", nullptr));
@@ -3348,6 +3395,11 @@ public:
         labelFabricant_10->setText(QCoreApplication::translate("MainWindow", "Date de maint. suiv.", nullptr));
         labelFabricant_11->setText(QCoreApplication::translate("MainWindow", "Notes", nullptr));
         Notes->setPlaceholderText(QCoreApplication::translate("MainWindow", "veuillez fournir des informations suppl\303\251mentaires concernant cet equipement", nullptr));
+        labelFabricant_12->setText(QCoreApplication::translate("MainWindow", "Nouveaut\303\251", nullptr));
+        Eq_Statut_2->setItemText(0, QCoreApplication::translate("MainWindow", "-", nullptr));
+        Eq_Statut_2->setItemText(1, QCoreApplication::translate("MainWindow", "Vierge", nullptr));
+        Eq_Statut_2->setItemText(2, QCoreApplication::translate("MainWindow", "Ancien", nullptr));
+
         le_recherche_2->setPlaceholderText(QCoreApplication::translate("MainWindow", "Rechercher par Fabricant, Type...", nullptr));
         comboBox_2->setItemText(0, QCoreApplication::translate("MainWindow", "Fabricant", nullptr));
         comboBox_2->setItemText(1, QCoreApplication::translate("MainWindow", "Statut", nullptr));
@@ -3362,10 +3414,17 @@ public:
         groupBox_2->setTitle(QCoreApplication::translate("MainWindow", "Op\303\251rations", nullptr));
         label_31->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt;\">ID Produit :</span></p></body></html>", nullptr));
         label_34->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt;\">Type Produit:</span></p></body></html>", nullptr));
-        cb_type->setItemText(0, QCoreApplication::translate("MainWindow", "Plastique", nullptr));
-        cb_type->setItemText(1, QCoreApplication::translate("MainWindow", "Verre", nullptr));
-        cb_type->setItemText(2, QCoreApplication::translate("MainWindow", "Aluminium", nullptr));
-        cb_type->setItemText(3, QCoreApplication::translate("MainWindow", "Papier", nullptr));
+        cb_type_2->setItemText(0, QCoreApplication::translate("MainWindow", "Verre", nullptr));
+        cb_type_2->setItemText(1, QCoreApplication::translate("MainWindow", "Carton", nullptr));
+        cb_type_2->setItemText(2, QCoreApplication::translate("MainWindow", "Cuivre", nullptr));
+        cb_type_2->setItemText(3, QCoreApplication::translate("MainWindow", "Plastique", nullptr));
+        cb_type_2->setItemText(4, QCoreApplication::translate("MainWindow", "Papier", nullptr));
+        cb_type_2->setItemText(5, QCoreApplication::translate("MainWindow", "Aluminium", nullptr));
+        cb_type_2->setItemText(6, QCoreApplication::translate("MainWindow", "acier", nullptr));
+        cb_type_2->setItemText(7, QCoreApplication::translate("MainWindow", "Bois", nullptr));
+        cb_type_2->setItemText(8, QCoreApplication::translate("MainWindow", "Textile", nullptr));
+        cb_type_2->setItemText(9, QCoreApplication::translate("MainWindow", "Pneumatiques", nullptr));
+        cb_type_2->setItemText(10, QCoreApplication::translate("MainWindow", "D\303\251chets \303\211lectroniques", nullptr));
 
         label_33->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt;\">Poids (kg) :</span></p></body></html>", nullptr));
         label_35->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt;\">Prix  :</span></p></body></html>", nullptr));
@@ -3394,9 +3453,9 @@ public:
 
         btn_trier_2->setText(QCoreApplication::translate("MainWindow", "Trier", nullptr));
         label_75->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:14pt; color:#ffffff;\">Gestion De Produits</span></p></body></html>", nullptr));
-        btn_ajouter_4->setText(QCoreApplication::translate("MainWindow", "AJOUTER", nullptr));
-        btn_modifier_4->setText(QCoreApplication::translate("MainWindow", "MODIFIER", nullptr));
-        btn_supprimer_5->setText(QCoreApplication::translate("MainWindow", "SUPPRIMER", nullptr));
+        btn_ajouter_produit->setText(QCoreApplication::translate("MainWindow", "AJOUTER", nullptr));
+        btn_modifier_produit->setText(QCoreApplication::translate("MainWindow", "MODIFIER", nullptr));
+        btn_supprimer_produit->setText(QCoreApplication::translate("MainWindow", "SUPPRIMER", nullptr));
         btn_pdf_3->setText(QCoreApplication::translate("MainWindow", "Exporter PDF", nullptr));
         gb_form_client->setTitle(QCoreApplication::translate("MainWindow", "Informations Client", nullptr));
         label_8_client->setText(QCoreApplication::translate("MainWindow", "ID Client", nullptr));
@@ -3483,6 +3542,17 @@ public:
         btn_refresh->setText(QCoreApplication::translate("MainWindow", "Refresh", nullptr));
         gb_stats->setTitle(QCoreApplication::translate("MainWindow", "Statistiques", nullptr));
         tabWidget_right->setTabText(tabWidget_right->indexOf(tab_stats), QCoreApplication::translate("MainWindow", "Statistiques", nullptr));
+        gb_contrat->setTitle(QCoreApplication::translate("MainWindow", "Statistiques", nullptr));
+        cb_type_contrat_emp->setItemText(0, QCoreApplication::translate("MainWindow", "CDI", nullptr));
+        cb_type_contrat_emp->setItemText(1, QCoreApplication::translate("MainWindow", "CDD", nullptr));
+        cb_type_contrat_emp->setItemText(2, QCoreApplication::translate("MainWindow", "Stage", nullptr));
+        cb_type_contrat_emp->setItemText(3, QCoreApplication::translate("MainWindow", "SIVP", nullptr));
+
+        label_17->setText(QCoreApplication::translate("MainWindow", "Type de contrat", nullptr));
+        label_18->setText(QCoreApplication::translate("MainWindow", "P\303\251riode d'essai (en mois)", nullptr));
+        label_19->setText(QCoreApplication::translate("MainWindow", "Lieu de travail", nullptr));
+        le_lieu_travail_emp->setPlaceholderText(QCoreApplication::translate("MainWindow", "Si\303\250ge EcoCycle, Tunis", nullptr));
+        btn_generer_contrat_emp->setText(QCoreApplication::translate("MainWindow", "G\303\251nerer", nullptr));
         tabWidget_right->setTabText(tabWidget_right->indexOf(tab_contrat), QCoreApplication::translate("MainWindow", "Contrat", nullptr));
         gb_form_2->setTitle(QCoreApplication::translate("MainWindow", "Informations Poubelle", nullptr));
         label_24->setText(QCoreApplication::translate("MainWindow", "ID_poubelle", nullptr));
@@ -3494,12 +3564,12 @@ public:
         le_type_dechet->setText(QString());
         le_type_dechet->setPlaceholderText(QCoreApplication::translate("MainWindow", "plastiques...", nullptr));
         label_28->setText(QCoreApplication::translate("MainWindow", "Capacit\303\251(L)", nullptr));
+        label_remp->setText(QCoreApplication::translate("MainWindow", "Remplissage (%)", nullptr));
+        label_batt->setText(QCoreApplication::translate("MainWindow", "Batterie (%)", nullptr));
         label_etat->setText(QCoreApplication::translate("MainWindow", "Etat", nullptr));
         cb_etat_poubelle->setItemText(0, QCoreApplication::translate("MainWindow", "EN_STOCK", nullptr));
         cb_etat_poubelle->setItemText(1, QCoreApplication::translate("MainWindow", "INSTALLE", nullptr));
 
-        label_remp->setText(QCoreApplication::translate("MainWindow", "Remplissage (%)", nullptr));
-        label_batt->setText(QCoreApplication::translate("MainWindow", "Batterie (%)", nullptr));
         label_statut_cap->setText(QCoreApplication::translate("MainWindow", "Statut Capteur", nullptr));
         cb_statut_capteur->setItemText(0, QCoreApplication::translate("MainWindow", "Fonctionnel", nullptr));
         cb_statut_capteur->setItemText(1, QCoreApplication::translate("MainWindow", "En panne", nullptr));
@@ -3522,11 +3592,10 @@ public:
         comboBox_client_2->setItemText(1, QCoreApplication::translate("MainWindow", "Type de d\303\251chets", nullptr));
         comboBox_client_2->setItemText(2, QCoreApplication::translate("MainWindow", "Adresse", nullptr));
 
-        btn_tri_client_2->setText(QCoreApplication::translate("MainWindow", "chercher", nullptr));
         btn_ajouter_poubelle->setText(QCoreApplication::translate("MainWindow", "Ajouter", nullptr));
         btn_modifier_poubelle->setText(QCoreApplication::translate("MainWindow", "Modifier", nullptr));
         btn_supprimer_poubelle->setText(QCoreApplication::translate("MainWindow", "Supprimer", nullptr));
-        btn_pdf_client_2->setText(QCoreApplication::translate("MainWindow", "Pdf", nullptr));
+        btn_pdf_poubelle->setText(QCoreApplication::translate("MainWindow", "Pdf", nullptr));
     } // retranslateUi
 
 };

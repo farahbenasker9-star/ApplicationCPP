@@ -1,13 +1,20 @@
 #include "mainwindow.h"
+#include "emailcontrat.h"
 #include "ui_mainwindow.h"
 #include <QDebug>
 #include <QMessageBox>
 #include <QRegularExpression>
 #include <QFileDialog>
+#include <QDir>
 #include <QPrinter>
 #include <QTextDocument>
 #include <QDateTime>
 #include <QTableView>
+#include <QDesktopServices>
+#include <QUrl>
+#include <QPainter>
+#include <QApplication>
+#include <QMouseEvent>
 #include <QComboBox>
 #include <QLineEdit>
 #include <QTextEdit>
@@ -33,6 +40,42 @@
 #include <QtCharts/QValueAxis>
 #include <QStyledItemDelegate>
 
+// ==================== PREVIEWDIALOG ====================
+PreviewDialog::PreviewDialog(QWidget *parent)
+    : QDialog(parent)
+{
+    setWindowTitle("Aperçu du Contrat");
+    setGeometry(100, 100, 900, 700);  // Dialog de 900x700
+    setModal(true);  // Modal - bloque l'accès à la fenêtre derrière
+    
+    QVBoxLayout *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(15, 15, 15, 15);
+    
+    // Titre
+    QLabel *title = new QLabel("Contrat Généré");
+    title->setStyleSheet("font-weight: bold; font-size: 16px; color: #1b5e20;");
+    layout->addWidget(title);
+    
+    // Text edit pour le contrat
+    textEdit = new QTextEdit(this);
+    textEdit->setReadOnly(true);
+    layout->addWidget(textEdit);
+    
+    // Bouton de fermeture
+    QPushButton *btnOk = new QPushButton("Fermer", this);
+    btnOk->setCursor(Qt::PointingHandCursor);
+    btnOk->setStyleSheet("padding: 8px; background-color: #1b5e20; color: white; border-radius: 4px; font-weight: bold;");
+    connect(btnOk, &QPushButton::clicked, this, &QDialog::accept);
+    layout->addWidget(btnOk);
+    
+    setLayout(layout);
+}
+
+void PreviewDialog::setContentHtml(const QString &html)
+{
+    textEdit->setHtml(html);
+}
+
 // ==================== CUSTOM DELEGATE FOR CIN ====================
 class CinDelegate : public QStyledItemDelegate
 {
@@ -50,12 +93,51 @@ public:
     }
 };
 
+// ==================== CUSTOM DELEGATE FOR CONTRAT DOWNLOAD ====================
+class ContratDownloadDelegate : public QStyledItemDelegate
+{
+public:
+    ContratDownloadDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent) {}
+
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        if (index.column() == 11) { // Colonne "Action"
+            painter->save();
+            QStyleOptionButton button;
+            QRect r = option.rect;
+            int padding = 4;
+            button.rect = QRect(r.left() + padding, r.top() + padding, r.width() - 2 * padding, r.height() - 2 * padding);
+            button.text = "Télécharger";
+            button.state = QStyle::State_Enabled;
+
+            // Optional: Check if file exists to color the button differently
+            QString id_contrat = index.sibling(index.row(), 0).data().toString();
+            QString nom_client = index.sibling(index.row(), 1).data().toString(); // id_client used for now, will find name based on real data
+            
+            // Standard button draw
+            QApplication::style()->drawControl(QStyle::CE_PushButton, &button, painter);
+            painter->restore();
+        } else {
+            QStyledItemDelegate::paint(painter, option, index);
+        }
+    }
+};
+
 // ─── Constructeur ────────────────────────────────────────────────────────────
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    
+    // Changer le titre de l'onglet tab_2 de "Page" à "Contrat"
+    if (ui->statistique_contrat && ui->tab_2) {
+        int tabIndex = ui->statistique_contrat->indexOf(ui->tab_2);
+        if (tabIndex >= 0) {
+            ui->statistique_contrat->setTabText(tabIndex, "Contrat");
+        }
+    }
+    
     model = new QSqlQueryModel(this);
 
     // Initialisation de l'affichage des poubelles
@@ -205,6 +287,25 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->btn_nav_poubelle,   &QPushButton::clicked, this, [this]() { navigateToPage(7); ui->btn_nav_poubelle->setChecked(true); });
     connect(ui->btn_nav_contrat,    &QPushButton::clicked, this, [this]() { navigateToPage(2); ui->btn_nav_contrat->setChecked(true); });
     connect(ui->btn_nav_stock,      &QPushButton::clicked, this, [this]() { navigateToPage(4); ui->btn_nav_stock->setChecked(true); });
+
+    // ==================== CHATBOT INTEGRATION ====================
+    chatbotVisible = false;
+    btn_nav_chatbot = new QPushButton("Assistant AI", ui->navbar_container);
+    btn_nav_chatbot->setObjectName("btn_nav_chatbot");
+    btn_nav_chatbot->setIcon(QIcon(":/images/chatbot.png"));
+    btn_nav_chatbot->setIconSize(QSize(24, 24));
+    btn_nav_chatbot->setCheckable(true);
+    btn_nav_chatbot->setAutoExclusive(true);
+    
+    // Insert into layout below btn_nav_stock
+    ui->verticalLayout_4->insertWidget(7, btn_nav_chatbot);
+    
+    connect(btn_nav_chatbot, &QPushButton::clicked, this, &MainWindow::on_btn_nav_chatbot_clicked);
+
+    // Create Chatbot instance
+    chatbot = new Chatbot(this);
+    chatbot->hide();
+    chatbotVisible = false;
     connect(ui->btn_nav_equipements,&QPushButton::clicked, this, [this]() { navigateToPage(3); ui->btn_nav_equipements->setChecked(true); });
 
     // Connect Quit button
@@ -213,6 +314,7 @@ MainWindow::MainWindow(QWidget *parent)
     // ==================== MODULE CONTRAT ====================
     // Affichage initial du tableau
     ui->tab_contrat_2->setModel(Contrat().afficher());
+    ui->tab_contrat_2->setItemDelegateForColumn(11, new ContratDownloadDelegate(this));
     contrat_populateComboBoxes();
 
     // Connexions CRUD
@@ -243,6 +345,72 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::contrat_validateFloats);
     connect(ui->clause_penale, &QTextEdit::textChanged,
             this, &MainWindow::contrat_validateDescription);
+
+    // ==================== CRÉATION DES ÉLÉMENTS ONGLET CONTRAT EN CODE ====================
+    if (ui->tab_2) {
+        // Créer le layout principal
+        QVBoxLayout *mainLayout = new QVBoxLayout(ui->tab_2);
+        mainLayout->setContentsMargins(10, 5, 220, 5); // Rembourrage à droite (220) pour centrage fin
+        
+        // Panneau blanc translucide (Glassmorphism / Card style)
+        QWidget *panel = new QWidget();
+        panel->setAttribute(Qt::WA_StyledBackground, true);
+        panel->setStyleSheet("QWidget { background-color: rgba(245, 255, 245, 0.95); border-radius: 8px; border: 1px solid #81c784; }");
+        
+        QVBoxLayout *panelLayout = new QVBoxLayout(panel);
+        panelLayout->setContentsMargins(10, 15, 10, 15);
+        panelLayout->setSpacing(10);
+        
+        QLabel *lblTitle = new QLabel("Actions Rapides");
+        lblTitle->setAlignment(Qt::AlignCenter);
+        lblTitle->setStyleSheet("font-weight: bold; font-size: 14px; color: #1b5e20; border: none; background: transparent;");
+        panelLayout->addWidget(lblTitle);
+        
+        QLabel *lblDesc = new QLabel("Générez et sauvegardez le PDF.");
+        lblDesc->setWordWrap(true);
+        lblDesc->setAlignment(Qt::AlignCenter);
+        lblDesc->setStyleSheet("font-size: 11px; color: #333333; border: none; background: transparent; margin-bottom: 10px;");
+        panelLayout->addWidget(lblDesc);
+        
+        // Conteneur aligné au centre pour restreindre la taille des boutons
+        QVBoxLayout *btnsLayout = new QVBoxLayout();
+        btnsLayout->setSpacing(8);
+        btnsLayout->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
+        
+        // Bouton Générer (Plus compact)
+        btn_generer_contrat = new QPushButton("Générer PDF");
+        btn_generer_contrat->setFixedSize(130, 35);
+        btn_generer_contrat->setCursor(Qt::PointingHandCursor);
+        btn_generer_contrat->setStyleSheet(
+            "QPushButton { background-color: #1b5e20; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 11px; } "
+            "QPushButton:hover { background-color: #2e7d32; } "
+            "QPushButton:pressed { background-color: #0d3817; }");
+        btnsLayout->addWidget(btn_generer_contrat);
+        
+        // Bouton Email
+        btn_email_contrat = new QPushButton("Envoyer E-mail");
+        btn_email_contrat->setFixedSize(130, 35);
+        btn_email_contrat->setCursor(Qt::PointingHandCursor);
+        btn_email_contrat->setStyleSheet(
+            "QPushButton { background-color: #f57c00; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 11px; } "
+            "QPushButton:hover { background-color: #fb8c00; } "
+            "QPushButton:pressed { background-color: #e65100; }");
+        btnsLayout->addWidget(btn_email_contrat);
+        
+        panelLayout->addLayout(btnsLayout);
+        panelLayout->addStretch();
+        mainLayout->addWidget(panel);
+        
+        // Assigner des valeurs nulles/cachées aux vieux composants retirés du layout
+        webview_contrat = nullptr;
+        btn_imprimer_contrat = new QPushButton();
+        btn_imprimer_contrat->hide();
+    }
+
+    // Connexions pour génération de contrat (onglet "Contrat")
+    if (btn_generer_contrat) connect(btn_generer_contrat,    &QPushButton::clicked, this, &MainWindow::contrat_onGenererClicked);
+    if (btn_imprimer_contrat) connect(btn_imprimer_contrat,   &QPushButton::clicked, this, &MainWindow::contrat_onImprimerClicked);
+    if (btn_email_contrat) connect(btn_email_contrat,      &QPushButton::clicked, this, &MainWindow::contrat_onEmailClicked);
     connect(ui->combo_ID_Client, &QComboBox::currentIndexChanged,
             this, &MainWindow::contrat_validateID);
 
@@ -312,6 +480,43 @@ void MainWindow::on_btn_nav_poubelle_clicked()   {
 }
 void MainWindow::on_btn_nav_equipements_clicked(){ ui->stackedWidget->setCurrentIndex(3); }
 void MainWindow::on_btn_nav_stock_clicked()      { ui->stackedWidget->setCurrentIndex(4); }
+
+void MainWindow::on_btn_nav_chatbot_clicked()
+{
+    if (!chatbot) return;
+
+    int margin = 20;
+    int botHeight = this->height() - (margin * 2);
+    int botWidth = chatbot->width();
+    int endX = this->width() - botWidth - margin;
+    int startX = this->width();
+
+    if (!chatbotVisible) {
+        chatbot->show();
+        chatbot->raise();
+        chatbot->setGeometry(startX, margin, botWidth, botHeight);
+
+        QPropertyAnimation *anim = new QPropertyAnimation(chatbot, "geometry");
+        anim->setDuration(600);
+        anim->setStartValue(QRect(startX, margin, botWidth, botHeight));
+        anim->setEndValue(QRect(endX, margin, botWidth, botHeight));
+        anim->setEasingCurve(QEasingCurve::OutBack); // Bouncy effect
+        anim->start(QAbstractAnimation::DeleteWhenStopped);
+        
+        chatbotVisible = true;
+    } else {
+        QPropertyAnimation *anim = new QPropertyAnimation(chatbot, "geometry");
+        anim->setDuration(400);
+        anim->setStartValue(chatbot->geometry());
+        anim->setEndValue(QRect(this->width(), margin, botWidth, botHeight));
+        anim->setEasingCurve(QEasingCurve::InBack);
+        connect(anim, &QPropertyAnimation::finished, chatbot, &QWidget::hide);
+        anim->start(QAbstractAnimation::DeleteWhenStopped);
+        
+        chatbotVisible = false;
+        btn_nav_chatbot->setChecked(false);
+    }
+}
 
 void MainWindow::on_btn_dash_poubelle_clicked()  {
     ui->stackedWidget->setCurrentIndex(7);
@@ -965,6 +1170,7 @@ void MainWindow::contrat_setupModelHeaders(QSqlQueryModel *m)
     m->setHeaderData(8,  Qt::Horizontal, QObject::tr("Taux Rem."));
     m->setHeaderData(9,  Qt::Horizontal, QObject::tr("Statut"));
     m->setHeaderData(10, Qt::Horizontal, QObject::tr("Clause Pénale"));
+    m->setHeaderData(11, Qt::Horizontal, QObject::tr("Action"));
 }
 
 // ─── Clic simple : affiche l'ID dans le formulaire ───────────────────────────
@@ -973,6 +1179,23 @@ void MainWindow::contrat_onTabClicked(const QModelIndex &index)
     contrat_currentSelectedId = ui->tab_contrat_2->model()
                         ->data(ui->tab_contrat_2->model()->index(index.row(), 0)).toInt();
     ui->ID_Contrat->setText(QString::number(contrat_currentSelectedId));
+    
+    // Check if Download column was clicked
+    if (index.column() == 11) {
+        QString idClientStr = ui->tab_contrat_2->model()->data(ui->tab_contrat_2->model()->index(index.row(), 1)).toString();
+        int idClient = idClientStr.toInt();
+        QString fileName = QString("Contrat_ID%1_Client%2.pdf").arg(contrat_currentSelectedId).arg(idClient);
+        
+        // Dossier situé exactement à la racine de votre projet (comme "images")
+        QString basePath = "C:/Users/misst/OneDrive/Bureau/Esprit/QT/EcoCycleApp/dossier_contrats/";
+        QString filePath = basePath + fileName;
+
+        if (QFile::exists(filePath)) {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
+        } else {
+            QMessageBox::warning(this, "Non Généré", "Ce contrat n'a pas encore été généré !\nVeuillez d'abord le générer avec le bouton 'Générer'.");
+        }
+    }
 }
 
 // ─── Double-clic : remplit tout le formulaire ─────────────────────────────────
@@ -985,8 +1208,14 @@ void MainWindow::contrat_onTabDoubleClicked(const QModelIndex &index)
     ui->ID_Contrat->setText(QString::number(contrat_currentSelectedId));
 
     QString id_client = m->data(m->index(row, 1)).toString();
-    int clientIdx = ui->combo_ID_Client->findText(id_client);
-    if (clientIdx != -1) ui->combo_ID_Client->setCurrentIndex(clientIdx);
+    if (id_client.isEmpty() || id_client == "0") {
+        // Pas de client → remettre le combo à "Sélectionner..." (index 0)
+        ui->combo_ID_Client->setCurrentIndex(0);
+    } else {
+        int clientIdx = ui->combo_ID_Client->findText(id_client);
+        if (clientIdx != -1) ui->combo_ID_Client->setCurrentIndex(clientIdx);
+        else ui->combo_ID_Client->setCurrentIndex(0); // non trouvé → reset aussi
+    }
 
     QString cin_val = m->data(m->index(row, 2)).toString();
     int cinIdx = ui->combo_CIN_Employe->findText(cin_val);
@@ -1212,7 +1441,7 @@ void MainWindow::contrat_onTriClicked()
     QSqlQueryModel *m = new QSqlQueryModel();
     QString sql = QString(
         "SELECT ID_CONTRAT, ID_CLIENT, CIN, TYPE_EXCLUSIVITE, PRODUITS_CONCERNES, "
-        "DATE_DEBUT, DATE_FIN, OBJECTIF_ACHAT_ANNUEL, TAUX_REMISE_ACCORDE, STATUT_CONTRAT, CLAUSE_PENALE "
+        "DATE_DEBUT, DATE_FIN, OBJECTIF_ACHAT_ANNUEL, TAUX_REMISE_ACCORDE, STATUT_CONTRAT, CLAUSE_PENALE, 'Télécharger' AS ACTION "
         "FROM CONTRAT ORDER BY %1"
     ).arg(orderBy);
 
@@ -1305,9 +1534,151 @@ void MainWindow::contrat_validateDescription()
     }
 }
 
+
+// ─── Collecter les données du formulaire contrat ─────────────────────────────
+ContratGenerator::ContratData MainWindow::collectContratData()
+{
+    ContratGenerator::ContratData d;
+
+    // Valeurs par défaut
+    d.nom_client     = "N/A";
+    d.adresse_client = "N/A";
+    d.tel_client     = "N/A";
+    d.email_client   = "";
+
+    // IDs
+    d.id_contrat = ui->ID_Contrat->text().trimmed().toInt();
+    int comboClientIndex = ui->combo_ID_Client->currentIndex();
+    d.id_client = (comboClientIndex <= 0) ? 0 : ui->combo_ID_Client->currentText().toInt();
+
+    // Infos client depuis la DB (Version utilisateur avec NOM_CLIENT)
+    if (d.id_client > 0) {
+        QSqlQuery q;
+        q.prepare("SELECT NOM_CLIENT, ADRESSE, NUM_TEL FROM CLIENT WHERE ID_CLIENT = :id");
+        q.bindValue(":id", d.id_client);
+        if (q.exec() && q.next()) {
+            d.nom_client     = q.value(0).toString().trimmed();
+            d.adresse_client = q.value(1).toString().trimmed();
+            d.tel_client     = q.value(2).toString().trimmed();
+            // EMAIL_CLIENT n'existe pas dans la table CLIENT d'après le code utilisateur
+            d.email_client   = ""; 
+        }
+    }
+
+    // Champs contrat
+    d.type_exclusivite        = ui->type_ex->currentText();
+    d.produits_concernes      = ui->prod_con->currentText().isEmpty() ? "Tous produits" : ui->prod_con->currentText();
+    d.gamme                   = d.produits_concernes;
+    d.date_debut              = ui->date_debut->date();
+    d.date_fin                = ui->date_fin->date();
+    d.objectif_achat_annuel   = ui->obj_ach_ann->value();
+    d.taux_remise_accorde     = ui->tau_rem_acc->value();
+    d.statut_contrat          = ui->status_contrat->currentText();
+    d.clause_penale           = ui->clause_penale->toPlainText().trimmed();
+
+    return d;
+}
+
+// ─── Générer le contrat (aperçu + POPUP utilisateur + Export PDF) ────────────
+void MainWindow::contrat_onGenererClicked()
+{
+    if (ui->date_debut->date() >= ui->date_fin->date()) {
+        QMessageBox::warning(this, "Erreur", "La date de début doit être antérieure à la date de fin.");
+        return;
+    }
+
+    ContratGenerator::ContratData data = collectContratData();
+    if (data.id_contrat == 0) {
+        QMessageBox::warning(this, "Erreur", "L'ID du contrat est introuvable. Veuillez sélectionner un contrat.");
+        return; 
+    }
+
+    // CREATE FOLDER AND CHECK IF FILE ALREADY EXISTS
+    QString basePath = "C:/Users/misst/OneDrive/Bureau/Esprit/QT/EcoCycleApp/dossier_contrats/";
+    QDir dir;
+    if (!dir.exists(basePath)) {
+        dir.mkpath(basePath);
+    }
+
+    QString fileName = QString("Contrat_ID%1_Client%2.pdf").arg(data.id_contrat).arg(data.id_client);
+    QString filePath = basePath + fileName;
+
+    if (QFile::exists(filePath)) {
+        QMessageBox::critical(this, "Déjà généré", "Ce contrat a déjà été généré.\nUn contrat ne peut être généré qu'une seule fois !");
+        return;
+    }
+
+    ContratGenerator gen;
+    QString html = gen.generateContractHTML(data);
+
+    // 1. SILENT EXPORT PDF
+    if (!gen.exportToPDF(data, filePath)) {
+        QMessageBox::critical(this, "Erreur", "La sauvegarde du contrat a échoué.");
+        return;
+    }
+
+    // 2. Affichage dans le petit aperçu (webview_contrat) - Hidden but just in case
+    if (webview_contrat) {
+        webview_contrat->setHtml(html);
+    }
+
+    // 3. OUVERTURE DE LA GRANDE PREVIEW
+    PreviewDialog *preview = new PreviewDialog(this);
+    preview->setContentHtml(html);
+    preview->exec();
+    delete preview;
+    
+    QMessageBox::information(this, "Succès", "Le contrat a bien été généré et sauvegardé dans 'dossier_contrats'.");
+}
+
+// ─── Exporter le contrat généré en PDF (avec Correct PDF Fix) ────────────────
+void MainWindow::contrat_onImprimerClicked()
+{
+    QString filePath = QFileDialog::getSaveFileName(this,
+        "Exporter le Contrat", "Contrat.pdf", "PDF (*.pdf)");
+    if (filePath.isEmpty()) return;
+
+    ContratGenerator::ContratData data = collectContratData();
+    ContratGenerator gen;
+
+    if (gen.exportToPDF(data, filePath)) {
+        QMessageBox::information(this, "Succès", "Contrat exporté en PDF avec succès !\n" + filePath);
+    } else {
+        QMessageBox::critical(this, "Erreur", "Impossible d'exporter le contrat en PDF.");
+    }
+}
+
+// ─── Envoyer le contrat par e-mail (avec EmailContrat Fix) ────────────────────
+void MainWindow::contrat_onEmailClicked()
+{
+    ContratGenerator::ContratData data = collectContratData();
+    ContratGenerator gen;
+    QString html = gen.generateContractHTML(data, true);
+
+    QString destinataire = "misstagada1231230@gmail.com";
+    QString sujet        = QString("Contrat EcoCycle #%1 - %2")
+                           .arg(data.id_contrat)
+                           .arg(data.nom_client);
+
+    QMessageBox::information(this, "Envoi en cours",
+        "Envoi du contrat à " + destinataire + "...\nCela peut prendre quelques secondes.");
+
+    QString erreur;
+    bool ok = EmailContrat::envoyerContrat(destinataire, sujet, html, erreur);
+
+    if (ok) {
+        QMessageBox::information(this, "Succès", "✅ Le contrat a été envoyé avec succès !");
+    } else {
+        QMessageBox::critical(this, "Erreur d'envoi", "❌ Échec : " + erreur);
+    }
+}
+
+void MainWindow::contrat_updatePreviewClicked() { contrat_onGenererClicked(); }
+
 // =========================================================
 // ===                MODULE EQUIPEMENT                  ===
 // =========================================================
+
 
 // ─── Remplir la combobox CIN depuis EMPLOYE ───────────────────────────────────
 void MainWindow::equipement_chargerCIN()
@@ -2451,3 +2822,5 @@ void MainWindow::onBtnSupprimerClicked() {
                               "Erreur lors de la suppression :\n" + query.lastError().text());
     }
 }
+
+

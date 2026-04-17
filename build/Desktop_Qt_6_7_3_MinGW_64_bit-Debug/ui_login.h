@@ -41,6 +41,14 @@ public:
     QSpacerItem *verticalSpacer;
     QLabel *label_2;
     QWidget *page_2;
+    QWidget *verticalLayoutWidget_2;
+    QVBoxLayout *verticalLayout_2;
+    QSpacerItem *verticalSpacer_3;
+    QLineEdit *le_reset_email;
+    QPushButton *btn_reset;
+    QSpacerItem *verticalSpacer_4;
+    QPushButton *btn_back;
+    QLabel *label_3;
 
     void setupUi(QDialog *Login)
     {
@@ -140,7 +148,7 @@ public:
         label->setPixmap(QPixmap(QString::fromUtf8(":/images/logo-removebg-preview (1).png")));
         stackedWidget = new QStackedWidget(Login);
         stackedWidget->setObjectName("stackedWidget");
-        stackedWidget->setGeometry(QRect(460, 10, 841, 701));
+        stackedWidget->setGeometry(QRect(460, 10, 831, 711));
         stackedWidget->setStyleSheet(QString::fromUtf8("\n"
 "\n"
 "/* --- BOUTON \"MOT DE PASSE OUBLI\303\211\" (Style Lien) --- */\n"
@@ -212,11 +220,79 @@ public:
         stackedWidget->addWidget(page);
         page_2 = new QWidget();
         page_2->setObjectName("page_2");
+        verticalLayoutWidget_2 = new QWidget(page_2);
+        verticalLayoutWidget_2->setObjectName("verticalLayoutWidget_2");
+        verticalLayoutWidget_2->setGeometry(QRect(70, 190, 711, 351));
+        verticalLayout_2 = new QVBoxLayout(verticalLayoutWidget_2);
+        verticalLayout_2->setObjectName("verticalLayout_2");
+        verticalLayout_2->setContentsMargins(0, 0, 0, 0);
+        verticalSpacer_3 = new QSpacerItem(20, 40, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
+
+        verticalLayout_2->addItem(verticalSpacer_3);
+
+        le_reset_email = new QLineEdit(verticalLayoutWidget_2);
+        le_reset_email->setObjectName("le_reset_email");
+        le_reset_email->setStyleSheet(QString::fromUtf8("QLineEdit {\n"
+"    background-color: white;\n"
+"    border: none;\n"
+"    border-radius: 5px; /* Les bords arrondis */\n"
+"    padding: 8px 15px;  /* L'espace \303\240 l'int\303\251rieur */\n"
+"    color: #333333;\n"
+"    font-size: 14px;\n"
+"}\n"
+"QLineEdit:focus {\n"
+"    border: 1px solid #A5D6A7; /* Petite bordure verte quand on clique dessus */\n"
+"}"));
+
+        verticalLayout_2->addWidget(le_reset_email);
+
+        btn_reset = new QPushButton(verticalLayoutWidget_2);
+        btn_reset->setObjectName("btn_reset");
+        btn_reset->setStyleSheet(QString::fromUtf8("QPushButton {\n"
+"    background-color: #388E3C; /* Le fond vert */\n"
+"    color: white;              /* Texte en blanc */\n"
+"    border: none;\n"
+"    border-radius: 5px;        /* Bords arrondis */\n"
+"    padding: 10px;\n"
+"    font-weight: bold;\n"
+"    font-size: 14px;\n"
+"}\n"
+"QPushButton:hover {\n"
+"    background-color: #2E7D32; /* Vert un peu plus fonc\303\251 quand la souris passe dessus */\n"
+"}\n"
+"QPushButton:pressed {\n"
+"    background-color: #1B5E20; /* Vert tr\303\250s fonc\303\251 quand on clique */\n"
+"}"));
+
+        verticalLayout_2->addWidget(btn_reset);
+
+        verticalSpacer_4 = new QSpacerItem(20, 40, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
+
+        verticalLayout_2->addItem(verticalSpacer_4);
+
+        btn_back = new QPushButton(verticalLayoutWidget_2);
+        btn_back->setObjectName("btn_back");
+        btn_back->setStyleSheet(QString::fromUtf8("QPushButton {\n"
+"    background-color: transparent; /* Fond invisible */\n"
+"    color: #A5D6A7;                /* Vert clair/gris\303\242tre */\n"
+"    border: none;\n"
+"    font-size: 13px;\n"
+"}\n"
+"QPushButton:hover {\n"
+"    color: white;                  /* Devient blanc au survol */\n"
+"    text-decoration: underline;    /* Soulign\303\251 au survol */\n"
+"}"));
+
+        verticalLayout_2->addWidget(btn_back);
+
+        label_3 = new QLabel(page_2);
+        label_3->setObjectName("label_3");
+        label_3->setGeometry(QRect(280, 110, 321, 71));
         stackedWidget->addWidget(page_2);
 
         retranslateUi(Login);
 
-        stackedWidget->setCurrentIndex(0);
+        stackedWidget->setCurrentIndex(1);
 
 
         QMetaObject::connectSlotsByName(Login);
@@ -230,7 +306,11 @@ public:
         le_password->setPlaceholderText(QCoreApplication::translate("Login", "Password", nullptr));
         btn_forgot->setText(QCoreApplication::translate("Login", "                                                                                                                                                 Reset Password", nullptr));
         btn_login->setText(QCoreApplication::translate("Login", "Sign in", nullptr));
-        label_2->setText(QCoreApplication::translate("Login", "<html><head/><body><p><span style=\" font-size:24pt; color:#ffffff;\">Welcome Back</span></p></body></html>", nullptr));
+        label_2->setText(QCoreApplication::translate("Login", "<html><head/><body><p><span style=\" font-size:24pt; color:#ffffff;\">Bienvenue</span></p></body></html>", nullptr));
+        le_reset_email->setPlaceholderText(QCoreApplication::translate("Login", "Mail de R\303\251cup\303\251ration", nullptr));
+        btn_reset->setText(QCoreApplication::translate("Login", "R\303\251initialiser", nullptr));
+        btn_back->setText(QCoreApplication::translate("Login", "Retour", nullptr));
+        label_3->setText(QCoreApplication::translate("Login", "<html><head/><body><p align=\"center\"><span style=\" font-size:24pt; font-weight:700; color:#ffffff;\">R\303\251initialisation</span></p></body></html>", nullptr));
     } // retranslateUi
 
 };

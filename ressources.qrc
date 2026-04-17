@@ -2,6 +2,11 @@
     <qresource prefix="/new/prefix1">
         <file>images/bg_left.jpg</file>
         <file>images/logo.png</file>
+        <file>images/lougo.png</file>
+        <file>images/lougo2.png</file>
+        <file>images/signature_ecocycle.png</file>
+        <file>images/signa.png</file>
+        <file>images/signa2.png</file>
     </qresource>
     <qresource prefix="/">
         <file>images/bg_left.jpg</file>
@@ -23,5 +28,6 @@
         <file>images/btn6.png</file>
         <file>images/logo2.png</file>
         <file>images/icon_profile.png</file>
+        <file>images/chatbot.png</file>
     </qresource>
 </RCC>

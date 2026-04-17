@@ -1080,7 +1080,7 @@ QGroupBox::title {
         </widget>
         <widget class="QWidget" name="tab_2">
          <attribute name="title">
-          <string>Page</string>
+          <string>Contrat</string>
          </attribute>
         </widget>
        </widget>

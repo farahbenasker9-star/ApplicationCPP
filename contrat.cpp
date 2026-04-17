@@ -73,7 +73,7 @@ QSqlQueryModel * Contrat::afficher() const
                     "DATE_DEBUT, DATE_FIN, "
                     "OBJECTIF_ACHAT_ANNUEL, "
                     "TAUX_REMISE_ACCORDE, "
-                    "STATUT_CONTRAT, CLAUSE_PENALE "
+                    "STATUT_CONTRAT, CLAUSE_PENALE, 'Télécharger' AS ACTION "
                     "FROM CONTRAT");
 
     model->setHeaderData(0,  Qt::Horizontal, QObject::tr("ID"));
@@ -87,6 +87,7 @@ QSqlQueryModel * Contrat::afficher() const
     model->setHeaderData(8,  Qt::Horizontal, QObject::tr("Taux Rem."));
     model->setHeaderData(9,  Qt::Horizontal, QObject::tr("Statut"));
     model->setHeaderData(10, Qt::Horizontal, QObject::tr("Clause Pénale"));
+    model->setHeaderData(11, Qt::Horizontal, QObject::tr("Action"));
 
     return model;
 }
@@ -122,7 +123,7 @@ bool Contrat::exporterPdf(const QString &filePath, QSqlQueryModel *model) const
             <p style="text-align: right; color: #666;">Généré le : %1</p>
             <table>
                 <tr>
-                    <th>ID</th><th>ID Client</th><th>CIN</th><th>Type</th><th>Produits</th><th>Date Début</th><th>Date Fin</th><th>Objectif</th><th>Taux</th><th>Statut</th><th>Clause</th>
+                    <th>ID</th><th>Type</th><th>Produits</th><th>Date Début</th><th>Date Fin</th><th>Objectif</th><th>Taux</th><th>Statut</th>
                 </tr>
     )";
 
@@ -130,8 +131,6 @@ bool Contrat::exporterPdf(const QString &filePath, QSqlQueryModel *model) const
 
     for (int i = 0; i < sourceModel->rowCount(); ++i) {
         QString id_contrat_s = sourceModel->data(sourceModel->index(i, 0)).toString();
-        QString id_client_s  = sourceModel->data(sourceModel->index(i, 1)).toString();
-        QString cin_s        = sourceModel->data(sourceModel->index(i, 2)).toString();
         QString type_s       = sourceModel->data(sourceModel->index(i, 3)).toString();
         QString produits_s   = sourceModel->data(sourceModel->index(i, 4)).toString();
         QString date_deb_s   = sourceModel->data(sourceModel->index(i, 5)).toDate().toString("dd/MM/yyyy");
@@ -139,10 +138,9 @@ bool Contrat::exporterPdf(const QString &filePath, QSqlQueryModel *model) const
         QString objectif_s   = sourceModel->data(sourceModel->index(i, 7)).toString();
         QString taux_s       = sourceModel->data(sourceModel->index(i, 8)).toString();
         QString statut_s     = sourceModel->data(sourceModel->index(i, 9)).toString();
-        QString clause_s     = sourceModel->data(sourceModel->index(i, 10)).toString();
 
-        html += QString("<tr><td>%1</td><td>%2</td><td>%3</td><td>%4</td><td>%5</td><td>%6</td><td>%7</td><td>%8</td><td>%9</td><td>%10</td><td>%11</td></tr>")
-                .arg(id_contrat_s, id_client_s, cin_s, type_s, produits_s, date_deb_s, date_fin_s, objectif_s, taux_s, statut_s, clause_s);
+        html += QString("<tr><td>%1</td><td>%2</td><td>%3</td><td>%4</td><td>%5</td><td>%6</td><td>%7</td><td>%8</td></tr>")
+                .arg(id_contrat_s, type_s, produits_s, date_deb_s, date_fin_s, objectif_s, taux_s, statut_s);
     }
 
     html += "</table></body></html>";
@@ -174,7 +172,7 @@ QSqlQueryModel * Contrat::rechercher(const QString &texte) const
 
     QString sql = QString(
         "SELECT ID_CONTRAT, ID_CLIENT, CIN, TYPE_EXCLUSIVITE, PRODUITS_CONCERNES, "
-        "DATE_DEBUT, DATE_FIN, OBJECTIF_ACHAT_ANNUEL, TAUX_REMISE_ACCORDE, STATUT_CONTRAT, CLAUSE_PENALE "
+        "DATE_DEBUT, DATE_FIN, OBJECTIF_ACHAT_ANNUEL, TAUX_REMISE_ACCORDE, STATUT_CONTRAT, CLAUSE_PENALE, 'Télécharger' AS ACTION "
         "FROM CONTRAT WHERE "
         "CAST(ID_CONTRAT AS VARCHAR2(50)) LIKE '%%1%' OR "
         "UPPER(TYPE_EXCLUSIVITE) LIKE UPPER('%%1%') OR "
@@ -193,6 +191,7 @@ QSqlQueryModel * Contrat::rechercher(const QString &texte) const
     model->setHeaderData(8,  Qt::Horizontal, QObject::tr("Taux Rem."));
     model->setHeaderData(9,  Qt::Horizontal, QObject::tr("Statut"));
     model->setHeaderData(10, Qt::Horizontal, QObject::tr("Clause Pénale"));
+    model->setHeaderData(11, Qt::Horizontal, QObject::tr("Action"));
 
     return model;
 }
