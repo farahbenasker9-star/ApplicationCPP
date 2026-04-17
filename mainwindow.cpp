@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "equipementai.h"
 #include <QStandardItemModel>
 #include <QStandardItem>
 #include <QSqlQueryModel>
@@ -133,6 +134,10 @@ MainWindow::MainWindow(QWidget *parent)
     equipement_chargerCIN();
     ui->tab_employes_2->setModel(Equipement().afficher());
 
+    ui->tab_employes_2->setItemDelegate(
+        new EquipementDelegate(ui->tab_employes_2, this));
+
+
     // ── 4. Dates par défaut ───────────────────────────────────────────────────
     QDateTime now = QDateTime::currentDateTime();
     ui->Eq_Last_Maint_Date->setDateTime(now);
@@ -165,6 +170,13 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::equipement_validateDateSuivMaint);
     equipement_setupStatsUI();
     equipement_refreshStats();
+
+    new EquipementAIPanel(
+        "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",
+        ui->Eq_type_2,
+        ui->plainTextEdit,
+        ui->gb_stats_equipement_2,
+        this);
 
     // ==================== MODULE EMPLOYE ====================
     ui->tab_employes->setModel(tmp_employe.afficher());
@@ -2818,6 +2830,7 @@ void MainWindow::equipement_refreshStats()
 
     chartViewEquipStatut->setChart(chartPie);
 }
+
 
 // =========================================================
 // ===                  MODULE EMPLOYE                   ===

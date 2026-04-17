@@ -3,10 +3,11 @@ QT       += core gui widgets sql printsupport charts network
 CONFIG += c++17
 QMAKE_CXXFLAGS += -std=c++17
 QT += printsupport
-
+QT += network
 SOURCES += \
     client.cpp \
     equipement.cpp \
+    equipementai.cpp \
     main.cpp \
     login.cpp \
     mainwindow.cpp \
@@ -22,6 +23,7 @@ SOURCES += \
 HEADERS += \
     client.h \
     equipement.h \
+    equipementai.h \
     login.h \
     mainwindow.h \
     connection.h \
