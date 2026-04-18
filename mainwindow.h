@@ -183,6 +183,10 @@ private:
     void clearFormPoubelle( );
     bool validerFormulairePoubelle(bool isUpdate);
 
+    // Module Client
+    bool verifierSaisie();
+    bool reaffecterIdClientDansRelations(int oldId, int newId);
+
     // ─── Module Produit ───────────────────────────────────────────────────────
     void chargerIdsClients();
     int id_a_modifier = -1;
@@ -256,6 +260,9 @@ private:
     void poubelle_refreshPredictionAI();
     QChartView *poubelle_chartViewRemplissage = nullptr;
     MapWidget *poubelle_mapView = nullptr;
+    ArduinoMonitor *m_arduino = nullptr;
+    void onArduinoLevelUpdated(int binId, int level);
+    void onArduinoAlert(int binId, int level);
 
     // ─── Module Arduino RFID ──────────────────────────────────────────────────
     Arduino *arduino;
@@ -263,6 +270,12 @@ private:
 
 private slots:
     void handle_rfid_scan(const QString &uid);
+    void onBtnAjouterClicked();
+    void onBtnModifierClicked();
+    void onBtnSupprimerClicked();
+    void onTableClicked(const QModelIndex &index);
+    void onRechercheTextChanged(const QString &text);
+    void rafraichirAffichage();
 };
 
 #endif // MAINWINDOW_H
