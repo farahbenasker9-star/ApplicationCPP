@@ -8,6 +8,7 @@
 #include <QSqlError>
 #include <QDebug>
 #include <QFont>
+#include <QRegularExpression>
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  Constructor
@@ -55,25 +56,18 @@ EquipementAIPanel::EquipementAIPanel(const QString   &apiKey,
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  buildEmbeddedWidgets
-//  Creates the robot QLabel and "Analyser" QPushButton directly inside the
-//  container widget.  They use fixed geometry so they fit within the gap
-//  between the type combo (bottom ≈ y=70) and the output text area (top y=260).
-//
-//  Container (gb_stats_equipement_2) is 341 px wide.
 // ═══════════════════════════════════════════════════════════════════════════════
 void EquipementAIPanel::buildEmbeddedWidgets()
 {
-    // ── Robot image label ─────────────────────────────────────────────────────
     // Centred horizontally: x = (341 - 140) / 2 = 100
     m_robotLabel = new QLabel(m_container);
     m_robotLabel->setGeometry(100, 78, ROBOT_W, ROBOT_H);
     m_robotLabel->setAlignment(Qt::AlignCenter);
-    m_robotLabel->setScaledContents(false);   // we scale manually to keep ratio
+    m_robotLabel->setScaledContents(false);
     m_robotLabel->setStyleSheet("border: none; background: transparent;");
     m_robotLabel->show();
 
-    // ── Analyser button ───────────────────────────────────────────────────────
-    // Centred: x = (341 - 141) / 2 = 100,  placed just below the robot (y=225)
+    // Centred: x = (341 - 141) / 2 = 100, just below the robot (y=225)
     m_analyzeBtn = new QPushButton("⚡  Analyser", m_container);
     m_analyzeBtn->setGeometry(100, 225, 141, 34);
     m_analyzeBtn->setEnabled(false);
@@ -115,8 +109,6 @@ void EquipementAIPanel::loadEquipmentTypes()
     }
 
     m_typeCombo->blockSignals(false);
-
-    // Trigger initial state evaluation
     onEquipmentTypeChanged(m_typeCombo->currentIndex());
 }
 
@@ -129,7 +121,6 @@ void EquipementAIPanel::onEquipmentTypeChanged(int index)
     m_analyzeBtn->setEnabled(hasSelection && m_state != State::Thinking);
 
     if (!hasSelection) {
-        // Return to idle state
         m_state = State::Idle;
         stopThinkingAnimation();
         setRobotImage("wave.png");
@@ -145,7 +136,6 @@ void EquipementAIPanel::onAnalyzeClicked()
     const QString type = m_typeCombo->currentData().toString().trimmed();
     if (type.isEmpty()) return;
 
-    // Transition → Thinking
     m_state = State::Thinking;
     m_analyzeBtn->setEnabled(false);
     m_typeCombo->setEnabled(false);
@@ -153,7 +143,6 @@ void EquipementAIPanel::onAnalyzeClicked()
     m_outputEdit->setPlaceholderText("Analyse en cours, veuillez patienter…");
     startThinkingAnimation();
 
-    // Build prompt and fire the API call
     callOpenAI(buildPrompt(type));
 }
 
@@ -174,7 +163,7 @@ QString EquipementAIPanel::fetchEquipmentData(const QString &equipmentType)
         "LEFT JOIN EMPLOYE E ON EQ.CIN = E.CIN "
         "WHERE  UPPER(EQ.EQUIPMENT_TYPE) = UPPER(:type) "
         "ORDER BY EQ.EQUIPMENT_ID"
-        );
+    );
     q.bindValue(":type", equipmentType);
 
     if (!q.exec()) {
@@ -198,7 +187,6 @@ QString EquipementAIPanel::fetchEquipmentData(const QString &equipmentType)
         const QString lastM   = q.value(5).toDateTime().toString("dd/MM/yyyy");
         const QString nextM   = q.value(6).toDateTime().toString("dd/MM/yyyy");
 
-        // Sanitise notes: collapse whitespace, cap at 200 chars
         QString notes = q.value(7).toString().simplified();
         if (notes.length() > 200) notes = notes.left(197) + "…";
 
@@ -216,7 +204,7 @@ QString EquipementAIPanel::fetchEquipmentData(const QString &equipmentType)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-//  buildPrompt  —  assemble the full system + user message
+//  buildPrompt  —  assemble the full prompt text
 // ═══════════════════════════════════════════════════════════════════════════════
 QString EquipementAIPanel::buildPrompt(const QString &equipmentType)
 {
@@ -243,35 +231,45 @@ QString EquipementAIPanel::buildPrompt(const QString &equipmentType)
                "4. **Alertes urgentes** : Signalez tout équipement nécessitant une intervention "
                "immédiate (maintenance dépassée, statut critique, notes alarmantes).\n"
                "5. **Résumé** : Une ligne de synthèse courte.\n\n"
-               "Soyez précis, structuré et professionnel."
+               "Soyez précis, structuré et professionnel(in english, your output MUST be in 6 lines max)."
                ).arg(equipmentType, data);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-//  callOpenAI  —  HTTP POST to the Chat Completions endpoint
+//  callOpenAI  —  HTTP POST to the Gemini generateContent endpoint
 // ═══════════════════════════════════════════════════════════════════════════════
 void EquipementAIPanel::callOpenAI(const QString &prompt)
 {
-    QNetworkRequest request(QUrl("https://api.openai.com/v1/chat/completions"));
+    // 1. We use gemini-1.5-flash-latest to satisfy Google's servers
+    QString urlStr = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" + m_apiKey.trimmed();
+
+    // 2. Debug print to the console so we can PROVE Qt is using our new code
+    qDebug() << "--- DEBUG AI ---";
+    qDebug() << "Model URL being used:" << urlStr.left(85) << "...[KEY HIDDEN]";
+
+    // 3. Setup the request
+    QNetworkRequest request((QUrl(urlStr)));
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    request.setRawHeader("Authorization",
-                         QString("Bearer %1").arg(m_apiKey).toUtf8());
 
-    QJsonObject systemMsg;
-    systemMsg["role"]    = "system";
-    systemMsg["content"] = "You are an expert industrial equipment management analyst "
-                           "with deep knowledge of maintenance planning and NLP-based "
-                           "text analysis. Always respond in French.";
+    // ── Gemini JSON body ──────────────────────────────────────────────────────
+    QString fullPrompt =
+        "You are an expert industrial equipment management analyst "
+        "with deep knowledge of maintenance planning and NLP-based "
+        "text analysis. Always respond in French.\n\n" + prompt;
 
-    QJsonObject userMsg;
-    userMsg["role"]    = "user";
-    userMsg["content"] = prompt;
+    QJsonObject part;
+    part["text"] = fullPrompt;
+
+    QJsonObject content;
+    content["parts"] = QJsonArray{ part };
+
+    QJsonObject generationConfig;
+    generationConfig["maxOutputTokens"] = 10000;
+    generationConfig["temperature"]     = 0.4;
 
     QJsonObject body;
-    body["model"]       = "gpt-4o-mini";   // change to "gpt-4o" for best quality
-    body["max_tokens"]  = 1024;
-    body["temperature"] = 0.4;
-    body["messages"]    = QJsonArray{ systemMsg, userMsg };
+    body["contents"]         = QJsonArray{ content };
+    body["generationConfig"] = generationConfig;
 
     m_network->post(request, QJsonDocument(body).toJson(QJsonDocument::Compact));
 }
@@ -281,12 +279,11 @@ void EquipementAIPanel::callOpenAI(const QString &prompt)
 // ═══════════════════════════════════════════════════════════════════════════════
 void EquipementAIPanel::onNetworkReply(QNetworkReply *reply)
 {
-    // IMPORTANT: always read the body BEFORE calling reply->deleteLater().
-    // OpenAI returns JSON error details (key revoked, quota, etc.) in the body
-    // even for HTTP 4xx responses, so we must read it regardless of error status.
-    const QByteArray raw = reply->readAll();
-    const int httpStatus  = reply->attribute(
-                                    QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    // Read body BEFORE deleteLater() — Gemini returns JSON error details
+    // (bad key, quota exceeded, etc.) even for HTTP 4xx responses.
+    const QByteArray raw       = reply->readAll();
+    const int        httpStatus = reply->attribute(
+                                      QNetworkRequest::HttpStatusCodeAttribute).toInt();
 
     reply->deleteLater();
 
@@ -294,58 +291,58 @@ void EquipementAIPanel::onNetworkReply(QNetworkReply *reply)
     m_typeCombo->setEnabled(true);
     m_analyzeBtn->setEnabled(true);
     m_outputEdit->setPlaceholderText(
-        "Bonjour, veuillez s\xc3\xa9lectionner un type d'\xc3\xa9quipement pour commencer l'analyse.");
+        "Bonjour, veuillez sélectionner un type d'équipement pour commencer l'analyse.");
 
-    // ── Try to parse the body as JSON (works for both success and error) ──────
+    // Try to parse body as JSON (works for both success and Gemini error bodies)
     QJsonParseError parseErr;
-    QJsonDocument doc = QJsonDocument::fromJson(raw, &parseErr);
-    const bool bodyIsJson = (parseErr.error == QJsonParseError::NoError);
+    QJsonDocument   doc        = QJsonDocument::fromJson(raw, &parseErr);
+    const bool      bodyIsJson = (parseErr.error == QJsonParseError::NoError);
 
-    // ── Network/transport-level failure (no HTTP response at all) ─────────────
+    // ── Network / transport-level failure (no HTTP response at all) ───────────
     if (reply->error() != QNetworkReply::NoError && httpStatus == 0) {
         m_state = State::Done;
         m_outputEdit->setPlainText(
-            QString("\xe2\x9a\xa0\xef\xb8\x8f  Erreur r\xc3\xa9seau : %1\n\n"
-                    "V\xc3\xa9rifiez votre connexion internet.\n"
-                    "Si le probl\xc3\xa8me persiste, SSL est peut-\xc3\xaatre absent :\n"
-                    "copiez libssl-1_1-x64.dll et libcrypto-1_1-x64.dll dans le dossier "
-                    "de votre ex\xc3\xa9cutable.")
-                .arg(reply->errorString()));
+            QString("⚠️  Erreur réseau : %1\n\n"
+                    "Vérifiez votre connexion internet.\n"
+                    "Si le problème persiste, SSL est peut-être absent :\n"
+                    "copiez libssl-1_1-x64.dll et libcrypto-1_1-x64.dll dans le "
+                    "dossier de votre exécutable.")
+            .arg(reply->errorString()));
         setRobotImage("wave.png");
         return;
     }
 
-    // ── HTTP-level error (4xx / 5xx) — read OpenAI error body ─────────────────
+    // ── HTTP-level error (4xx / 5xx) — read Gemini error body ────────────────
     if (reply->error() != QNetworkReply::NoError) {
         m_state = State::Done;
         QString detail;
 
         if (bodyIsJson && doc.object().contains("error")) {
-            // OpenAI standard error envelope: { "error": { "message": "...", "type": "..." } }
+            // Gemini error envelope: { "error": { "code": 400, "message": "...", "status": "..." } }
             const QJsonObject err = doc.object()["error"].toObject();
-            const QString msg  = err["message"].toString();
-            const QString type = err["type"].toString();
-            const QString code = err["code"].toString();
-            detail = QString("Type  : %1\nCode  : %2\nD\xc3\xa9tail: %3")
-                         .arg(type.isEmpty() ? "—" : type,
-                              code.isEmpty() ? "—" : code,
-                              msg.isEmpty()  ? "—" : msg);
+            const QString msg    = err["message"].toString();
+            const QString status = err["status"].toString();
+            const int     code   = err["code"].toInt();
+            detail = QString("Status : %1\nCode   : %2\nDétail : %3")
+                         .arg(status.isEmpty() ? "—" : status)
+                         .arg(code)
+                         .arg(msg.isEmpty() ? "—" : msg);
         } else {
             detail = QString::fromUtf8(raw).trimmed();
             if (detail.isEmpty()) detail = reply->errorString();
         }
 
-        // Key revoked hint
-        const bool keyError = (httpStatus == 401 || httpStatus == 403 ||
-                               detail.contains("revoked",  Qt::CaseInsensitive) ||
-                               detail.contains("invalid",  Qt::CaseInsensitive) ||
-                               detail.contains("Incorrect API key", Qt::CaseInsensitive));
+        const bool keyError = (httpStatus == 400 || httpStatus == 401 ||
+                               httpStatus == 403 ||
+                               detail.contains("API_KEY", Qt::CaseInsensitive) ||
+                               detail.contains("invalid", Qt::CaseInsensitive) ||
+                               detail.contains("API key", Qt::CaseInsensitive));
 
-        QString msg = QString("\xe2\x9a\xa0\xef\xb8\x8f  Erreur HTTP %1\n\n%2").arg(httpStatus).arg(detail);
+        QString msg = QString("⚠️  Erreur HTTP %1\n\n%2").arg(httpStatus).arg(detail);
         if (keyError)
-            msg += "\n\n\xf0\x9f\x94\x91 Votre cl\xc3\xa9 API semble invalide ou r\xc3\xa9voqu\xc3\xa9e.\n"
-                   "G\xc3\xa9n\xc3\xa9rez-en une nouvelle sur platform.openai.com "
-                   "et mettez-la \xc3\xa0 jour dans mainwindow.cpp.";
+            msg += "\n\n🔑 Votre clé API Gemini semble invalide.\n"
+                   "Générez-en une nouvelle sur aistudio.google.com "
+                   "et mettez-la à jour dans mainwindow.cpp.";
 
         m_outputEdit->setPlainText(msg);
         setRobotImage("wave.png");
@@ -356,65 +353,79 @@ void EquipementAIPanel::onNetworkReply(QNetworkReply *reply)
     if (!bodyIsJson) {
         m_state = State::Done;
         m_outputEdit->setPlainText(
-            QString("\xe2\x9a\xa0\xef\xb8\x8f  R\xc3\xa9ponse JSON invalide : %1\n\nBrut :\n%2")
-                .arg(parseErr.errorString(), QString::fromUtf8(raw)));
+            QString("⚠️  Réponse JSON invalide : %1\n\nBrut :\n%2")
+            .arg(parseErr.errorString(), QString::fromUtf8(raw)));
         setRobotImage("wave.png");
         return;
     }
 
-    // API-level error inside a 200 OK (rare but possible)
+    // API-level error inside a 200 OK
     if (doc.object().contains("error")) {
         m_state = State::Done;
         const QString apiErr =
             doc.object()["error"].toObject()["message"].toString();
         m_outputEdit->setPlainText(
-            QString("\xe2\x9a\xa0\xef\xb8\x8f  Erreur API OpenAI :\n%1").arg(apiErr));
+            QString("⚠️  Erreur API Gemini :\n%1").arg(apiErr));
         setRobotImage("wave.png");
         return;
     }
 
-    // Extract assistant message
-    const QJsonArray choices = doc.object()["choices"].toArray();
-    if (choices.isEmpty()) {
+    // ── Extract Gemini response ───────────────────────────────────────────────
+    // Gemini path: candidates[0] → content → parts[0] → text
+    const QJsonArray candidates = doc.object()["candidates"].toArray();
+    if (candidates.isEmpty()) {
         m_state = State::Done;
         m_outputEdit->setPlainText(
-            "\xe2\x9a\xa0\xef\xb8\x8f  Aucune r\xc3\xa9ponse re\xc3\xa7ue de l'API (tableau choices vide).");
+            "⚠️  Aucune réponse reçue de l'API (tableau candidates vide).");
         setRobotImage("wave.png");
         return;
     }
 
     const QString result =
-        choices[0].toObject()["message"].toObject()["content"]
-            .toString().trimmed();
+        candidates[0].toObject()["content"].toObject()
+                     ["parts"].toArray()[0].toObject()
+                     ["text"].toString().trimmed();
 
     if (result.isEmpty()) {
         m_state = State::Done;
-        m_outputEdit->setPlainText("\xe2\x9a\xa0\xef\xb8\x8f  L'IA a retourn\xc3\xa9 une r\xc3\xa9ponse vide.");
+        m_outputEdit->setPlainText("⚠️  L'IA a retourné une réponse vide.");
         setRobotImage("wave.png");
         return;
     }
 
+    // ── Strip Markdown (QPlainTextEdit is plain-text only) ───────────────────
+    QString cleaned = result;
+    // Remove headers: "### Title" → "Title"
+    cleaned.replace(QRegularExpression("^#{1,6}\\s*",
+                        QRegularExpression::MultilineOption), "");
+    // Replace horizontal rules with a visual divider
+    cleaned.replace(QRegularExpression("^-{3,}\\s*$",
+                        QRegularExpression::MultilineOption),
+                    "────────────────────────────");
+    // Remove bold/italic markers keeping inner text: **text** → text
+    cleaned.replace(QRegularExpression("\\*{1,3}([^*\\n]+)\\*{1,3}"), "\\1");
+    // Remove inline code backticks: `code` → code
+    cleaned.replace(QRegularExpression("`([^`]+)`"), "\\1");
+    // Collapse 3+ blank lines into 2
+    cleaned.replace(QRegularExpression("\\n{3,}"), "\n\n");
+
     // ── Success ───────────────────────────────────────────────────────────────
     m_state = State::Done;
-    m_outputEdit->setPlainText(result);
+    m_outputEdit->setPlainText(cleaned.trimmed());
     setRobotImage("idea.png");
 }
-
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  Robot image helpers
 // ═══════════════════════════════════════════════════════════════════════════════
 void EquipementAIPanel::setRobotImage(const QString &resourceName)
 {
-    // Try every common QRC path so this works regardless of .qrc folder structure.
-    // If images still don't load, check Qt Creator Application Output for the
-    // "tried:" debug line and match one of those paths in your .qrc file.
     const QStringList candidates = {
-        ":/"           + resourceName,   // <file alias="wave.png">
-        ":/images/"    + resourceName,   // <file alias="images/wave.png">
-        ":/resources/" + resourceName,   // <file alias="resources/wave.png">
-        ":/assets/"    + resourceName,   // <file alias="assets/wave.png">
-        resourceName                     // bare filesystem path (last resort)
+        ":/"           + resourceName,
+        ":/images/"    + resourceName,
+        ":/resources/" + resourceName,
+        ":/assets/"    + resourceName,
+        resourceName
     };
 
     QPixmap pix;
@@ -433,13 +444,13 @@ void EquipementAIPanel::setRobotImage(const QString &resourceName)
             pix.scaled(ROBOT_W, ROBOT_H, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     } else {
         qDebug() << "[AI] image NOT found for" << resourceName
-                 << "-- tried paths:" << candidates;
+                 << "-- tried:" << candidates;
         m_robotLabel->setPixmap(QPixmap());
         m_robotLabel->setStyleSheet(
             "font-size: 64px; border: none; background: transparent;");
         m_robotLabel->setText(
-            resourceName == "wave.png" ? "ð¤" :
-                resourceName == "idea.png" ? "ð¡" : "ð");
+            resourceName == "wave.png" ? "🤖" :
+            resourceName == "idea.png" ? "💡" : "🔄");
     }
 }
 

@@ -1,4 +1,4 @@
-﻿#include "client.h"
+#include "client.h"
 #include "ui_mainwindow.h"
 #include "connection.h"
 #include <QSqlQuery>
@@ -502,7 +502,7 @@ void Client::checkAndResetFidelite(int clientId, int currentPoints, const QStrin
 
 void Client::sendTwilioSms(const QString &to, const QString &message) {
     QString accountSid = "AC8e97d35bfe809bf22bded53c97eabf3c";
-    QString authToken = "b06afbcf22188c9f65483f703e3981b2";
+    QString authToken = "72523db94a101c7cbbac982872d790fc";
     QString fromNumber = "+16624934698";
 
     // Formatter le numéro proprement

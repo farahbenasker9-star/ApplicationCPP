@@ -161,6 +161,16 @@ private slots:
     void employe_onRefreshClicked();
     void employe_onGenererContratClicked();
 
+    // ─── Module Client ────────────────────────────────────────────────────────
+    void rafraichirAffichage();
+    bool verifierSaisie();
+    bool reaffecterIdClientDansRelations(int oldId, int newId);
+    void onTableClicked(const QModelIndex &index);
+    void onRechercheTextChanged(const QString &text);
+    void onBtnAjouterClicked();
+    void onBtnModifierClicked();
+    void onBtnSupprimerClicked();
+
 private:
     Ui::MainWindow *ui;
     Client *clientObject; // Utilise la classe Client (client.cpp) pour la logique
@@ -168,6 +178,10 @@ private:
     Poubelle tmp_poubelle;
     int poubelle_currentSelectedId = -1;
     Employe tmp_employe;
+
+    QSqlQueryModel *model = nullptr;
+    int selectedClientId = -1;
+    QString currentFilter;
 
     // Chatbot
     Chatbot *chatbot;

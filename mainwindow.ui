@@ -1951,8 +1951,17 @@ QGroupBox::title {
              <x>10</x>
              <y>290</y>
              <width>331</width>
-             <height>251</height>
+             <height>250</height>
             </rect>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>250</height>
+            </size>
+           </property>
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOn</enum>
            </property>
            <property name="placeholderText">
             <string>Bonjour, veuillez selectionner un type d'équipement pour commencer l'analyse</string>
@@ -5054,7 +5063,7 @@ QTabBar::tab:hover {
        <widget class="QGroupBox" name="gb_form_2">
         <property name="geometry">
          <rect>
-          <x>10</x>
+          <x>0</x>
           <y>40</y>
           <width>321</width>
           <height>661</height>
@@ -5256,9 +5265,9 @@ QTabBar::tab:hover {
        <widget class="QWidget" name="layoutWidget_3">
         <property name="geometry">
          <rect>
-          <x>360</x>
+          <x>330</x>
           <y>110</y>
-          <width>631</width>
+          <width>551</width>
           <height>42</height>
          </rect>
         </property>
@@ -5307,9 +5316,9 @@ QTabBar::tab:hover {
        <widget class="QTabWidget" name="tabWidget_right_2">
         <property name="geometry">
          <rect>
-          <x>1000</x>
+          <x>890</x>
           <y>60</y>
-          <width>491</width>
+          <width>711</width>
           <height>851</height>
          </rect>
         </property>
@@ -5323,8 +5332,8 @@ QTabBar::tab:hover {
          <widget class="QGroupBox" name="gb_stats_3">
           <property name="geometry">
            <rect>
-            <x>11</x>
-            <y>11</y>
+            <x>-10</x>
+            <y>-20</y>
             <width>471</width>
             <height>601</height>
            </rect>
@@ -5348,7 +5357,7 @@ QTabBar::tab:hover {
            <rect>
             <x>10</x>
             <y>20</y>
-            <width>631</width>
+            <width>761</width>
             <height>591</height>
            </rect>
           </property>
@@ -5367,9 +5376,9 @@ QTabBar::tab:hover {
          <widget class="QTableView" name="tab_poubelle_3">
           <property name="geometry">
            <rect>
-            <x>10</x>
-            <y>30</y>
-            <width>631</width>
+            <x>0</x>
+            <y>10</y>
+            <width>421</width>
             <height>591</height>
            </rect>
           </property>
@@ -5385,9 +5394,9 @@ QTabBar::tab:hover {
        <widget class="QTableView" name="tab_poubelle">
         <property name="geometry">
          <rect>
-          <x>360</x>
+          <x>330</x>
           <y>160</y>
-          <width>631</width>
+          <width>551</width>
           <height>491</height>
          </rect>
         </property>
@@ -5401,9 +5410,9 @@ QTabBar::tab:hover {
        <widget class="QWidget" name="layoutWidget">
         <property name="geometry">
          <rect>
-          <x>360</x>
+          <x>330</x>
           <y>60</y>
-          <width>631</width>
+          <width>551</width>
           <height>57</height>
          </rect>
         </property>
@@ -5439,9 +5448,9 @@ QTabBar::tab:hover {
        <widget class="QWidget" name="layoutWidget">
         <property name="geometry">
          <rect>
-          <x>361</x>
+          <x>330</x>
           <y>650</y>
-          <width>631</width>
+          <width>551</width>
           <height>51</height>
          </rect>
         </property>
@@ -5523,7 +5532,7 @@ background-color: rgb(67, 160, 71);</string>
      <x>0</x>
      <y>0</y>
      <width>1587</width>
-     <height>26</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

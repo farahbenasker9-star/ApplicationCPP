@@ -39,4 +39,3 @@ private:
 };
 
 #endif // MAPWIDGET_H
-

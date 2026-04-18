@@ -114,11 +114,8 @@ public:
 
 void contrat_applyComboBoxBlackStyle(QComboBox* combo) {
     if (!combo) return;
-    combo->setStyleSheet(
-        "QComboBox { background-color: #2F3136; color: white; border: 1px solid #40444B; border-radius: 5px; padding: 5px; }"
-        "QComboBox::drop-down { border-left: 1px solid #40444B; }"
-        "QComboBox QAbstractItemView { background-color: #2F3136; color: white; selection-background-color: #7289DA; }"
-    );
+    // Laisser le design blanc par défaut de Qt
+    combo->setStyleSheet("");
 }
 
 
@@ -273,7 +270,7 @@ MainWindow::MainWindow(QWidget *parent)
     equipement_refreshStats();
 
     new EquipementAIPanel(
-        "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",
+        "AIzaSyBKJkWZnyVFQBiBep3DqCPJXqWxqMmgTT8",
         ui->Eq_type_2,
         ui->plainTextEdit,
         ui->gb_stats_equipement_2,
@@ -356,11 +353,11 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tab_contrat_2->setModel(Contrat().afficher());
     ui->tab_contrat_2->setItemDelegateForColumn(11, new ContratDownloadDelegate(this));
     contrat_populateComboBoxes();
-    contrat_applyComboBoxBlackStyle(ui->combo_ID_Client);
-    contrat_applyComboBoxBlackStyle(ui->combo_CIN_Employe);
-    contrat_applyComboBoxBlackStyle(ui->type_ex);
-    contrat_applyComboBoxBlackStyle(ui->prod_con);
-    contrat_applyComboBoxBlackStyle(ui->status_contrat);
+    // contrat_applyComboBoxBlackStyle(ui->combo_ID_Client);
+    // contrat_applyComboBoxBlackStyle(ui->combo_CIN_Employe);
+    // contrat_applyComboBoxBlackStyle(ui->type_ex);
+    // contrat_applyComboBoxBlackStyle(ui->prod_con);
+    // contrat_applyComboBoxBlackStyle(ui->status_contrat);
 
     // Connexions CRUD
     connect(ui->tab_contrat_2, &QTableView::clicked,       this, &MainWindow::contrat_onTabClicked);
@@ -630,9 +627,9 @@ void MainWindow::navigateToPage(int pageIndex)
     }
 }
 
-// =
+// =========================================================
 // ===                  MODULE POUBELLE                  ===
-// =
+// =========================================================
 
 void MainWindow::on_btn_ajouter_poubelle_clicked()
 {
@@ -1082,22 +1079,22 @@ void MainWindow::poubelle_refreshMap()
                 addressLower.replace("ç", "c").replace("î", "i").replace("ô", "o");
                 addressLower.replace("û", "u").replace("ù", "u");
 
-                    // Chercher chaque ville dans l'adresse
-                    for (auto it = cityCoordinates.begin(); it != cityCoordinates.end(); ++it) {
-                        // Chercher le nom de la ville comme mot complet
-                        if (addressLower.contains(it.key())) {
-                            p.lat = it.value().first;
-                            p.lng = it.value().second;
-                            found = true;
-                            break;
-                        }
+                // Chercher chaque ville dans l'adresse
+                for (auto it = cityCoordinates.begin(); it != cityCoordinates.end(); ++it) {
+                    // Chercher le nom de la ville comme mot complet
+                    if (addressLower.contains(it.key())) {
+                        p.lat = it.value().first;
+                        p.lng = it.value().second;
+                        found = true;
+                        break;
                     }
+                }
 
-                    // Si pas de correspondance, centrer sur Tunis
-                    if (!found) {
-                        p.lat = 36.7963;
-                        p.lng = 10.1815;
-                    }
+                // Si pas de correspondance, centrer sur Tunis
+                if (!found) {
+                    p.lat = 36.7963;
+                    p.lng = 10.1815;
+                }
             }
 
             poubellesList.append(p);
@@ -1120,11 +1117,11 @@ void MainWindow::poubelle_setupStatsUI()
     QVBoxLayout *layout = new QVBoxLayout(ui->gb_stats_3);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
-    
+
     poubelle_chartViewRemplissage = new QChartView(ui->gb_stats_3);
     poubelle_chartViewRemplissage->setRenderHint(QPainter::Antialiasing);
     poubelle_chartViewRemplissage->setMinimumHeight(300);
-    
+
     layout->addWidget(poubelle_chartViewRemplissage);
     ui->gb_stats_3->setLayout(layout);
 }
@@ -1172,7 +1169,7 @@ void MainWindow::poubelle_refreshPredictionAI()
 
     // Créer un modele standard
     QStandardItemModel *model = new QStandardItemModel();
-    
+
     // Colonnes
     QStringList headers;
     headers << "ID" << "Type" << "Adresse" << "Capacite" << "Remplissage %"
@@ -1255,7 +1252,7 @@ void MainWindow::poubelle_refreshPredictionAI()
     tabPrediction->setColumnWidth(5, 95);
     tabPrediction->setColumnWidth(6, 75);
     tabPrediction->setColumnWidth(7, 160);
-    
+
     // Activer le scrolling horizontal pour afficher tout le tableau
     tabPrediction->horizontalHeader()->setStretchLastSection(false);
     tabPrediction->resizeRowsToContents();
@@ -1264,7 +1261,6 @@ void MainWindow::poubelle_refreshPredictionAI()
     tabPrediction->setSelectionBehavior(QAbstractItemView::SelectRows);
     tabPrediction->setStyleSheet("QTableView {gridline-color: #d0d0d0;} QHeaderView::section {background-color: #4CAF50; color: white;}");
 }
-
 //  =
 // ===                  MODULE PRODUIT                   ===
 // =
@@ -2393,11 +2389,11 @@ void MainWindow::contrat_setWidgetStyle(QWidget *widget, bool isValid)
 void MainWindow::contrat_resetValidationStyles()
 {
     ui->ID_Contrat->setStyleSheet("");
-    contrat_applyComboBoxBlackStyle(ui->combo_ID_Client);
-    contrat_applyComboBoxBlackStyle(ui->combo_CIN_Employe);
-    contrat_applyComboBoxBlackStyle(ui->type_ex);
-    contrat_applyComboBoxBlackStyle(ui->prod_con);
-    contrat_applyComboBoxBlackStyle(ui->status_contrat);
+    // contrat_applyComboBoxBlackStyle(ui->combo_ID_Client);
+    // contrat_applyComboBoxBlackStyle(ui->combo_CIN_Employe);
+    // contrat_applyComboBoxBlackStyle(ui->type_ex);
+    // contrat_applyComboBoxBlackStyle(ui->prod_con);
+    // contrat_applyComboBoxBlackStyle(ui->status_contrat);
     ui->date_debut->setStyleSheet("");
     ui->date_fin->setStyleSheet("");
     ui->obj_ach_ann->setStyleSheet("");
@@ -2433,7 +2429,7 @@ void MainWindow::contrat_validateID()
     }
 
     if (ui->combo_ID_Client->currentIndex() <= 0) {
-        contrat_applyComboBoxBlackStyle(ui->combo_ID_Client);
+        // contrat_applyComboBoxBlackStyle(ui->combo_ID_Client);
     } else {
         contrat_setWidgetStyle(ui->combo_ID_Client, true);
     }

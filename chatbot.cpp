@@ -16,7 +16,7 @@ Chatbot::Chatbot(QWidget *parent)
     : QWidget(parent)
     , m_isWaiting(false)
 {
-    m_apiKey = "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";
+    m_apiKey = "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";
     m_networkManager = new QNetworkAccessManager(this);
     this->setFixedWidth(380);
     setupUI();
