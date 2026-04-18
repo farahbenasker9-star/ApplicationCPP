@@ -481,6 +481,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     // cb_statut (produit)
     on_cb_statut_currentIndexChanged(ui->cb_statut->currentIndex());
+
+    // Arduino RFID Setup
+    setupArduino();
 }
 
 // ─── Destructeur ─────────────────────────────────────────────────────────────
@@ -3757,6 +3760,40 @@ void MainWindow::onBtnSupprimerClicked() {
     } else {
          QMessageBox::critical(nullptr, "Erreur de base de données", 
                               "Erreur lors de la suppression :\n" + query.lastError().text());
+    }
+}
+
+// ─── Module Arduino RFID ──────────────────────────────────────────────────
+void MainWindow::setupArduino()
+{
+    arduino = new Arduino(this);
+    arduino->setupArduino();
+    connect(arduino, &Arduino::uidRead, this, &MainWindow::handle_rfid_scan);
+}
+
+void MainWindow::handle_rfid_scan(const QString &uid)
+{
+    // Rechercher le badge dans la base de données (Table Employe)
+    QSqlQuery query;
+    query.prepare("SELECT NOM, PRENOM FROM EMPLOYE WHERE ID_BADGE = :badge");
+    query.bindValue(":badge", uid);
+
+    if (query.exec() && query.next()) {
+        // Employé trouvé !
+        QString nom = query.value(0).toString();
+        QString prenom = query.value(1).toString();
+        
+        // Envoyer la commande 1 (Autorisé) immédiatement !
+        qDebug() << "Employé trouvé, envoi de 1 à l'Arduino";
+        arduino->write("1");
+        
+        // Afficher le message sans bloquer le processus Arduino
+        QMessageBox::information(this, "Accès Autorisé", "L'employé " + nom + " " + prenom + " vient de scanner son badge.");
+    } else {
+        // Employé non trouvé !
+        qDebug() << "Employé non trouvé, envoi de 0 à l'Arduino";
+        arduino->write("0");
+        QMessageBox::warning(this, "Accès Refusé", "Badge " + uid + " non reconnu !");
     }
 }
 

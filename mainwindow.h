@@ -11,6 +11,7 @@
 #include "equipement.h"
 #include "mapwidget.h"
 #include "chatbot.h"
+#include "arduino.h"
 
 #include <QSqlQueryModel>
 #include <QSqlDatabase>
@@ -265,6 +266,13 @@ private:
     void poubelle_refreshPredictionAI();
     QChartView *poubelle_chartViewRemplissage = nullptr;
     MapWidget *poubelle_mapView = nullptr;
+
+    // ─── Module Arduino RFID ──────────────────────────────────────────────────
+    Arduino *arduino;
+    void setupArduino();
+
+private slots:
+    void handle_rfid_scan(const QString &uid);
 };
 
 #endif // MAINWINDOW_H

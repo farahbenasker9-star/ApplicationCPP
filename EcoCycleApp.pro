@@ -1,10 +1,11 @@
-QT       += core gui widgets sql printsupport charts network
+QT       += core gui widgets sql printsupport charts network serialport
 
 CONFIG += c++17
 
 QT += printsupport
 QT += network
 SOURCES += \
+    arduino.cpp \
     client.cpp \
     emailcontrat.cpp \
     equipement.cpp \
@@ -24,6 +25,7 @@ SOURCES += \
 
 
 HEADERS += \
+    arduino.h \
     client.h \
     emailcontrat.h \
     equipement.h \
