@@ -265,7 +265,7 @@ private:
     void onArduinoAlert(int binId, int level);
 
     // ─── Module Arduino RFID ──────────────────────────────────────────────────
-    Arduino *arduino;
+    ArduinoRFID *arduino;
     void setupArduino();
 
 private slots:

@@ -184,7 +184,7 @@ MainWindow::MainWindow(QWidget *parent)
     // ── Arduino serial monitor ────────────────────────────────────────
     // Change the bin ID (1) and port name ("COM6") to match your setup.
     // On Linux/Mac use "/dev/ttyUSB0" or "/dev/ttyACM0".
-    m_arduino = new ArduinoMonitor(23456, "COM6", this);
+    m_arduino = new ArduinoMonitor(23456, "COM10", this);
 
     connect(m_arduino, &ArduinoMonitor::levelUpdated,
             this,      &MainWindow::onArduinoLevelUpdated);
@@ -1365,7 +1365,8 @@ void MainWindow::on_btn_ajouter_produit_clicked() {
 
         ui->tab_produit->setModel(P.afficher());
         afficherStatistiques();
-        refreshHistorique(); // On force le rafraîchissement
+        refreshHistorique();
+        calculerValorisation();
         QMessageBox::information(this, "Succès", "Produit ajouté !");
         viderFormulaire();
     } else {
@@ -1378,6 +1379,7 @@ void MainWindow::on_btn_supprimer_produit_clicked() {
     if(P.supprimer(id)) {
         P.enregistrerAction(id, "SUPPRESSION", ui->cb_type_2->currentText(), "Produit définitivement retiré du stock.");
         ui->tab_produit->setModel(P.afficher());
+        calculerValorisation();
         afficherStatistiques();
         QMessageBox::information(this, "Succès", "Produit supprimé !");
         viderFormulaire();
@@ -1392,6 +1394,7 @@ void MainWindow::on_btn_modifier_produit_clicked() {
 
     if (!controleSaisieProduit(true)) return;
 
+    // Récupération sécurisée de l'ID Client
     int id_c = 0;
     if (!ui->cb_id_client->currentText().isEmpty()) {
         id_c = ui->cb_id_client->currentText().toInt();
@@ -1405,52 +1408,58 @@ void MainWindow::on_btn_modifier_produit_clicked() {
               ui->de_date_v->date(),
               ui->cb_statut->currentText(),
               ui->sb_prix->value());
-
     int id_nouveau = ui->le_id->text().toInt();
-
     if(P.modifier(id_a_modifier)) {
-        QString statut_actuel = ui->cb_statut->currentText().trimmed();
-        // On nettoie aussi l'ancien statut au cas où
-        QString ancien_statut = this->statut_a_modifier.trimmed();
+        QString statut = ui->cb_statut->currentText();
+        int id_c = ui->cb_id_client->currentText().toInt();
+
+
+        QString nomClient = "Inconnu";
+        if (id_c != 0) {
+            QSqlQuery q;
+            q.prepare("SELECT NOM_CLIENT FROM CLIENT WHERE ID_CLIENT = :id");
+            q.bindValue(":id", id_c);
+            if (q.exec() && q.next()) {
+                nomClient = q.value(0).toString();
+            }
+        }
 
         QString typeLog = "MODIFICATION";
-        QString details = QString("Mise à jour technique (Prix/Poids/Type) du produit ID %1.").arg(id_a_modifier);
+        QString details = "Mise à jour technique (Prix/Poids/Type).";
 
-        // 1. DÉTECTION VENTE (Seulement si le statut CHANGE vers Vendu)
-        if (statut_actuel == "Vendu" && ancien_statut != "Vendu") {
+        // 2. INCLURE LE NOM DANS LES DÉTAILS
+        if (statut == "Vendu") {
             typeLog = "VENTE";
-            details = QString("💰 VENTE EFFECTUÉE : Produit vendu au client %1").arg(ui->cb_id_client->currentText());
+            details = QString("💰 Produit vendu au client : %1 (ID: %2)")
+                          .arg(nomClient, QString::number(id_c));
         }
-        // 2. DÉTECTION RÉSERVATION (Seulement si le statut CHANGE vers Réservé)
-        else if (statut_actuel == "Réservé" && ancien_statut != "Réservé") {
+        else if (statut == "Réservé") {
             typeLog = "RESERVATION";
-            details = QString("⏰ RÉSERVATION : Produit bloqué pour le client %1").arg(ui->cb_id_client->currentText());
+            details = QString("⏰ Produit réservé pour : %1 (ID: %2)")
+                          .arg(nomClient, QString::number(id_c));
         }
-        // 3. TOUT LE RESTE (Si le statut est déjà Vendu ou déjà Réservé et qu'on change le prix)
-        // Le typeLog restera "MODIFICATION" et ira donc dans l'onglet Modifs.
 
-        // Enregistrement
+        // 3. ENREGISTRER DANS LE CSV
         P.enregistrerAction(id_nouveau, typeLog, ui->cb_type_2->currentText(), details);
 
         // --- MISE À JOUR UI ---
         ui->tab_produit->setModel(P.afficher());
+        calculerValorisation();
         QMessageBox::information(this, "Succès", "Produit mis à jour !");
         afficherStatistiques();
         refreshHistorique();
-        calculerValorisation();
 
-        // 4. TRÈS IMPORTANT : Mettre à jour les références pour la prochaine fois
-        id_a_modifier = id_nouveau;
-        this->statut_a_modifier = statut_actuel;
+        // 5. IMPORTANT : On met à jour l'ID de référence ET le statut de référence
+        id_a_modifier = ui->le_id->text().toInt();
+        this->statut_a_modifier = statut; // <--- ICI on utilise 'statut' (ce qui règle votre erreur)
 
         viderFormulaire();
     } else {
-        QMessageBox::critical(this, "Erreur", "Modification échouée (ID déjà utilisé ?)");
+        QMessageBox::critical(this, "Erreur", "La modification a échoué. Vérifiez que le nouvel ID n'est pas déjà utilisé par un autre produit.");
     }
 }
 void MainWindow::on_cb_statut_currentIndexChanged(int index)
 {
-    Q_UNUSED(index);
     QString statut = ui->cb_statut->currentText();
 
     if (statut == "Vendu") {
@@ -1519,7 +1528,7 @@ bool MainWindow::controleSaisieProduit(bool isModification) {
         return false;
     }
 
-    // ====== CONTROLE DATE (UNIQUEMENT POUR L'AJOUT) ======
+    // ==================== CONTROLE DATE (UNIQUEMENT POUR L'AJOUT) ====================
     if (!isModification) { // On n'entre ici que si on AJOUTE un nouveau produit
         QDate dateCreation = ui->de_date_c->date();
         QDate aujourdhui = QDate::currentDate();
@@ -1537,7 +1546,7 @@ bool MainWindow::controleSaisieProduit(bool isModification) {
             return false;
         }
     }
-    // ====
+    // =================================================================================
 
     // 3. Vérification de l'ID Client
     if (statut != "Disponible" && id_c.isEmpty()) {
@@ -1602,9 +1611,9 @@ void MainWindow::afficherStatistiques() {
         delete child;
     }
 
-    // =
+    // =========================================================
     // SECTION 1 : HISTOGRAMME
-    // =
+    // =========================================================
     QMap<QString, double> statsPoids = P.statistiquePoidsParType();
     QBarSeries *barSeries = new QBarSeries();
     double maxPoids = 0;
@@ -1643,9 +1652,9 @@ void MainWindow::afficherStatistiques() {
     barChartView->setRenderHint(QPainter::Antialiasing);
     barChartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    // =
+    // =========================================================
     // SECTION 2 : DIAGRAMME EN ANNEAU (Modifiée pour visibilité)
-    // =
+    // =========================================================
     QMap<QString, int> statsNb = P.statistiqueParType();
     QPieSeries *pieSeries = new QPieSeries();
 
@@ -1979,7 +1988,6 @@ void MainWindow::calculerValorisation() {
         }
     }
 }
-
 
 // =
 // ===                  MODULE CONTRAT                   ===
@@ -3837,9 +3845,9 @@ void MainWindow::onBtnSupprimerClicked() {
 // ─── Module Arduino RFID ──────────────────────────────────────────────────
 void MainWindow::setupArduino()
 {
-    arduino = new Arduino(this);
-    arduino->setupArduino();
-    connect(arduino, &Arduino::uidRead, this, &MainWindow::handle_rfid_scan);
+    arduino = new ArduinoRFID(this); // Remplacez "new Arduino" par "new ArduinoRFID"
+    arduino->setupArduino("COM12");
+    connect(arduino, &ArduinoRFID::uidRead, this, &MainWindow::handle_rfid_scan);
 }
 
 void MainWindow::handle_rfid_scan(const QString &uid)
