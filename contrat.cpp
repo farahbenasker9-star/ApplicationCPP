@@ -1,0 +1,283 @@
+#include "contrat.h"
+
+#include <QPrinter>
+#include <QTextDocument>
+#include <QDateTime>
+#include <QPageSize>
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Classe Contrat  (DAO – données uniquement)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── Constructeur par défaut ────────────────────────────────────────────────
+Contrat::Contrat()
+    : id_contrat(0), id_client(0), cin(0), objectif_achat_annuel(0.0), taux_remise_accorde(0.0)
+{}
+
+// ─── Constructeur complet (ID_CONTRAT est auto-incrémenté) ───────────────────
+Contrat::Contrat(int id_client, int cin,
+                 const QString &type_exclusivite, const QString &produits_concernes,
+                 const QDate &date_debut, const QDate &date_fin,
+                 double objectif_achat_annuel, double taux_remise_accorde,
+                 const QString &statut_contrat, const QString &clause_penale)
+    : id_contrat(0), id_client(id_client), cin(cin),
+      type_exclusivite(type_exclusivite), produits_concernes(produits_concernes),
+      date_debut(date_debut), date_fin(date_fin),
+      objectif_achat_annuel(objectif_achat_annuel), taux_remise_accorde(taux_remise_accorde),
+      statut_contrat(statut_contrat), clause_penale(clause_penale)
+{}
+
+// ─── Méthode AJOUTER ────────────────────────────────────────────────────────
+bool Contrat::ajouter()
+{
+    QSqlQuery query;
+
+    query.prepare(
+        "INSERT INTO CONTRAT "
+        "(ID_CONTRAT, ID_CLIENT, CIN, TYPE_EXCLUSIVITE, PRODUITS_CONCERNES, "
+        " DATE_DEBUT, DATE_FIN, OBJECTIF_ACHAT_ANNUEL, TAUX_REMISE_ACCORDE, STATUT_CONTRAT, CLAUSE_PENALE) "
+        "VALUES "
+        "(:id_contrat, :id_client, :cin, :type_ex, :prod_con, "
+        " :date_deb, :date_fin, :ob_ach_an, :tau_rem_acc, :status, :clause)"
+    );
+
+    last_error.clear();
+    query.bindValue(":id_contrat", id_contrat);
+    query.bindValue(":id_client",   id_client);
+    query.bindValue(":cin",         cin);
+    query.bindValue(":type_ex",     type_exclusivite);
+    query.bindValue(":prod_con",    produits_concernes);
+    query.bindValue(":date_deb",    date_debut);
+    query.bindValue(":date_fin",    date_fin);
+    query.bindValue(":ob_ach_an",   objectif_achat_annuel);
+    query.bindValue(":tau_rem_acc", taux_remise_accorde);
+    query.bindValue(":status",      statut_contrat);
+    query.bindValue(":clause",      clause_penale);
+
+    if (!query.exec()) {
+        last_error = query.lastError().text();
+        qDebug() << "Erreur ajouter contrat:" << last_error;
+        return false;
+    }
+
+    qDebug() << "Contrat ajouté avec succès.";
+    return true;
+}
+
+// ─── Méthode AFFICHER ────────────────────────────────────────────────────────
+QSqlQueryModel * Contrat::afficher() const
+{
+    QSqlQueryModel * model = new QSqlQueryModel();
+
+    model->setQuery("SELECT ID_CONTRAT, ID_CLIENT, CIN, TYPE_EXCLUSIVITE, PRODUITS_CONCERNES, "
+                    "DATE_DEBUT, DATE_FIN, "
+                    "OBJECTIF_ACHAT_ANNUEL, "
+                    "TAUX_REMISE_ACCORDE, "
+                    "STATUT_CONTRAT, CLAUSE_PENALE, 'Télécharger' AS ACTION "
+                    "FROM CONTRAT");
+
+    model->setHeaderData(0,  Qt::Horizontal, QObject::tr("ID"));
+    model->setHeaderData(1,  Qt::Horizontal, QObject::tr("ID Client"));
+    model->setHeaderData(2,  Qt::Horizontal, QObject::tr("CIN Employé"));
+    model->setHeaderData(3,  Qt::Horizontal, QObject::tr("Type Exclusivité"));
+    model->setHeaderData(4,  Qt::Horizontal, QObject::tr("Produits"));
+    model->setHeaderData(5,  Qt::Horizontal, QObject::tr("Date Début"));
+    model->setHeaderData(6,  Qt::Horizontal, QObject::tr("Date Fin"));
+    model->setHeaderData(7,  Qt::Horizontal, QObject::tr("Obj. Achat"));
+    model->setHeaderData(8,  Qt::Horizontal, QObject::tr("Taux Rem."));
+    model->setHeaderData(9,  Qt::Horizontal, QObject::tr("Statut"));
+    model->setHeaderData(10, Qt::Horizontal, QObject::tr("Clause Pénale"));
+    model->setHeaderData(11, Qt::Horizontal, QObject::tr("Action"));
+
+    return model;
+}
+
+// ─── Export PDF ──────────────────────────────────────────────────────────────
+bool Contrat::exporterPdf(const QString &filePath, QSqlQueryModel *model) const
+{
+    if (filePath.isEmpty()) {
+        return false;
+    }
+
+    QSqlQueryModel *sourceModel = model;
+    bool ownModel = false;
+
+    if (!sourceModel) {
+        sourceModel = afficher();
+        ownModel = true;
+    }
+
+    QString html = R"(<html>
+        <head>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; }
+                h1 { color: #1B4332; text-align: center; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th { background-color: #1B4332; color: white; padding: 10px; text-align: left; }
+                td { border-bottom: 1px solid #ddd; padding: 8px; color: #333; }
+                tr:nth-child(even) { background-color: #f9fafb; }
+            </style>
+        </head>
+        <body>
+            <h1>Liste des Contrats - EcoCycle</h1>
+            <p style="text-align: right; color: #666;">Généré le : %1</p>
+            <table>
+                <tr>
+                    <th>ID</th><th>Type</th><th>Produits</th><th>Date Début</th><th>Date Fin</th><th>Objectif</th><th>Taux</th><th>Statut</th>
+                </tr>
+    )";
+
+    html = html.arg(QDateTime::currentDateTime().toString("dd/MM/yyyy HH:mm"));
+
+    for (int i = 0; i < sourceModel->rowCount(); ++i) {
+        QString id_contrat_s = sourceModel->data(sourceModel->index(i, 0)).toString();
+        QString type_s       = sourceModel->data(sourceModel->index(i, 3)).toString();
+        QString produits_s   = sourceModel->data(sourceModel->index(i, 4)).toString();
+        QString date_deb_s   = sourceModel->data(sourceModel->index(i, 5)).toDate().toString("dd/MM/yyyy");
+        QString date_fin_s   = sourceModel->data(sourceModel->index(i, 6)).toDate().toString("dd/MM/yyyy");
+        QString objectif_s   = sourceModel->data(sourceModel->index(i, 7)).toString();
+        QString taux_s       = sourceModel->data(sourceModel->index(i, 8)).toString();
+        QString statut_s     = sourceModel->data(sourceModel->index(i, 9)).toString();
+
+        html += QString("<tr><td>%1</td><td>%2</td><td>%3</td><td>%4</td><td>%5</td><td>%6</td><td>%7</td><td>%8</td></tr>")
+                .arg(id_contrat_s, type_s, produits_s, date_deb_s, date_fin_s, objectif_s, taux_s, statut_s);
+    }
+
+    html += "</table></body></html>";
+
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setOutputFileName(filePath);
+    printer.setPageSize(QPageSize(QPageSize::A4));
+
+    QTextDocument doc;
+    doc.setHtml(html);
+    doc.print(&printer);
+
+    if (ownModel) {
+        delete sourceModel;
+    }
+
+    return true;
+}
+
+// ─── Méthode RECHERCHER ──────────────────────────────────────────────────────
+QSqlQueryModel * Contrat::rechercher(const QString &texte) const
+{
+    QSqlQueryModel * model = new QSqlQueryModel();
+    QString key = texte.trimmed();
+    if (key.isEmpty()) {
+        return afficher();
+    }
+
+    QString sql = QString(
+        "SELECT ID_CONTRAT, ID_CLIENT, CIN, TYPE_EXCLUSIVITE, PRODUITS_CONCERNES, "
+        "DATE_DEBUT, DATE_FIN, OBJECTIF_ACHAT_ANNUEL, TAUX_REMISE_ACCORDE, STATUT_CONTRAT, CLAUSE_PENALE, 'Télécharger' AS ACTION "
+        "FROM CONTRAT WHERE "
+        "CAST(ID_CONTRAT AS VARCHAR2(50)) LIKE '%%1%' OR "
+        "UPPER(TYPE_EXCLUSIVITE) LIKE UPPER('%%1%') OR "
+        "UPPER(STATUT_CONTRAT) LIKE UPPER('%%1%')"
+    ).arg(key);
+
+    model->setQuery(sql);
+    model->setHeaderData(0,  Qt::Horizontal, QObject::tr("ID"));
+    model->setHeaderData(1,  Qt::Horizontal, QObject::tr("ID Client"));
+    model->setHeaderData(2,  Qt::Horizontal, QObject::tr("CIN Employé"));
+    model->setHeaderData(3,  Qt::Horizontal, QObject::tr("Type Exclusivité"));
+    model->setHeaderData(4,  Qt::Horizontal, QObject::tr("Produits"));
+    model->setHeaderData(5,  Qt::Horizontal, QObject::tr("Date Début"));
+    model->setHeaderData(6,  Qt::Horizontal, QObject::tr("Date Fin"));
+    model->setHeaderData(7,  Qt::Horizontal, QObject::tr("Obj. Achat"));
+    model->setHeaderData(8,  Qt::Horizontal, QObject::tr("Taux Rem."));
+    model->setHeaderData(9,  Qt::Horizontal, QObject::tr("Statut"));
+    model->setHeaderData(10, Qt::Horizontal, QObject::tr("Clause Pénale"));
+    model->setHeaderData(11, Qt::Horizontal, QObject::tr("Action"));
+
+    return model;
+}
+
+// ─── Méthode SUPPRIMER ───────────────────────────────────────────────────────
+bool Contrat::supprimer(int id)
+{
+    QSqlQuery query;
+    query.prepare("DELETE FROM CONTRAT WHERE ID_CONTRAT = :id");
+    query.bindValue(":id", id);
+
+    if (!query.exec()) {
+        qDebug() << "Erreur suppression contrat:" << query.lastError().text();
+        return false;
+    }
+    return true;
+}
+
+// ─── Méthode MODIFIER ────────────────────────────────────────────────────────
+bool Contrat::modifier(int old_id)
+{
+    QSqlQuery query;
+    query.prepare("UPDATE CONTRAT SET "
+                  "ID_CONTRAT = :new_id, "
+                  "ID_CLIENT = :id_client, "
+                  "CIN = :cin, "
+                  "TYPE_EXCLUSIVITE = :type_ex, "
+                  "PRODUITS_CONCERNES = :prod_con, "
+                  "DATE_DEBUT = :date_deb, "
+                  "DATE_FIN = :date_fin, "
+                  "OBJECTIF_ACHAT_ANNUEL = :ob_ach_an, "
+                  "TAUX_REMISE_ACCORDE = :tau_rem_acc, "
+                  "STATUT_CONTRAT = :status, "
+                  "CLAUSE_PENALE = :clause "
+                  "WHERE ID_CONTRAT = :old_id");
+
+    last_error.clear();
+    query.bindValue(":new_id",      id_contrat);
+    query.bindValue(":old_id",      old_id);
+    query.bindValue(":id_client",   id_client);
+    query.bindValue(":cin",         cin);
+    query.bindValue(":type_ex",     type_exclusivite);
+    query.bindValue(":prod_con",    produits_concernes);
+    query.bindValue(":date_deb",    date_debut);
+    query.bindValue(":date_fin",    date_fin);
+    query.bindValue(":ob_ach_an",   objectif_achat_annuel);
+    query.bindValue(":tau_rem_acc", taux_remise_accorde);
+    query.bindValue(":status",      statut_contrat);
+    query.bindValue(":clause",      clause_penale);
+
+    if (!query.exec()) {
+        last_error = query.lastError().text();
+        qDebug() << "Erreur modification contrat:" << last_error;
+        return false;
+    }
+    return true;
+}
+
+QString Contrat::getLastError() const
+{
+    return last_error;
+}
+
+// ─── Méthodes de validation statiques ────────────────────────────────────────
+
+bool Contrat::validerDateDebut(const QDate &date_debut) {
+    QDate today = QDate::currentDate();
+    return date_debut == today;
+}
+
+bool Contrat::validerDateFin(const QDate &date_fin, const QDate &date_debut) {
+    return date_fin >= date_debut;
+}
+
+bool Contrat::validerDates(const QDate &date_debut, const QDate &date_fin) {
+    return validerDateDebut(date_debut) && validerDateFin(date_fin, date_debut);
+}
+
+bool Contrat::validerID(int id) {
+    return id > 0;
+}
+
+bool Contrat::validerFloats(double obj_ach_ann, double tau_rem_acc) {
+    return (obj_ach_ann > 0) && (tau_rem_acc >= 0 && tau_rem_acc <= 100);
+}
+
+bool Contrat::validerDescription(const QString &clause_penale) {
+    return clause_penale.trimmed().length() >= 5;
+}
