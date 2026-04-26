@@ -412,31 +412,96 @@ void Client::onBtnPdfClicked() {
 
     QTextDocument doc;
     QString html = "<html><head><style>"
-                   "h1 { text-align: center; color: #2E7D32; font-family: Arial; }"
-                   "p { text-align: right; color: #555; }"
-                   "table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10pt; }"
-                   "th { background-color: #4CAF50; color: white; padding: 10px; border: 1px solid #ddd; }"
-                   "td { padding: 8px; border: 1px solid #ddd; text-align: left; }"
-                   "tr:nth-child(even) { background-color: #f2f2f2; }"
+                   "* { margin: 0; padding: 0; }"
+                   "body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(180deg, #e8f5e9 0%, #f1f8f6 100%); padding: 50px 80px; min-height: 100vh; }"
+                   ".header { background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%); color: white; padding: 35px; border-radius: 12px; margin-bottom: 40px; text-align: center; box-shadow: 0 6px 12px rgba(46, 125, 50, 0.2); }"
+                   ".header h1 { font-size: 32pt; margin-bottom: 10px; letter-spacing: 1.5px; font-weight: 700; }"
+                   ".header-subtitle { font-size: 12pt; opacity: 0.95; font-weight: 300; }"
+                   ".info-section { display: table; margin: 0 auto 35px auto; font-size: 11pt; color: #1B5E20; background: white; padding: 25px 50px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }"
+                   ".info-item { display: table-cell; padding: 0 50px; border-right: 1px solid #e0e0e0; }"
+                   ".info-item:last-child { border-right: none; }"
+                   ".info-label { color: #2E7D32; font-weight: 700; margin-bottom: 8px; font-size: 10pt; letter-spacing: 0.5px; }"
+                   ".table-wrapper { display: flex; justify-content: center; margin: 40px 0; }"
+                   ".table-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #e0e0e0; max-width: 95%; }"
+                   "table { width: 100%; border-collapse: collapse; margin: 0; }"
+                   "thead { background-color: #2E7D32; }"
+                   "th { color: white; padding: 16px 14px; text-align: left; font-weight: 700; font-size: 10.5pt; letter-spacing: 0.7px; }"
+                   "td { padding: 14px 14px; font-size: 9.5pt; border-bottom: 1px solid #e8e8e8; color: #333; }"
+                   "tbody tr { transition: background-color 0.3s ease; }"
+                   "tbody tr:nth-child(even) { background-color: #f8f9f8; }"
+                   "tbody tr:hover { background-color: #e8f5e9; }"
+                   "tbody tr:last-child td { border-bottom: none; }"
+                   ".footer { text-align: center; margin-top: 50px; padding-top: 25px; border-top: 2px solid rgba(46, 125, 50, 0.2); color: #555; font-size: 10pt; }"
+                   ".footer-text { color: #2E7D32; font-weight: 700; font-size: 11pt; }"
+                   ".stats { margin: 40px auto; width: 80%; max-width: 800px; padding: 25px 30px; background: linear-gradient(135deg, #e8f5e9 0%, #f0f7f0 100%); border-left: 5px solid #2E7D32; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }"
+                   ".stats-text { color: #1B5E20; font-size: 11pt; font-weight: 600; }"
                    "</style></head><body>";
 
-    html += "<h1>LISTE DES CLIENTS - ECO CYCLE</h1>";
-    html += "<p>Date d'exportation : " + QDateTime::currentDateTime().toString("dd/MM/yyyy HH:mm") + "</p>";
+    // En-tête
+    html += "<div class='header'>"
+            "<h1>📊 LISTE DES CLIENTS</h1>"
+            "<p class='header-subtitle'>Rapport de gestion - EcoCycleApp</p>"
+            "</div>";
+
+    // Informations
+    html += "<div class='info-section'>"
+            "<div class='info-item'>"
+            "<div class='info-label'>Date d'exportation</div>"
+            "<div>" + QDateTime::currentDateTime().toString("dd MMMM yyyy à HH:mm") + "</div>"
+            "</div>";
     
-    html += "<table><thead><tr>"
-            "<th>ID</th><th>Nom Client</th><th>Ville</th><th>CP</th><th>Téléphone</th><th>Responsable</th><th>Adresse</th>"
+    // Compter le nombre de clients
+    QSqlQuery countQuery;
+    countQuery.exec("SELECT COUNT(*) FROM CLIENT");
+    int totalClients = 0;
+    if (countQuery.next()) {
+        totalClients = countQuery.value(0).toInt();
+    }
+    
+    html += "<div class='info-item'>"
+            "<div class='info-label'>Nombre de clients</div>"
+            "<div>" + QString::number(totalClients) + " client(s)</div>"
+            "</div>"
+            "</div>";
+    
+    // Récupérer les données directement de la base de données
+    QSqlQuery query;
+    query.prepare("SELECT ID_CLIENT, NOM_CLIENT, VILLE, CODE_POSTAL, TO_CHAR(NUM_TEL), PDG, ADRESSE FROM CLIENT ORDER BY ID_CLIENT");
+    
+    html += "<div class='table-wrapper'><div class='table-container'><table><thead><tr>"
+            "<th style='width: 8%;'>ID</th>"
+            "<th style='width: 18%;'>Nom Client</th>"
+            "<th style='width: 14%;'>Ville</th>"
+            "<th style='width: 10%;'>Code Postal</th>"
+            "<th style='width: 14%;'>Téléphone</th>"
+            "<th style='width: 14%;'>Responsable</th>"
+            "<th style='width: 22%;'>Adresse</th>"
             "</tr></thead><tbody>";
 
-    for (int i = 0; i < model->rowCount(); ++i) {
-        html += "<tr>";
-        for (int j = 0; j < model->columnCount(); ++j) {
-            html += "<td>" + model->data(model->index(i, j)).toString() + "</td>";
+    if (query.exec()) {
+        while (query.next()) {
+            html += "<tr>";
+            for (int j = 0; j < 7; ++j) {
+                html += "<td>" + query.value(j).toString() + "</td>";
+            }
+            html += "</tr>";
         }
-        html += "</tr>";
     }
 
-    html += "</tbody></table>";
-    html += "<br><br><p style='text-align:center;'>Document généré par EcoCycleApp</p>";
+    html += "</tbody></table></div></div>";
+    
+    // Statistiques
+    html += "<div class='stats'>"
+            "<p class='stats-text'>✓ Total: " + QString::number(totalClients) + " client(s) enregistré(s) | "
+            "Généré le " + QDateTime::currentDateTime().toString("dd/MM/yyyy") + "</p>"
+            "</div>";
+    
+    // Footer
+    html += "<div class='footer'>"
+            "<p class='footer-text'>Document généré par EcoCycleApp</p>"
+            "<p style='margin-top: 8px; font-size: 9pt;'>Confidentiel - Usage interne uniquement</p>"
+            "</div>";
+    
     html += "</body></html>";
 
     doc.setHtml(html);
