@@ -4138,16 +4138,6 @@ background-color: rgb(67, 160, 71);</string>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QPushButton" name="btn_mailing_client">
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(30, 136, 229);</string>
-           </property>
-           <property name="text">
-            <string>sms</string>
-           </property>
-          </widget>
-         </item>
         </layout>
        </widget>
        <widget class="QLabel" name="label_4_client">
@@ -5532,7 +5522,7 @@ background-color: rgb(67, 160, 71);</string>
      <x>0</x>
      <y>0</y>
      <width>1587</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>
