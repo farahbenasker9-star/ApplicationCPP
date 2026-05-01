@@ -3650,8 +3650,8 @@ public:
         horizontalLayout_client_2->addWidget(btn_pdf_poubelle);
 
         stackedWidget->addWidget(page_poubelle);
-        layoutWidget2->raise();
-        layoutWidget2->raise();
+        layoutWidget->raise();
+        layoutWidget->raise();
         gb_form_2->raise();
         lbl_page_title_3->raise();
         tab_poubelle->raise();
