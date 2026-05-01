@@ -48,9 +48,6 @@ public:
     // Exporter en PDF
     bool exportToPDF(const ContratData &data, const QString &filePath);
     
-    // Imprimer
-    bool printContract(const ContratData &data);
-    
 private:
     // Templates pour différents types
     QString generateArticlesForContractType(const ContratData &data);

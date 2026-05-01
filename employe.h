@@ -26,10 +26,9 @@ public:
     bool exporterPDF(QString filePath, QSqlTableModel *model);
     
     //Génération du contrat individuel
-    bool genererContratPDF(const QString &filePath, const QString &cin, const QString &nom, 
-                           const QString &prenom, const QString &poste, double salaire, 
-                           const QDate &dateEmb, const QString &typeContrat, 
-                           int periodeEssai, const QString &lieuTravail);
+    bool genererContratPDF(const QString &filePath, const QString &cin, 
+                           const QString &typeContrat, int periodeEssai, 
+                           const QString &lieuTravail);
     // Validation
     static bool validerFormulaire(const QString &cin, const QString &nom,
                                   const QString &prenom, const QString &idBadge,

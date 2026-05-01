@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QDateTime>
+#include <QFileInfo>
 
 // ═══════════════════════════════════════════════════════════════════════════
 // VOS IDENTIFIANTS – À REMPLIR (voir instructions ci-dessous)
@@ -16,7 +17,8 @@ static const QString EC_PASSWORD = "qrsx xpxv jswu nzyw";  // ← mot de passe a
 bool EmailContrat::envoyerContrat(const QString &destinataire,
                                   const QString &sujet,
                                   const QString &htmlContrat,
-                                  QString &erreurMsg)
+                                  QString &erreurMsg,
+                                  const QString &pdfFilePath)
 {
     erreurMsg.clear();
 
@@ -51,10 +53,11 @@ bool EmailContrat::envoyerContrat(const QString &destinataire,
     send("DATA\r\n");                                        readResp();
 
     // ─── CONSTRUCTION DU MESSAGE MULTIPART ───
-    QString boundary = "boundary_ecocycle_limit_" + QString::number(QDateTime::currentMSecsSinceEpoch());
+    QString boundaryMixed = "mixed_boundary_ecocycle_" + QString::number(QDateTime::currentMSecsSinceEpoch());
+    QString boundaryRelated = "related_boundary_ecocycle_" + QString::number(QDateTime::currentMSecsSinceEpoch() + 1);
     
-    // Fonction helper pour charger une image en base64 pour MIME
-    auto getImageBase64 = [](const QString &resPath) -> QByteArray {
+    // Fonction helper pour charger un fichier en base64 pour MIME
+    auto getFileBase64 = [](const QString &resPath) -> QByteArray {
         QFile file(resPath);
         if (file.open(QIODevice::ReadOnly)) {
             return file.readAll().toBase64();
@@ -62,17 +65,20 @@ bool EmailContrat::envoyerContrat(const QString &destinataire,
         return QByteArray();
     };
 
-    QByteArray logoData      = getImageBase64(":/new/prefix1/images/lougo2.png");
-    QByteArray signatureData = getImageBase64(":/new/prefix1/images/signa2.png");
+    QByteArray logoData      = getFileBase64(":/new/prefix1/images/lougo2.png");
+    QByteArray signatureData = getFileBase64(":/new/prefix1/images/signa2.png");
 
     QString message = 
         "From: EcoCycle <" + EC_FROM + ">\r\n"
         "To: " + destinataire + "\r\n"
         "Subject: " + sujet + "\r\n"
         "MIME-Version: 1.0\r\n"
-        "Content-Type: multipart/related; boundary=\"" + boundary + "\"\r\n"
+        "Content-Type: multipart/mixed; boundary=\"" + boundaryMixed + "\"\r\n"
         "\r\n"
-        "--" + boundary + "\r\n"
+        "--" + boundaryMixed + "\r\n"
+        "Content-Type: multipart/related; boundary=\"" + boundaryRelated + "\"\r\n"
+        "\r\n"
+        "--" + boundaryRelated + "\r\n"
         "Content-Type: text/html; charset=utf-8\r\n"
         "Content-Transfer-Encoding: 7bit\r\n"
         "\r\n"
@@ -80,7 +86,7 @@ bool EmailContrat::envoyerContrat(const QString &destinataire,
 
     // Ajout du LOGO
     if (!logoData.isEmpty()) {
-        message += "--" + boundary + "\r\n"
+        message += "--" + boundaryRelated + "\r\n"
                    "Content-Type: image/png\r\n"
                    "Content-Transfer-Encoding: base64\r\n"
                    "Content-ID: <logo>\r\n"
@@ -91,7 +97,7 @@ bool EmailContrat::envoyerContrat(const QString &destinataire,
 
     // Ajout de la SIGNATURE
     if (!signatureData.isEmpty()) {
-        message += "--" + boundary + "\r\n"
+        message += "--" + boundaryRelated + "\r\n"
                    "Content-Type: image/png\r\n"
                    "Content-Transfer-Encoding: base64\r\n"
                    "Content-ID: <signature>\r\n"
@@ -100,7 +106,23 @@ bool EmailContrat::envoyerContrat(const QString &destinataire,
                    + QString::fromLatin1(signatureData) + "\r\n\r\n";
     }
 
-    message += "--" + boundary + "--\r\n.\r\n";
+    message += "--" + boundaryRelated + "--\r\n\r\n";
+
+    // Ajout du PDF
+    if (!pdfFilePath.isEmpty()) {
+        QByteArray pdfData = getFileBase64(pdfFilePath);
+        if (!pdfData.isEmpty()) {
+            QFileInfo fi(pdfFilePath);
+            message += "--" + boundaryMixed + "\r\n"
+                       "Content-Type: application/pdf; name=\"" + fi.fileName() + "\"\r\n"
+                       "Content-Transfer-Encoding: base64\r\n"
+                       "Content-Disposition: attachment; filename=\"" + fi.fileName() + "\"\r\n"
+                       "\r\n"
+                       + QString::fromLatin1(pdfData) + "\r\n\r\n";
+        }
+    }
+
+    message += "--" + boundaryMixed + "--\r\n.\r\n";
 
     send(message);
     QByteArray resp = readResp();

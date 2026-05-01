@@ -2575,16 +2575,34 @@ ContratGenerator::ContratData MainWindow::collectContratData()
         }
     }
 
-    // Champs contrat
-    d.type_exclusivite        = ui->type_ex->currentText();
-    d.produits_concernes      = ui->prod_con->currentText().isEmpty() ? "Tous produits" : ui->prod_con->currentText();
+    // Champs contrat par défaut
+    d.type_exclusivite        = "";
+    d.produits_concernes      = "Tous produits";
     d.gamme                   = d.produits_concernes;
-    d.date_debut              = ui->date_debut->date();
-    d.date_fin                = ui->date_fin->date();
-    d.objectif_achat_annuel   = ui->obj_ach_ann->value();
-    d.taux_remise_accorde     = ui->tau_rem_acc->value();
-    d.statut_contrat          = ui->status_contrat->currentText();
-    d.clause_penale           = ui->clause_penale->toPlainText().trimmed();
+    d.date_debut              = QDate::currentDate();
+    d.date_fin                = QDate::currentDate();
+    d.objectif_achat_annuel   = 0.0;
+    d.taux_remise_accorde     = 0.0;
+    d.statut_contrat          = "";
+    d.clause_penale           = "";
+
+    if (d.id_contrat > 0) {
+        QSqlQuery q2;
+        q2.prepare("SELECT TYPE_EXCLUSIVITE, PRODUITS_CONCERNES, DATE_DEBUT, DATE_FIN, OBJECTIF_ACHAT_ANNUEL, TAUX_REMISE_ACCORDE, STATUT_CONTRAT, CLAUSE_PENALE FROM CONTRAT WHERE ID_CONTRAT = :id");
+        q2.bindValue(":id", d.id_contrat);
+        if (q2.exec() && q2.next()) {
+            d.type_exclusivite        = q2.value(0).toString().trimmed();
+            d.produits_concernes      = q2.value(1).toString().trimmed();
+            if (d.produits_concernes.isEmpty()) d.produits_concernes = "Tous produits";
+            d.gamme                   = d.produits_concernes;
+            d.date_debut              = q2.value(2).toDate();
+            d.date_fin                = q2.value(3).toDate();
+            d.objectif_achat_annuel   = q2.value(4).toString().replace(",", ".").toDouble();
+            d.taux_remise_accorde     = q2.value(5).toString().replace(",", ".").toDouble();
+            d.statut_contrat          = q2.value(6).toString().trimmed();
+            d.clause_penale           = q2.value(7).toString().trimmed();
+        }
+    }
 
     return d;
 }
@@ -2670,11 +2688,25 @@ void MainWindow::contrat_onEmailClicked()
                         .arg(data.id_contrat)
                         .arg(data.nom_client);
 
+    // Generation du PDF pour la pièce jointe
+    QString basePath = "C:/Users/misst/OneDrive/Bureau/Esprit/QT/EcoCycleApp/dossier_contrats/";
+    QDir dir;
+    if (!dir.exists(basePath)) {
+        dir.mkpath(basePath);
+    }
+    QString fileName = QString("Contrat_ID%1_Client%2.pdf").arg(data.id_contrat).arg(data.id_client);
+    QString pdfFilePath = basePath + fileName;
+
+    // S'assurer que le PDF existe, sinon le générer (silencieusement)
+    if (!QFile::exists(pdfFilePath)) {
+        gen.exportToPDF(data, pdfFilePath);
+    }
+
     QMessageBox::information(this, "Envoi en cours",
-                             "Envoi du contrat à " + destinataire + "...\nCela peut prendre quelques secondes.");
+                             "Envoi du contrat à " + destinataire + " et de son PDF en pièce jointe...\nCela peut prendre quelques secondes.");
 
     QString erreur;
-    bool ok = EmailContrat::envoyerContrat(destinataire, sujet, html, erreur);
+    bool ok = EmailContrat::envoyerContrat(destinataire, sujet, html, erreur, pdfFilePath);
 
     if (ok) {
         QMessageBox::information(this, "Succès", "✅ Le contrat a été envoyé avec succès !");
@@ -3512,12 +3544,9 @@ void MainWindow::employe_onGenererContratClicked()
         return;
     }
 
-    // 2. Récupérer les données de l'employé depuis les champs existants
+    // 2. Récupérer le nom et le prénom pour le nom du fichier par défaut
     QString nom     = ui->le_nom->text();
     QString prenom  = ui->le_prenom->text();
-    QString poste   = ui->cb_poste->currentText();
-    double  salaire = ui->le_salaire->text().replace(",", ".").toDouble();
-    QDate   dateEmb = ui->de_embauche->date();
 
     // 3. Récupérer les données spécifiques au contrat depuis la groupBox gb_contrat
     QString typeContrat = ui->cb_type_contrat_emp->currentText();
@@ -3536,7 +3565,7 @@ void MainWindow::employe_onGenererContratClicked()
     if (filePath.isEmpty()) return; // L'utilisateur a annulé
 
     // 5. Générer le document
-    if (tmp_employe.genererContratPDF(filePath, cin, nom, prenom, poste, salaire, dateEmb, typeContrat, periodeEssai, lieuTravail)) {
+    if (tmp_employe.genererContratPDF(filePath, cin, typeContrat, periodeEssai, lieuTravail)) {
         QMessageBox::information(this, "Succès", "Le contrat de travail a été généré et sauvegardé avec succès !");
     } else {
         QMessageBox::critical(this, "Erreur", "Une erreur est survenue lors de la création du PDF.");
@@ -3836,17 +3865,11 @@ void MainWindow::onBtnSupprimerClicked() {
     }
 }
 
-
-// =
-// ===                  MODULE PRODUIT                   ===
-// =
-
-
 // ─── Module Arduino RFID ──────────────────────────────────────────────────
 void MainWindow::setupArduino()
 {
     arduino = new ArduinoRFID(this); // Remplacez "new Arduino" par "new ArduinoRFID"
-    arduino->setupArduino("COM12");
+    arduino->setupArduino("COM10");
     connect(arduino, &ArduinoRFID::uidRead, this, &MainWindow::handle_rfid_scan);
 }
 
@@ -3869,23 +3892,46 @@ void MainWindow::handle_rfid_scan(const QString &uid)
         qDebug() << "Query error:" << query.lastError().text();
         return;
     }
-    qDebug() << "Query returned rows:" << query.next();
 
-    if (query.exec() && query.next()) {
+    if (query.next()) {
         // Employé trouvé !
         QString nom = query.value(0).toString();
         QString prenom = query.value(1).toString();
-        
+
         // Envoyer la commande 1 (Autorisé) immédiatement !
         qDebug() << "Employé trouvé, envoi de 1 à l'Arduino";
-        arduino->write("1");
-        
+        arduino->write("1\n");
+
+        // --- MISE À JOUR DE LA DB (Attribut ACCES) ---
+        QSqlQuery updateQuery;
+        updateQuery.prepare("UPDATE EMPLOYE SET ACCES = 1 WHERE TRIM(ID_BADGE) = TRIM(:badge)");
+        updateQuery.bindValue(":badge", cleanUid);
+        if (updateQuery.exec()) {
+            qDebug() << "[SQL] Accès de l'employé passé à 1.";
+
+            // Rafraîchir le tableau en direct
+            ui->tab_employes->setModel(tmp_employe.afficher());
+
+            // Relais DB : remettre ACCES à 0 après 5 secondes (le temps de fermeture)
+            QTimer::singleShot(5000, this, [cleanUid, this]() {
+                QSqlQuery resetQuery;
+                resetQuery.prepare("UPDATE EMPLOYE SET ACCES = 0 WHERE TRIM(ID_BADGE) = TRIM(:badge)");
+                resetQuery.bindValue(":badge", cleanUid);
+                if (resetQuery.exec()) {
+                    qDebug() << "[SQL] Accès de l'employé remis à 0 après 5 secondes.";
+
+                    // Rafraîchir le tableau en direct à nouveau
+                    ui->tab_employes->setModel(tmp_employe.afficher());
+                }
+            });
+        }
+
         // Afficher le message sans bloquer le processus Arduino
         QMessageBox::information(this, "Accès Autorisé", "L'employé " + nom + " " + prenom + " vient de scanner son badge.");
     } else {
         // Employé non trouvé !
         qDebug() << "Employé non trouvé, envoi de 0 à l'Arduino";
-        arduino->write("0");
+        arduino->write("0\n");
         QMessageBox::warning(this, "Accès Refusé", "Badge " + uid + " non reconnu !");
     }
 }

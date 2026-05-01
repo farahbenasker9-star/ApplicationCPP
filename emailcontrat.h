@@ -15,7 +15,8 @@ public:
     static bool envoyerContrat(const QString &destinataire,
                                const QString &sujet,
                                const QString &htmlContrat,
-                               QString &erreurMsg);
+                               QString &erreurMsg,
+                               const QString &pdfFilePath = "");
 };
 
 #endif // EMAILCONTRAT_H

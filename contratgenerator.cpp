@@ -1,7 +1,6 @@
 #include "contratgenerator.h"
 #include <QTextDocument>
 #include <QPrinter>
-#include <QPrintDialog>
 #include <QPageLayout>
 #include <QApplication>
 #include <QDesktopServices>
@@ -311,7 +310,8 @@ QString ContratGenerator::generateArticlesForContractType(const ContratData &dat
                    "et la commercialisation des produits EcoCycleApp de la gamme " + data.gamme + " sur son territoire. "
                    "Le CLIENT s'engage à ne pas proposer de produits similaires ou concurrents durant la période du contrat.";
     } else {
-        articles += "Le CLIENT confère au PRESTATAIRE une exclusivité <strong>PARTIELLE</strong> pour la distribution et la "
+        QString typeExCaps = data.type_exclusivite.toUpper();
+        articles += "Le CLIENT confère au PRESTATAIRE une exclusivité <strong>" + typeExCaps + "</strong> pour la distribution et la "
                    "commercialisation des produits EcoCycleApp de la gamme " + data.gamme + ". Cette exclusivité ne s'applique "
                    "que aux catégories de produits mentionnées ci-après : " + data.produits_concernes + ".";
     }
@@ -594,28 +594,6 @@ bool ContratGenerator::exportToPDF(const ContratData &data, const QString &fileP
     return true;
 }
 
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// IMPRIMER
-// ═══════════════════════════════════════════════════════════════════════════════
-bool ContratGenerator::printContract(const ContratData &data)
-{
-    QString html = generateContractHTML(data);
-    
-    QTextDocument document;
-    document.setHtml(html);
-    
-    QPrinter printer(QPrinter::HighResolution);
-    printer.setPageSize(QPageSize::A4);
-    
-    QPrintDialog dialog(&printer, nullptr);
-    if (dialog.exec() == QDialog::Accepted) {
-        document.print(&printer);
-        qDebug() << "Contrat imprimé";
-        return true;
-    }
-    return false;
-}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // UTILITAIRES

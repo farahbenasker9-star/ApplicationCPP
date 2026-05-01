@@ -14,6 +14,7 @@
 #include <QtCharts/QHorizontalBarSeries>
 #include <QtCharts/QBarCategoryAxis>
 #include <QtCharts/QValueAxis>
+#include <QFile>
 
 Employe::Employe()
 {
@@ -323,14 +324,36 @@ QChart* Employe::createSalaireChart()
     return chartSalaire;
 }
 
-bool Employe::genererContratPDF(const QString &filePath, const QString &cin, const QString &nom, 
-                                const QString &prenom, const QString &poste, double salaire, 
-                                const QDate &dateEmb, const QString &typeContrat, 
+static QString employe_imageToBase64(const QString &resourcePath)
+{
+    QFile f(resourcePath);
+    if (!f.open(QIODevice::ReadOnly)) return QString();
+    QByteArray data = f.readAll();
+    QString ext = resourcePath.split('.').last().toLower();
+    return QString("data:image/%1;base64,%2").arg(ext, QString(data.toBase64()));
+}
+
+bool Employe::genererContratPDF(const QString &filePath, const QString &cin, 
+                                const QString &typeContrat, 
                                 int periodeEssai, const QString &lieuTravail)
 {
     if (filePath.isEmpty()) return false;
 
-    QString logoPath = "C:\\Users\\MSI\\Downloads\\logo.png"; //changer le chemin du logo selon votre machine
+    QSqlQuery query;
+    query.prepare("SELECT NOM, PRENOM, POSTE, SALAIRE, DATE_EMBAUCHE FROM EMPLOYE WHERE CIN = :cin");
+    query.bindValue(":cin", cin);
+    if (!query.exec() || !query.next()) {
+        qDebug() << "Erreur: Impossible de trouver l'employé avec le CIN" << cin;
+        return false;
+    }
+
+    QString nom = query.value(0).toString();
+    QString prenom = query.value(1).toString();
+    QString poste = query.value(2).toString();
+    double salaire = query.value(3).toDouble();
+    QDate dateEmb = query.value(4).toDate();
+
+    QString logoPath = employe_imageToBase64(":/new/prefix1/images/lougo.png");
     QString html =
         "<html>\n"
         "<head>\n"
