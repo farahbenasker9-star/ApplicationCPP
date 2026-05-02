@@ -268,6 +268,13 @@ private:
     // ─── Module Arduino RFID ──────────────────────────────────────────────────
     ArduinoRFID *arduino;
     void setupArduino();
+    //------arduino client
+    ArduinoClient *m_arduinoClient; // Nouveau pointeur centralisé
+    QDateTime m_dernierAppelClient;
+
+    void processNumeroClient(const QString &numero);
+    void checkReservation(const QString &phoneNumber);
+
 
 private slots:
     void handle_rfid_scan(const QString &uid);

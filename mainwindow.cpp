@@ -200,6 +200,13 @@ MainWindow::MainWindow(QWidget *parent)
         // App continues normally without Arduino — no crash.
     }
     setupArduino();
+    m_arduinoClient = new ArduinoClient(this);
+    m_arduinoClient->connectArduino("COM9"); // Port Clavier/Audio
+
+    connect(m_arduinoClient, &ArduinoClient::numeroRecu,
+            this, &MainWindow::processNumeroClient);
+
+    m_dernierAppelClient = QDateTime::currentDateTime().addSecs(-10);
 
     // Module poubelle: slots `on_<object>_<signal>` are auto-connected by setupUi.
 
@@ -1720,10 +1727,14 @@ void MainWindow::on_btn_pdf_produit_clicked()
         return; // L'utilisateur a annulé
     }
 
-    // 2. Récupérer le modèle du tableau
-    QAbstractItemModel *model = ui->tab_produit->model();
-    if (!model) {
-        QMessageBox::warning(this, "Erreur", "Aucune donnée à exporter.");
+    // --- NOUVEAU : 2. Récupérer TOUTES les données directement depuis la base ---
+    Produit P;
+    QSqlQueryModel *model = P.afficher(); // On appelle ta fonction qui fait le "SELECT" global
+
+    // Vérification de sécurité
+    if (!model || model->rowCount() == 0) {
+        QMessageBox::warning(this, "Erreur", "La base de données est vide. Rien à exporter.");
+        delete model; // On nettoie la mémoire
         return;
     }
 
@@ -1740,13 +1751,12 @@ void MainWindow::on_btn_pdf_produit_clicked()
         "</style>"
         "</head>"
         "<body>"
-        "<h1>Rapport d'Inventaire - EcoCycle</h1>"
+        "<h1>Rapport d'Inventaire Global - EcoCycle</h1>"
         "<p class='date'>Généré le : " + QDate::currentDate().toString("dd/MM/yyyy") + "</p>"
-                                                        // C'EST CETTE LIGNE QUI FORCE LA LARGEUR MAXIMALE :
                                                         "<table width=\"100%\">"
                                                         "<thead><tr>";
 
-    // 4. Ajouter les en-têtes des colonnes (Noms personnalisés et propres)
+    // 4. Ajouter les en-têtes des colonnes
     QStringList jolisTitres = {"ID Produit", "ID Client", "Type", "Poids (Kg)", "Date Création", "Date Vente", "Statut", "Prix (TND)"};
     int columnCount = model->columnCount();
 
@@ -1760,42 +1770,46 @@ void MainWindow::on_btn_pdf_produit_clicked()
     }
     html += "</tr></thead><tbody>";
 
-    // 5. Ajouter les données des lignes (Avec formatage des dates)
+    // 5. Ajouter les données des lignes
     int rowCount = model->rowCount();
     for (int row = 0; row < rowCount; ++row) {
         html += "<tr>";
         for (int col = 0; col < columnCount; ++col) {
 
-            // On récupère la donnée sous sa forme brute (QVariant)
+            // On récupère la donnée sous sa forme brute
             QVariant valeur = model->data(model->index(row, col));
             QString data = valeur.toString();
 
-            // Si c'est la colonne 4 (Création) ou 5 (Vente) ET que la case n'est pas vide
+            // Formatage des dates
             if ((col == 4 || col == 5) && !data.isEmpty()) {
-                // On la transforme en jolie date : JJ/MM/AAAA
                 data = valeur.toDateTime().toString("dd/MM/yyyy");
             }
 
-            // (Optionnel) Si la donnée est "0" dans le client d'un produit dispo, on n'affiche rien
+            // Client vide si dispo
             if (col == 1 && data == "0") data = "";
 
             html += "<td>" + data + "</td>";
         }
         html += "</tr>";
     }
+    html += "</tbody></table></body></html>";
+
     // 6. Générer le PDF
     QPrinter printer(QPrinter::PrinterResolution);
     printer.setOutputFormat(QPrinter::PdfFormat);
     printer.setOutputFileName(fileName);
-    printer.setPageSize(QPageSize(QPageSize::A4)); // Format A4
-    printer.setPageOrientation(QPageLayout::Landscape); // Paysage pour avoir de la place
+    printer.setPageSize(QPageSize(QPageSize::A4));
+    printer.setPageOrientation(QPageLayout::Landscape);
 
     QTextDocument document;
     document.setHtml(html);
     document.print(&printer);
 
-    QMessageBox::information(this, "Succès", "Le fichier PDF a été généré avec succès !");
+    // --- NOUVEAU : 7. Nettoyer la mémoire ---
+    // Puisqu'on a généré un nouveau modèle avec P.afficher() juste pour le PDF, il faut le supprimer.
+    delete model;
 
+    QMessageBox::information(this, "Succès", "Le fichier PDF a été généré avec succès !");
 }
 
 void MainWindow::renderHistorique(QString typeFiltre, QTextBrowser* targetFeed, QString searchKeyword) {
@@ -3938,3 +3952,72 @@ void MainWindow::handle_rfid_scan(const QString &uid)
         QMessageBox::warning(this, "Accès Refusé", "Badge " + uid + " non reconnu !");
     }
 }
+//-------MODULE ARDUINO CLIENT
+void MainWindow::processNumeroClient(const QString &numero) {
+    // Sécurité anti-rebond (3 secondes)
+    if (m_dernierAppelClient.msecsTo(QDateTime::currentDateTime()) < 3000) return;
+    m_dernierAppelClient = QDateTime::currentDateTime();
+
+    if (numero.length() >= 8) {
+        checkReservation(numero);
+    } else {
+        qDebug() << "Numéro trop court:" << numero;
+        m_arduinoClient->writeToArduino("4\n"); // Bruit d'échec
+    }
+}
+
+void MainWindow::checkReservation(const QString &phoneNumber) {
+    QSqlQuery query;
+    query.prepare("SELECT ID_CLIENT, NOM_CLIENT FROM CLIENT WHERE NUM_TEL = :tel");
+    query.bindValue(":tel", phoneNumber);
+
+    if (query.exec() && query.next()) {
+        int idClient = query.value(0).toInt();
+        QString nomClient = query.value(1).toString();
+
+        QSqlQuery prodQuery;
+        // 1. AJOUT de ID_PRODUIT ici pour pouvoir faire l'update après
+        prodQuery.prepare("SELECT ID_PRODUIT, TYPE_PRODUIT FROM PRODUIT WHERE ID_CLIENT = :id "
+                          "AND (UPPER(STATUT) LIKE 'RESERV%' OR UPPER(STATUT) LIKE 'RÉSERV%')");
+        prodQuery.bindValue(":id", idClient);
+
+        if (prodQuery.exec() && prodQuery.next()) {
+            int idProduit = prodQuery.value(0).toInt(); // On récupère l'ID
+            QString typeProduit = prodQuery.value(1).toString();
+
+            // 2. ON ENVOIE LE SON EN PREMIER (Priorité absolue)
+            m_arduinoClient->writeToArduino("2\n");
+            qDebug() << "Commande son 2 envoyée à l'Arduino";
+
+            // 3. MISE À JOUR DE LA BASE DE DONNÉES
+            QSqlQuery updateQuery;
+            updateQuery.prepare("UPDATE PRODUIT SET STATUT = 'Vendu' WHERE ID_PRODUIT = :idp");
+            updateQuery.bindValue(":idp", idProduit);
+
+            if(!updateQuery.exec()){
+                qDebug() << "Erreur Update:" << updateQuery.lastError().text();
+            } else {
+                Produit P;
+                ui->tab_produit->setModel(P.afficher());
+                qDebug() << "Statut mis à jour en 'Vendu' pour le produit ID:" << idProduit;
+
+            }
+
+            // 4. AFFICHAGE DU MESSAGE (Attention : QMessageBox bloque le code tant qu'on ne clique pas sur OK)
+            QMessageBox::information(this, "Authentification Réussie",
+                                     "Bonjour " + nomClient + ".\nVotre " + typeProduit + " est prêt.");
+        }
+        else {
+            // CAS : Le client existe mais n'a plus de produit "Réservé" (soit c'est déjà vendu, soit il n'a rien)
+            m_arduinoClient->writeToArduino("3\n");
+            QMessageBox::information(this, "Authentification Réussie",
+                                     "Bonjour " + nomClient + ".\nAucune réservation active .");
+        }
+    }
+    else {
+        // CAS : Numéro inconnu
+        m_arduinoClient->writeToArduino("4\n");
+        QMessageBox::warning(this, "Échec", "Numéro inconnu.");
+    }
+}
+
