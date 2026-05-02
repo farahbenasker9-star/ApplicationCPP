@@ -489,3 +489,4 @@ QJsonArray Poubelle::getPoubellesToJSON()
     return jsonArray;
 }
 
+     
