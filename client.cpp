@@ -66,76 +66,8 @@ Client::Client(Ui::MainWindow *ui, QObject *parent) : QObject(parent), ui(ui) {
     connect(ui->btn_tri_client, &QPushButton::clicked, this, &Client::onBtnTriClicked);
     connect(ui->btn_pdf_client, &QPushButton::clicked, this, &Client::onBtnPdfClicked);
 
-    // --- Initialisation Arduino ---
-    // --- Initialisation Arduino ---
-    monArduino = new ArduinoClient(this); // <--- Nouveau nom
-
-    // 🔴 IMPORTANT : Mettez ici le VRAI port du clavier de votre collègue
-    monArduino->connectArduino("COM9");
-
-    // On connecte la réception du numéro à notre fonction de vérification
-    connect(monArduino, &ArduinoClient::numeroRecu, this, &Client::processNumeroClient); // <--- Nouveau nom
-    dernierAppel = QDateTime::currentDateTime().addSecs(-10);
 }
 
-void Client::processNumeroClient(const QString &numero) {
-    // Sécurité anti-rebond du clavier
-    if (dernierAppel.msecsTo(QDateTime::currentDateTime()) < 3000) return;
-    dernierAppel = QDateTime::currentDateTime();
-
-    if (numero.length() >= 8) {
-        checkReservation(numero);
-    } else {
-        qDebug() << "Numéro trop court:" << numero;
-        // Piste 4 = Buzzz + Échec de l'authentification
-        monArduino->writeToArduino("4\n");
-    }
-}
-
-void Client::checkReservation(const QString &phoneNumber) {
-    QSqlQuery query;
-    query.prepare("SELECT ID_CLIENT, NOM_CLIENT FROM CLIENT WHERE NUM_TEL = :tel");
-    query.bindValue(":tel", phoneNumber);
-
-    if (query.exec() && query.next()) {
-        int idClient = query.value(0).toInt();
-        QString nomClient = query.value(1).toString();
-
-        QSqlQuery prodQuery;
-        prodQuery.prepare("SELECT TYPE_PRODUIT FROM PRODUIT WHERE ID_CLIENT = :id AND (UPPER(STATUT) LIKE 'RESERV%' OR UPPER(STATUT) LIKE 'RÉSERV%')");
-        prodQuery.bindValue(":id", idClient);
-
-        if (prodQuery.exec() && prodQuery.next()) {
-            QString typeProduit = prodQuery.value(0).toString();
-
-            // CAS 1 : Client avec réservation -> Piste 2 (Ting + Produit prêt)
-            monArduino->writeToArduino("2\n");
-
-            // PLUS DE QTIMER ! Le son fait tout le travail.
-            QString msg = "Bonjour " + nomClient + ".\nVotre produit (" + typeProduit + ") est prêt.\nVous pouvez procéder à sa récupération.";
-            QMessageBox *msgBox = new QMessageBox(QMessageBox::Information, "Authentification Réussie", msg, QMessageBox::Ok, nullptr);
-            msgBox->setAttribute(Qt::WA_DeleteOnClose);
-            msgBox->show();
-
-        } else {
-            // CAS 2 : Client SANS réservation -> Piste 3 (Ting + Aucune réservation)
-            monArduino->writeToArduino("3\n");
-
-            QString msg = "Bonjour " + nomClient + ".\nNous n'avons trouvé aucune réservation en cours associée à ce compte.";
-            QMessageBox *msgBox = new QMessageBox(QMessageBox::Information, "Authentification Réussie", msg, QMessageBox::Ok, nullptr);
-            msgBox->setAttribute(Qt::WA_DeleteOnClose);
-            msgBox->show();
-        }
-    } else {
-        // CAS 3 : Numéro inconnu -> Piste 4 (Buzzz + Échec)
-        monArduino->writeToArduino("4\n");
-
-        QString msg = "Ce numéro n'est pas reconnu.\nVeuillez vérifier votre saisie.";
-        QMessageBox *msgBox = new QMessageBox(QMessageBox::Warning, "Échec de l'authentification", msg, QMessageBox::Ok, nullptr);
-        msgBox->setAttribute(Qt::WA_DeleteOnClose);
-        msgBox->show();
-    }
-}
 
 void Client::rafraichirAffichage() {
     QString sql = "SELECT ID_CLIENT, NOM_CLIENT, VILLE, CODE_POSTAL, TO_CHAR(NUM_TEL), PDG, ADRESSE FROM CLIENT";

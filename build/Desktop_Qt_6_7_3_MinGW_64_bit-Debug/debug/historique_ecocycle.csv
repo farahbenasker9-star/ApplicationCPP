@@ -1,0 +1,9 @@
+02/05/2026 13:44:47;RESERVATION;15951598;Textile;⏰ Produit réservé pour : test (ID: 12345679)
+02/05/2026 13:44:56;MODIFICATION;14774147;Bois;Mise à jour technique (Prix/Poids/Type).
+02/05/2026 13:45:11;MODIFICATION;15951598;Textile;Mise à jour technique (Prix/Poids/Type).
+02/05/2026 14:00:49;RESERVATION;78965412;Verre;⏰ Produit réservé pour : azaear (ID: 12345678)
+02/05/2026 14:02:56;MODIFICATION;78965412;Verre;Mise à jour technique (Prix/Poids/Type).
+02/05/2026 14:03:26;AJOUT;45687987;Carton;Entrée en stock initial.
+02/05/2026 14:03:42;RESERVATION;45687987;Carton;⏰ Produit réservé pour : qsdfghj (ID: 87965417)
+02/05/2026 14:03:52;VENTE;45687987;Carton;💰 Produit vendu au client : qsdfghj (ID: 87965417)
+02/05/2026 14:04:35;SUPPRESSION;45687987;Carton;Produit définitivement retiré du stock.

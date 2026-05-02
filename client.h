@@ -15,7 +15,6 @@
 #include <QTimer>
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
-#include "arduino.h"
 
 namespace Ui { class MainWindow; }
 
@@ -35,7 +34,6 @@ private slots:
 
 private slots:
     void onSmsReplyFinished(QNetworkReply *reply);
-    void processNumeroClient(const QString &numero);
 
 private:
     Ui::MainWindow *ui;
@@ -51,16 +49,13 @@ private:
     QNetworkAccessManager *networkManager;
     void sendTwilioSms(const QString &to, const QString &message);
     void checkAndResetFidelite(int clientId, int currentPoints, const QString &phone);
-    // Arduino Integration
-    void checkReservation(const QString &phoneNumber);
 
     void rafraichirAffichage();
     void rafraichirStats();
     void rafraichirRendement();
     bool verifierSaisie(); // Fonction de contrôle de saisie centralisée
     bool reaffecterIdClientDansRelations(int oldId, int newId);
-    ArduinoClient *monArduino; // <--- On utilise le nouveau nom de la classe
-    QDateTime dernierAppel;
+
 };
 
 #endif

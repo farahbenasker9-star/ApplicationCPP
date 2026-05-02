@@ -242,19 +242,16 @@ public:
     QWidget *tab_contrat_client;
     QTableView *tab_clients_4;
     QTableView *tab_clients;
-    QWidget *layoutWidget2;
-    QHBoxLayout *horizontalLayout_client;
-    QPushButton *btn_ajouter_client;
-    QPushButton *btn_modifier_client;
-    QPushButton *btn_supprimer_client;
-    QSpacerItem *horizontalSpacer_client;
-    QPushButton *btn_pdf_client;
     QLabel *label_4_client;
-    QWidget *layoutWidget3;
+    QWidget *layoutWidget2;
     QHBoxLayout *horizontalLayout_7_client;
     QLineEdit *le_recherche_client;
     QComboBox *comboBox_client;
     QPushButton *btn_tri_client;
+    QPushButton *btn_pdf_client;
+    QPushButton *btn_modifier_client;
+    QPushButton *btn_ajouter_client;
+    QPushButton *btn_supprimer_client;
     QWidget *page_employes;
     QHBoxLayout *horizontalLayout_3;
     QGroupBox *gb_form;
@@ -341,11 +338,11 @@ public:
     QWidget *tab;
     QTableView *tab_poubelle_3;
     QTableView *tab_poubelle;
-    QWidget *layoutWidget4;
+    QWidget *layoutWidget3;
     QHBoxLayout *horizontalLayout_7_client_2;
     QLineEdit *le_recherche_poubelle;
     QComboBox *comboBox_client_2;
-    QWidget *layoutWidget5;
+    QWidget *layoutWidget4;
     QHBoxLayout *horizontalLayout_client_2;
     QPushButton *btn_ajouter_poubelle;
     QPushButton *btn_modifier_poubelle;
@@ -2721,7 +2718,7 @@ public:
         tab_stats_client->setObjectName("tab_stats_client");
         gb_stats_client = new QGroupBox(tab_stats_client);
         gb_stats_client->setObjectName("gb_stats_client");
-        gb_stats_client->setGeometry(QRect(11, 11, 581, 646));
+        gb_stats_client->setGeometry(QRect(10, 30, 431, 551));
         gb_stats_client->setFont(font);
         tabWidget_right_client->addTab(tab_stats_client, QString());
         tab_contrat_client = new QWidget();
@@ -2734,58 +2731,25 @@ public:
         tabWidget_right_client->addTab(tab_contrat_client, QString());
         tab_clients = new QTableView(page_client);
         tab_clients->setObjectName("tab_clients");
-        tab_clients->setGeometry(QRect(240, 90, 621, 591));
+        tab_clients->setGeometry(QRect(240, 90, 621, 581));
         tab_clients->setAlternatingRowColors(true);
         tab_clients->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
-        layoutWidget2 = new QWidget(page_client);
-        layoutWidget2->setObjectName("layoutWidget2");
-        layoutWidget2->setGeometry(QRect(240, 530, 621, 41));
-        horizontalLayout_client = new QHBoxLayout(layoutWidget2);
-        horizontalLayout_client->setObjectName("horizontalLayout_client");
-        horizontalLayout_client->setContentsMargins(0, 0, 0, 0);
-        btn_ajouter_client = new QPushButton(layoutWidget2);
-        btn_ajouter_client->setObjectName("btn_ajouter_client");
-        btn_ajouter_client->setStyleSheet(QString::fromUtf8("background-color: rgb(0, 96, 0);"));
-
-        horizontalLayout_client->addWidget(btn_ajouter_client);
-
-        btn_modifier_client = new QPushButton(layoutWidget2);
-        btn_modifier_client->setObjectName("btn_modifier_client");
-
-        horizontalLayout_client->addWidget(btn_modifier_client);
-
-        btn_supprimer_client = new QPushButton(layoutWidget2);
-        btn_supprimer_client->setObjectName("btn_supprimer_client");
-
-        horizontalLayout_client->addWidget(btn_supprimer_client);
-
-        horizontalSpacer_client = new QSpacerItem(40, 20, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
-
-        horizontalLayout_client->addItem(horizontalSpacer_client);
-
-        btn_pdf_client = new QPushButton(layoutWidget2);
-        btn_pdf_client->setObjectName("btn_pdf_client");
-        btn_pdf_client->setStyleSheet(QString::fromUtf8("\n"
-"background-color: rgb(67, 160, 71);"));
-
-        horizontalLayout_client->addWidget(btn_pdf_client);
-
         label_4_client = new QLabel(page_client);
         label_4_client->setObjectName("label_4_client");
         label_4_client->setGeometry(QRect(430, -10, 211, 41));
         label_4_client->setStyleSheet(QString::fromUtf8("color: rgb(255, 255, 255);"));
-        layoutWidget3 = new QWidget(page_client);
-        layoutWidget3->setObjectName("layoutWidget3");
-        layoutWidget3->setGeometry(QRect(240, 40, 621, 57));
-        horizontalLayout_7_client = new QHBoxLayout(layoutWidget3);
+        layoutWidget2 = new QWidget(page_client);
+        layoutWidget2->setObjectName("layoutWidget2");
+        layoutWidget2->setGeometry(QRect(240, 40, 621, 57));
+        horizontalLayout_7_client = new QHBoxLayout(layoutWidget2);
         horizontalLayout_7_client->setObjectName("horizontalLayout_7_client");
         horizontalLayout_7_client->setContentsMargins(0, 0, 0, 0);
-        le_recherche_client = new QLineEdit(layoutWidget3);
+        le_recherche_client = new QLineEdit(layoutWidget2);
         le_recherche_client->setObjectName("le_recherche_client");
 
         horizontalLayout_7_client->addWidget(le_recherche_client);
 
-        comboBox_client = new QComboBox(layoutWidget3);
+        comboBox_client = new QComboBox(layoutWidget2);
         comboBox_client->addItem(QString());
         comboBox_client->addItem(QString());
         comboBox_client->addItem(QString());
@@ -2793,11 +2757,26 @@ public:
 
         horizontalLayout_7_client->addWidget(comboBox_client);
 
-        btn_tri_client = new QPushButton(layoutWidget3);
+        btn_tri_client = new QPushButton(layoutWidget2);
         btn_tri_client->setObjectName("btn_tri_client");
 
         horizontalLayout_7_client->addWidget(btn_tri_client);
 
+        btn_pdf_client = new QPushButton(page_client);
+        btn_pdf_client->setObjectName("btn_pdf_client");
+        btn_pdf_client->setGeometry(QRect(800, 680, 54, 39));
+        btn_pdf_client->setStyleSheet(QString::fromUtf8("\n"
+"background-color: rgb(67, 160, 71);"));
+        btn_modifier_client = new QPushButton(page_client);
+        btn_modifier_client->setObjectName("btn_modifier_client");
+        btn_modifier_client->setGeometry(QRect(320, 680, 85, 39));
+        btn_ajouter_client = new QPushButton(page_client);
+        btn_ajouter_client->setObjectName("btn_ajouter_client");
+        btn_ajouter_client->setGeometry(QRect(235, 680, 78, 39));
+        btn_ajouter_client->setStyleSheet(QString::fromUtf8("background-color: rgb(0, 96, 0);"));
+        btn_supprimer_client = new QPushButton(page_client);
+        btn_supprimer_client->setObjectName("btn_supprimer_client");
+        btn_supprimer_client->setGeometry(QRect(412, 680, 96, 39));
         stackedWidget->addWidget(page_client);
         page_employes = new QWidget();
         page_employes->setObjectName("page_employes");
@@ -3595,18 +3574,18 @@ public:
         tab_poubelle->setGeometry(QRect(330, 160, 551, 491));
         tab_poubelle->setAlternatingRowColors(true);
         tab_poubelle->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
-        layoutWidget4 = new QWidget(page_poubelle);
-        layoutWidget4->setObjectName("layoutWidget4");
-        layoutWidget4->setGeometry(QRect(330, 60, 551, 57));
-        horizontalLayout_7_client_2 = new QHBoxLayout(layoutWidget4);
+        layoutWidget3 = new QWidget(page_poubelle);
+        layoutWidget3->setObjectName("layoutWidget3");
+        layoutWidget3->setGeometry(QRect(330, 60, 551, 57));
+        horizontalLayout_7_client_2 = new QHBoxLayout(layoutWidget3);
         horizontalLayout_7_client_2->setObjectName("horizontalLayout_7_client_2");
         horizontalLayout_7_client_2->setContentsMargins(0, 0, 0, 0);
-        le_recherche_poubelle = new QLineEdit(layoutWidget4);
+        le_recherche_poubelle = new QLineEdit(layoutWidget3);
         le_recherche_poubelle->setObjectName("le_recherche_poubelle");
 
         horizontalLayout_7_client_2->addWidget(le_recherche_poubelle);
 
-        comboBox_client_2 = new QComboBox(layoutWidget4);
+        comboBox_client_2 = new QComboBox(layoutWidget3);
         comboBox_client_2->addItem(QString());
         comboBox_client_2->addItem(QString());
         comboBox_client_2->addItem(QString());
@@ -3614,25 +3593,25 @@ public:
 
         horizontalLayout_7_client_2->addWidget(comboBox_client_2);
 
-        layoutWidget5 = new QWidget(page_poubelle);
-        layoutWidget5->setObjectName("layoutWidget5");
-        layoutWidget5->setGeometry(QRect(330, 650, 551, 51));
-        horizontalLayout_client_2 = new QHBoxLayout(layoutWidget5);
+        layoutWidget4 = new QWidget(page_poubelle);
+        layoutWidget4->setObjectName("layoutWidget4");
+        layoutWidget4->setGeometry(QRect(330, 650, 551, 51));
+        horizontalLayout_client_2 = new QHBoxLayout(layoutWidget4);
         horizontalLayout_client_2->setObjectName("horizontalLayout_client_2");
         horizontalLayout_client_2->setContentsMargins(0, 0, 0, 0);
-        btn_ajouter_poubelle = new QPushButton(layoutWidget5);
+        btn_ajouter_poubelle = new QPushButton(layoutWidget4);
         btn_ajouter_poubelle->setObjectName("btn_ajouter_poubelle");
         btn_ajouter_poubelle->setStyleSheet(QString::fromUtf8("background-color: rgb(0, 96, 0);"));
 
         horizontalLayout_client_2->addWidget(btn_ajouter_poubelle);
 
-        btn_modifier_poubelle = new QPushButton(layoutWidget5);
+        btn_modifier_poubelle = new QPushButton(layoutWidget4);
         btn_modifier_poubelle->setObjectName("btn_modifier_poubelle");
         btn_modifier_poubelle->setStyleSheet(QString::fromUtf8("background-color: rgb(26, 120, 202);"));
 
         horizontalLayout_client_2->addWidget(btn_modifier_poubelle);
 
-        btn_supprimer_poubelle = new QPushButton(layoutWidget5);
+        btn_supprimer_poubelle = new QPushButton(layoutWidget4);
         btn_supprimer_poubelle->setObjectName("btn_supprimer_poubelle");
         btn_supprimer_poubelle->setStyleSheet(QString::fromUtf8("background-color: rgb(226, 56, 52);"));
 
@@ -3642,7 +3621,7 @@ public:
 
         horizontalLayout_client_2->addItem(horizontalSpacer_client_2);
 
-        btn_pdf_poubelle = new QPushButton(layoutWidget5);
+        btn_pdf_poubelle = new QPushButton(layoutWidget4);
         btn_pdf_poubelle->setObjectName("btn_pdf_poubelle");
         btn_pdf_poubelle->setStyleSheet(QString::fromUtf8("\n"
 "background-color: rgb(67, 160, 71);"));
@@ -3650,8 +3629,8 @@ public:
         horizontalLayout_client_2->addWidget(btn_pdf_poubelle);
 
         stackedWidget->addWidget(page_poubelle);
-        layoutWidget->raise();
-        layoutWidget->raise();
+        layoutWidget3->raise();
+        layoutWidget3->raise();
         gb_form_2->raise();
         lbl_page_title_3->raise();
         tab_poubelle->raise();
@@ -3668,7 +3647,7 @@ public:
         MainWindow->setCentralWidget(centralwidget);
         menubar = new QMenuBar(MainWindow);
         menubar->setObjectName("menubar");
-        menubar->setGeometry(QRect(0, 0, 1587, 21));
+        menubar->setGeometry(QRect(0, 0, 1587, 26));
         MainWindow->setMenuBar(menubar);
         statusbar = new QStatusBar(MainWindow);
         statusbar->setObjectName("statusbar");
@@ -3681,7 +3660,7 @@ public:
         tabWidget_right_contrat_2->setCurrentIndex(1);
         tabWidget_Stock->setCurrentIndex(0);
         tabWidget_sub_hist->setCurrentIndex(4);
-        tabWidget_right_client->setCurrentIndex(1);
+        tabWidget_right_client->setCurrentIndex(0);
         tabWidget_right->setCurrentIndex(1);
         tabWidget_right_2->setCurrentIndex(0);
 
@@ -3904,10 +3883,6 @@ public:
         gb_stats_client->setTitle(QCoreApplication::translate("MainWindow", "Statistiques", nullptr));
         tabWidget_right_client->setTabText(tabWidget_right_client->indexOf(tab_stats_client), QCoreApplication::translate("MainWindow", "Statistiques", nullptr));
         tabWidget_right_client->setTabText(tabWidget_right_client->indexOf(tab_contrat_client), QCoreApplication::translate("MainWindow", "Rendement des clients ", nullptr));
-        btn_ajouter_client->setText(QCoreApplication::translate("MainWindow", "Ajouter", nullptr));
-        btn_modifier_client->setText(QCoreApplication::translate("MainWindow", "Modifier", nullptr));
-        btn_supprimer_client->setText(QCoreApplication::translate("MainWindow", "Supprimer", nullptr));
-        btn_pdf_client->setText(QCoreApplication::translate("MainWindow", "Pdf", nullptr));
         label_4_client->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:14pt;\">Gestion des clients</span></p></body></html>", nullptr));
         le_recherche_client->setPlaceholderText(QCoreApplication::translate("MainWindow", "Rechercher par Nom, ID...", nullptr));
         comboBox_client->setItemText(0, QCoreApplication::translate("MainWindow", "ID Client", nullptr));
@@ -3915,6 +3890,10 @@ public:
         comboBox_client->setItemText(2, QCoreApplication::translate("MainWindow", "Nom", nullptr));
 
         btn_tri_client->setText(QCoreApplication::translate("MainWindow", "Trier", nullptr));
+        btn_pdf_client->setText(QCoreApplication::translate("MainWindow", "Pdf", nullptr));
+        btn_modifier_client->setText(QCoreApplication::translate("MainWindow", "Modifier", nullptr));
+        btn_ajouter_client->setText(QCoreApplication::translate("MainWindow", "Ajouter", nullptr));
+        btn_supprimer_client->setText(QCoreApplication::translate("MainWindow", "Supprimer", nullptr));
         gb_form->setTitle(QCoreApplication::translate("MainWindow", "Informations Employ\303\251", nullptr));
         label_8->setText(QCoreApplication::translate("MainWindow", "CIN", nullptr));
         le_cin->setPlaceholderText(QCoreApplication::translate("MainWindow", "12345678", nullptr));

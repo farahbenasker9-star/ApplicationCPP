@@ -4017,7 +4017,7 @@ QTabBar::tab:hover {
          </rect>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="tab_stats_client">
          <attribute name="title">
@@ -4026,10 +4026,10 @@ QTabBar::tab:hover {
          <widget class="QGroupBox" name="gb_stats_client">
           <property name="geometry">
            <rect>
-            <x>11</x>
-            <y>11</y>
-            <width>581</width>
-            <height>646</height>
+            <x>10</x>
+            <y>30</y>
+            <width>431</width>
+            <height>551</height>
            </rect>
           </property>
           <property name="font">
@@ -4070,7 +4070,7 @@ QTabBar::tab:hover {
           <x>240</x>
           <y>90</y>
           <width>621</width>
-          <height>591</height>
+          <height>581</height>
          </rect>
         </property>
         <property name="alternatingRowColors">
@@ -4079,66 +4079,6 @@ QTabBar::tab:hover {
         <property name="selectionBehavior">
          <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
         </property>
-       </widget>
-       <widget class="QWidget" name="layoutWidget">
-        <property name="geometry">
-         <rect>
-          <x>240</x>
-          <y>530</y>
-          <width>621</width>
-          <height>41</height>
-         </rect>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_client">
-         <item>
-          <widget class="QPushButton" name="btn_ajouter_client">
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(0, 96, 0);</string>
-           </property>
-           <property name="text">
-            <string>Ajouter</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_modifier_client">
-           <property name="text">
-            <string>Modifier</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_supprimer_client">
-           <property name="text">
-            <string>Supprimer</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_client">
-           <property name="orientation">
-            <enum>Qt::Orientation::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_pdf_client">
-           <property name="styleSheet">
-            <string notr="true">
-background-color: rgb(67, 160, 71);</string>
-           </property>
-           <property name="text">
-            <string>Pdf</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
        </widget>
        <widget class="QLabel" name="label_4_client">
         <property name="geometry">
@@ -4200,6 +4140,65 @@ background-color: rgb(67, 160, 71);</string>
           </widget>
          </item>
         </layout>
+       </widget>
+       <widget class="QPushButton" name="btn_pdf_client">
+        <property name="geometry">
+         <rect>
+          <x>800</x>
+          <y>680</y>
+          <width>54</width>
+          <height>39</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">
+background-color: rgb(67, 160, 71);</string>
+        </property>
+        <property name="text">
+         <string>Pdf</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="btn_modifier_client">
+        <property name="geometry">
+         <rect>
+          <x>320</x>
+          <y>680</y>
+          <width>85</width>
+          <height>39</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Modifier</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="btn_ajouter_client">
+        <property name="geometry">
+         <rect>
+          <x>235</x>
+          <y>680</y>
+          <width>78</width>
+          <height>39</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(0, 96, 0);</string>
+        </property>
+        <property name="text">
+         <string>Ajouter</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="btn_supprimer_client">
+        <property name="geometry">
+         <rect>
+          <x>412</x>
+          <y>680</y>
+          <width>96</width>
+          <height>39</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Supprimer</string>
+        </property>
        </widget>
       </widget>
       <widget class="QWidget" name="page_employes">
@@ -5522,7 +5521,7 @@ background-color: rgb(67, 160, 71);</string>
      <x>0</x>
      <y>0</y>
      <width>1587</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>
